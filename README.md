@@ -5,13 +5,14 @@
 ## 概要
 
 - **目的:** 子供たちが楽しく英語を学べるプラットフォーム
-- **ステータス:** 開発中 (Vue 3 + Vite)
+- **ステータス:** 開発中 (Next.js)
 
 ## 技術スタック
 
-- **フレームワーク:** Vue 3 (Composition API)
-- **ビルドツール:** Vite
-- **将来拡張:** Vue Router / Pinia / Nuxt.js (必要に応じて)
+- **フレームワーク:** Next.js (App Router)
+- **言語:** TypeScript
+- **スタイリング:** Tailwind CSS
+- **将来拡張:** API Routes / 音声認識 (Web Speech API) / PWA
 
 ## 開発予定機能
 
@@ -29,13 +30,16 @@ npm install
 npm run dev
 ```
 
+開発サーバー: http://localhost:3000
+
 ## 開発コマンド
 
 | コマンド | 説明 |
 |---|---|
 | `npm run dev` | 開発サーバー起動 |
 | `npm run build` | 本番ビルド |
-| `npm run preview` | ビルド結果のプレビュー |
+| `npm start` | 本番サーバー起動 |
+| `npm run lint` | ESLint チェック |
 
 ---
 
