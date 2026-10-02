@@ -1,0 +1,39 @@
+name: Deploy
+
+# main へマージ (= push) されたら VPS 上のセルフホストランナーがデプロイする。
+# NOTE: PR からは絶対に起動しない (pull_request トリガを付けない) こと。
+#       public リポジトリのため、fork PR のコードをセルフホストランナーで
+#       実行してしまう事故を避ける。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: deploy to VPS
+    runs-on: [self-hosted, linux, english-for-kids]
+    steps:
+      - name: Deploy
+        run: |
+          set -euo pipefail
+          export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+
+          cd "$HOME/apps/english-for-kids"
+          git fetch --prune origin
+          git reset --hard origin/main
+          npm ci
+          npm run build
+
+          systemctl --user restart english-for-kids.service
+          sleep 2
+
+          # health check (tunnel 前段のローカル確認)
+          curl -fsS -o /dev/null http://127.0.0.1:3000/ && echo "✅ health OK"
