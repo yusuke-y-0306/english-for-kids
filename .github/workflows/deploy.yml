@@ -1,9 +1,15 @@
 name: Deploy
 
-# main へマージ (= push) されたら VPS 上のセルフホストランナーがデプロイする。
-# NOTE: PR からは絶対に起動しない (pull_request トリガを付けない) こと。
-#       public リポジトリのため、fork PR のコードをセルフホストランナーで
-#       実行してしまう事故を避ける。
+# main マージ (= push) で、GitHub ホステッドランナーから VPS へ SSH デプロイする。
+#
+# NOTE: セルフホストランナーは使わない。
+#   この VPS では OpenClaw Gateway が稼働しており、リポジトリのワークフローに
+#   Gateway の秘密 (credentials / トークン類) を触らせないため。デプロイ経路は
+#   「GitHub (hosted runner) → VPS」方向の SSH のみで、VPS 側に常駐プロセス
+#   (ランナー) を置かない。
+#
+# NOTE: リポジトリは public。deploy は push(main) / workflow_dispatch のみで起動し、
+#   pull_request では絶対に起動しないこと (fork PR のコードを実行しない)。
 on:
   push:
     branches: [main]
@@ -18,22 +24,23 @@ permissions:
 
 jobs:
   deploy:
-    name: deploy to VPS
-    runs-on: [self-hosted, linux, english-for-kids]
+    name: deploy to VPS (ssh)
+    runs-on: ubuntu-latest
     steps:
-      - name: Deploy
+      - name: Deploy over SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           set -euo pipefail
-          export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-
-          cd "$HOME/apps/english-for-kids"
-          git fetch --prune origin
-          git reset --hard origin/main
-          npm ci
-          npm run build
-
-          systemctl --user restart english-for-kids.service
-          sleep 2
-
-          # health check (tunnel 前段のローカル確認)
-          curl -fsS -o /dev/null http://127.0.0.1:3000/ && echo "✅ health OK"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT:-22}" \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=accept-new \
+              -o ServerAliveInterval=30 \
+              "${VPS_USER}@${VPS_HOST}" \
+              'set -euo pipefail; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; cd "$HOME/apps/english-for-kids"; git fetch --prune origin; git reset --hard origin/main; npm ci; npm run build; systemctl --user restart english-for-kids.service; sleep 2; curl -fsS -o /dev/null http://127.0.0.1:3000/ && echo "deploy OK"'
