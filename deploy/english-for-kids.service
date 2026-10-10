@@ -1,0 +1,18 @@
+[Unit]
+Description=English for Kids (Next.js)
+Documentation=https://github.com/yusuke-y-0306/english-for-kids
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/yusuke/apps/english-for-kids
+Environment=NODE_ENV=production
+Environment=PORT=3000
+# fnm の default エイリアス経由で node を参照 (バージョン更新に追従しやすい)
+ExecStart=/home/yusuke/.local/share/fnm/aliases/default/bin/node /home/yusuke/apps/english-for-kids/node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target
