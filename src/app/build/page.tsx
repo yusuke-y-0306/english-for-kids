@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { checkAnswer, tasks, type CheckResult, type Task } from "@/lib/sentences";
+import { judgeAnswer, tasks, type Judgment, type Task } from "@/lib/sentences";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -35,11 +35,11 @@ function TaskCard({
   );
 
   const [placed, setPlaced] = useState<number[]>([]);
-  const [result, setResult] = useState<CheckResult | null>(null);
+  const [result, setResult] = useState<Judgment | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [showHint, setShowHint] = useState(false);
 
-  const solved = result === "correct";
+  const solved = result?.verdict === "correct";
   const remaining = cardOrder.filter((i) => !placed.includes(i));
 
   function place(i: number) {
@@ -63,9 +63,9 @@ function TaskCard({
   function submit() {
     if (placed.length === 0 || solved) return;
     const answer = placed.map((i) => task.words[i]);
-    const r = checkAnswer(task, answer);
-    setResult(r);
-    if (r !== "correct") setAttempts((a) => a + 1);
+    const judgment = judgeAnswer(task, answer);
+    setResult(judgment);
+    if (judgment.verdict !== "correct") setAttempts((a) => a + 1);
   }
 
   return (
@@ -140,7 +140,7 @@ function TaskCard({
 
       {/* フィードバック */}
       <div aria-live="polite" className="min-h-12">
-        {result === "correct" && (
+        {result?.verdict === "correct" && (
           <div className="mt-3 rounded-2xl bg-emerald-50 p-4 text-center dark:bg-emerald-900/20">
             <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
               ✅ せいかい！
@@ -155,12 +155,17 @@ function TaskCard({
             )}
           </div>
         )}
-        {result === "wrong-order" && (
+        {result?.verdict === "grammar" && (
+          <p className="mt-3 rounded-2xl bg-amber-50 p-3 text-center text-sm font-medium text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+            📝 {result.detail ?? "ぶんぽうを たしかめてみよう"}
+          </p>
+        )}
+        {result?.verdict === "wrong-order" && (
           <p className="mt-3 rounded-2xl bg-amber-50 p-3 text-center text-sm font-medium text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
             🤔 ことばは あってるよ！じゅんばんを かんがえてみよう
           </p>
         )}
-        {result === "wrong-words" && (
+        {result?.verdict === "wrong-words" && (
           <p className="mt-3 rounded-2xl bg-amber-50 p-3 text-center text-sm font-medium text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
             🤔 おしい！つかう ことばを えらびなおしてみよう
           </p>
