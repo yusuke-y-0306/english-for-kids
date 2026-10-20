@@ -1,8 +1,9 @@
 name: CI
 
 on:
+  # base ブランチを限定しない。feature ブランチを積む（stacked PR）場合でも
+  # CI を回すため。
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read
