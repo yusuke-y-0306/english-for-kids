@@ -12,6 +12,12 @@ const features: {
     desc: "英単語を楽しく覚えよう",
     href: "/flashcards",
   },
+  {
+    emoji: "🧩",
+    title: "単語ならべかえ",
+    desc: "ことばをならべて ぶんを作ろう",
+    href: "/build",
+  },
   { emoji: "🎤", title: "発音練習", desc: "声に出して練習しよう" },
   { emoji: "🎮", title: "クイズ・ゲーム", desc: "遊びながら学ぼう" },
   { emoji: "📈", title: "進捗管理", desc: "がんばりを見える化" },
