@@ -49,6 +49,7 @@ const features: Feature[] = [
     title: "クイズ・ゲーム",
     en: "Games",
     desc: "あそびながら、いつのまにか覚えちゃう。",
+    href: "/quiz",
     bg: "bg-[#eef7e2]",
     ink: "text-[#38702f]",
     ring: "#8fd06a",

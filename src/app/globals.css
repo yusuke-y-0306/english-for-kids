@@ -135,6 +135,73 @@
   }
 }
 
+/* ------------------------------------------------------------------
+   クイズ — せいかいの おいわい / まちがいの ゆれ
+------------------------------------------------------------------ */
+@keyframes quiz-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0) rotate(0deg) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx, 0px), 78vh, 0)
+      rotate(var(--rot, 360deg)) scale(1);
+  }
+}
+
+@keyframes quiz-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-7px) rotate(-1deg);
+  }
+  40% {
+    transform: translateX(6px) rotate(1deg);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes quiz-correct-pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes quiz-star-pop {
+  0% {
+    transform: scale(0) rotate(-40deg);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.2) rotate(6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
 .anim-float {
   animation: kids-float 6s ease-in-out infinite;
 }
@@ -154,6 +221,18 @@
 .anim-pop {
   animation: kids-pop 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+.anim-confetti {
+  animation: quiz-confetti-fall 1.5s cubic-bezier(0.3, 0.7, 0.4, 1) forwards;
+}
+.anim-shake {
+  animation: quiz-shake 0.45s ease-in-out both;
+}
+.anim-correct-pop {
+  animation: quiz-correct-pop 0.5s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+}
+.anim-star-pop {
+  animation: quiz-star-pop 0.6s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+}
 
 /* キャラクターの歩くリズム */
 .anim-step {
@@ -167,7 +246,11 @@
   .anim-twinkle,
   .anim-bubble,
   .anim-step,
-  .anim-pop {
+  .anim-pop,
+  .anim-confetti,
+  .anim-shake,
+  .anim-correct-pop,
+  .anim-star-pop {
     animation: none !important;
   }
 }
