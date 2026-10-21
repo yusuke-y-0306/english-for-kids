@@ -1,26 +1,173 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ------------------------------------------------------------------
+   こども英語ひろば — design tokens
+   絵本のようにあたたかく、パステル＋ビビッドの差し色で。
+------------------------------------------------------------------ */
+@theme {
+  /* 空と野原 */
+  --color-sky-top: #cdeeff;
+  --color-sky-bottom: #eefaff;
+  --color-meadow: #a8e07a;
+  --color-meadow-deep: #6cc24a;
+  --color-forest: #2f8f4e;
+  --color-path: #f2e3c3;
+  --color-path-deep: #e6d5b8;
+
+  /* キャラクター */
+  --color-bear: #a9744f;
+  --color-bear-deep: #86593a;
+  --color-muzzle: #f7e3cd;
+  --color-bunny: #ffffff;
+  --color-bunny-shadow: #f0e6ea;
+  --color-blush: #ffb3c7;
+
+  /* 差し色 */
+  --color-rainbow-red: #ff6b6b;
+  --color-rainbow-orange: #ff9f43;
+  --color-rainbow-yellow: #ffd93d;
+  --color-rainbow-green: #6cc24a;
+  --color-rainbow-blue: #4dc9f6;
+  --color-rainbow-purple: #a17bf0;
+  --color-ink: #3d3229;
+  --color-ink-soft: #7a6857;
+  --color-cream: #fff8ec;
+  --color-badge: #8a5a3b;
+
+  /* 文字 */
+  --font-rounded: var(--font-mplus), var(--font-nunito), ui-sans-serif, system-ui,
+    sans-serif;
+  --font-display: var(--font-fredoka), var(--font-mplus), ui-sans-serif,
+    sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background:
+      radial-gradient(120% 80% at 50% -20%, var(--color-sky-top) 0%, transparent 60%),
+      linear-gradient(180deg, var(--color-sky-bottom) 0%, var(--color-cream) 70%);
+    background-attachment: fixed;
+    color: var(--color-ink);
+    font-family: var(--font-rounded);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-rainbow-yellow);
+    color: var(--color-ink);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ------------------------------------------------------------------
+   アニメーション — しずかに、でも生きている感じに
+------------------------------------------------------------------ */
+@keyframes kids-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: translateY(-10px) rotate(var(--tilt, 0deg));
+  }
+}
+
+@keyframes kids-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes kids-sway {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes kids-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes kids-bubble {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.7);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-70px) scale(1.05);
+  }
+}
+
+@keyframes kids-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.anim-float {
+  animation: kids-float 6s ease-in-out infinite;
+}
+.anim-bob {
+  animation: kids-bob 4s ease-in-out infinite;
+}
+.anim-sway {
+  animation: kids-sway 7s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+.anim-twinkle {
+  animation: kids-twinkle 3.4s ease-in-out infinite;
+}
+.anim-bubble {
+  animation: kids-bubble 7s ease-in-out infinite;
+}
+.anim-pop {
+  animation: kids-pop 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* キャラクターの歩くリズム */
+.anim-step {
+  animation: kids-bob 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-float,
+  .anim-bob,
+  .anim-sway,
+  .anim-twinkle,
+  .anim-bubble,
+  .anim-step,
+  .anim-pop {
+    animation: none !important;
+  }
 }

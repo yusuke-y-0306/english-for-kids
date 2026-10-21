@@ -47,91 +47,97 @@ export default function FlashcardsPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-5 py-8">
-      <header className="flex items-center justify-between">
+    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-4 py-6 sm:px-6 sm:py-8">
+      {/* ヘッダー */}
+      <header className="flex items-center justify-between gap-3 rounded-full border-2 border-white bg-white/85 px-3 py-2.5 shadow-[0_5px_16px_rgba(122,104,87,0.12)] sm:px-4">
         <Link
           href="/"
-          className="text-sm text-zinc-500 transition hover:text-zinc-900 dark:hover:text-zinc-100"
+          className="rounded-full px-3 py-1.5 text-sm font-extrabold text-[#5b4a3c] transition hover:bg-[#fff6e3] hover:text-ink"
         >
           ← ホーム
         </Link>
-        <h1 className="text-lg font-bold">🃏 フラッシュカード</h1>
-        <span className="w-14 text-right text-sm text-zinc-400">
+        <h1 className="text-base font-extrabold text-ink sm:text-lg">
+          フラッシュカード
+        </h1>
+        <span className="rounded-full bg-[#fff6e3] px-3 py-1.5 text-xs font-extrabold text-[#a85f08]">
           {index + 1} / {total}
         </span>
       </header>
 
-      {/* Category selector */}
+      {/* カテゴリえらび */}
       <div className="mt-5 flex flex-wrap justify-center gap-2">
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => selectCategory(c.id)}
-            aria-pressed={c.id === catId}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              c.id === catId
-                ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
-                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-            }`}
-          >
-            {c.emoji} {c.label}
-          </button>
-        ))}
+        {categories.map((c) => {
+          const active = c.id === catId;
+          return (
+            <button
+              key={c.id}
+              onClick={() => selectCategory(c.id)}
+              aria-pressed={active}
+              className={`min-h-11 rounded-full px-4 py-2 text-sm font-extrabold transition ${
+                active
+                  ? "bg-badge text-white shadow-[0_3px_0_rgba(61,50,41,0.28)]"
+                  : "border-2 border-white bg-white text-[#5b4a3c] shadow-[0_3px_0_rgba(122,104,87,0.12)] hover:-translate-y-0.5 hover:bg-[#fff6e3]"
+              }`}
+            >
+              {c.emoji} {c.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Card */}
-      <div className="mt-8 [perspective:1200px]">
+      {/* カード */}
+      <div className="mt-7 [perspective:1200px]">
         <button
           type="button"
           onClick={() => setFlipped((f) => !f)}
           aria-label="カードをめくる"
-          className="relative block h-72 w-full [transform-style:preserve-3d] transition-transform duration-500 ease-out"
+          className="relative block h-72 w-full [transform-style:preserve-3d] transition-transform duration-500 ease-out sm:h-80"
           style={{ transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
         >
-          {/* Front (English) */}
+          {/* おもてがわ（えいご） */}
           <div
-            className={`absolute inset-0 flex flex-col items-center justify-center rounded-3xl bg-gradient-to-br ${cat.color} p-6 text-white shadow-lg [backface-visibility:hidden]`}
+            className={`absolute inset-0 flex flex-col items-center justify-center rounded-[32px] border-4 border-white bg-gradient-to-br ${cat.color} p-6 text-white shadow-[0_16px_36px_rgba(122,104,87,0.24)] [backface-visibility:hidden]`}
           >
             <div className="text-7xl drop-shadow-sm">{word.emoji}</div>
             <div className="mt-4 text-4xl font-extrabold tracking-tight drop-shadow-sm">
               {word.en}
             </div>
-            <div className="mt-4 text-xs font-medium text-white/80">
-              タップして いみを みる 👆
+            <div className="mt-5 rounded-full bg-white/25 px-4 py-1.5 text-xs font-extrabold">
+              タップして いみを みる
             </div>
           </div>
 
-          {/* Back (Japanese) */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-3xl border border-zinc-200 bg-white p-6 shadow-lg [backface-visibility:hidden] [transform:rotateY(180deg)] dark:border-zinc-700 dark:bg-zinc-900">
+          {/* うらがわ（にほんご） */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[32px] border-4 border-white bg-[#fff8ec] p-6 shadow-[0_16px_36px_rgba(122,104,87,0.24)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
             <div className="text-7xl">{word.emoji}</div>
-            <div className="mt-4 text-4xl font-extrabold tracking-tight">
+            <div className="mt-4 text-4xl font-extrabold tracking-tight text-ink">
               {word.ja}
             </div>
-            <div className="mt-3 text-lg font-medium text-zinc-400">
+            <div className="mt-3 font-display text-lg font-semibold tracking-wide text-[#a85f08]">
               {word.en}
             </div>
           </div>
         </button>
       </div>
 
-      {/* Controls */}
+      {/* そうさ */}
       <div className="mt-8 flex items-center justify-center gap-3">
         <button
           onClick={() => go(-1)}
-          className="rounded-full bg-zinc-100 px-6 py-3 text-lg font-semibold transition hover:bg-zinc-200 active:scale-95 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-white text-lg font-extrabold text-[#5b4a3c] shadow-[0_4px_0_rgba(122,104,87,0.18)] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
           aria-label="まえのカード"
         >
           ◀
         </button>
         <button
           onClick={() => setFlipped((f) => !f)}
-          className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700 active:scale-95 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          className="min-h-12 rounded-full bg-[#f4801f] px-7 py-3 text-sm font-extrabold text-white shadow-[0_4px_0_#c25f0d] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
         >
-          めくる 🔄
+          めくる
         </button>
         <button
           onClick={() => go(1)}
-          className="rounded-full bg-zinc-100 px-6 py-3 text-lg font-semibold transition hover:bg-zinc-200 active:scale-95 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-white text-lg font-extrabold text-[#5b4a3c] shadow-[0_4px_0_rgba(122,104,87,0.18)] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
           aria-label="つぎのカード"
         >
           ▶
@@ -141,9 +147,9 @@ export default function FlashcardsPage() {
       <div className="mt-4 flex justify-center">
         <button
           onClick={doShuffle}
-          className="text-sm text-zinc-400 underline-offset-4 transition hover:text-zinc-700 hover:underline dark:hover:text-zinc-200"
+          className="rounded-full px-4 py-2 text-sm font-extrabold text-[#5b4a3c] underline decoration-[#c9b9a6] decoration-2 underline-offset-4 transition hover:bg-white hover:text-ink"
         >
-          🔀 シャッフル
+          シャッフル
         </button>
       </div>
     </main>

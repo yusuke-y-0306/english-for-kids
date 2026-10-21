@@ -71,32 +71,32 @@ function TaskCard({
   return (
     <div className="flex flex-col">
       {/* 進捗 */}
-      <div className="flex items-center justify-between text-sm text-zinc-400">
-        <span>
+      <div className="flex items-center justify-between text-sm">
+        <span className="rounded-full bg-white px-3 py-1.5 text-xs font-extrabold text-[#5b4a3c] shadow-[0_3px_0_rgba(122,104,87,0.12)]">
           {number} / {total}
         </span>
         <button
           onClick={() => setShowHint((s) => !s)}
-          className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-800 transition hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:hover:bg-amber-900/60"
+          className="min-h-10 rounded-full bg-[#fff3d6] px-4 py-2 text-xs font-extrabold text-[#a85f08] shadow-[0_3px_0_rgba(224,178,28,0.35)] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
         >
           {showHint ? "ヒントをとじる" : "💡 ヒント"}
         </button>
       </div>
 
       {/* 相手の発言 */}
-      <div className="mt-3 flex items-start gap-3 rounded-3xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="mt-3 flex items-start gap-3 rounded-[26px] border-4 border-white bg-white/85 p-4 shadow-[0_8px_22px_rgba(122,104,87,0.14)]">
         <div className="text-4xl leading-none">{task.emoji}</div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs font-extrabold text-[#7a6857]">
             {task.speaker} <span className="ml-1">{task.scene}</span>
           </p>
-          <p className="mt-1 text-lg font-semibold leading-snug">
+          <p className="mt-1 text-lg leading-snug font-extrabold text-ink">
             “{task.prompt}”
           </p>
           {showHint && (
-            <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
+            <p className="mt-2 text-sm font-bold text-[#a85f08]">
               {task.promptJa}
-              <span className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="mt-1 block text-xs font-bold text-[#7a6857]">
                 {task.hintJa}
               </span>
             </p>
@@ -106,16 +106,16 @@ function TaskCard({
 
       {/* こたえの組み立てエリア */}
       <div
-        className={`mt-4 min-h-24 rounded-3xl border-2 border-dashed p-3 transition ${
+        className={`mt-4 min-h-24 rounded-[26px] border-[3px] border-dashed p-3 transition ${
           solved
-            ? "border-emerald-400 bg-emerald-50 dark:border-emerald-600 dark:bg-emerald-900/20"
+            ? "border-[#8fd06a] bg-[#eef7e2]"
             : result
-              ? "border-amber-300 bg-amber-50/60 dark:border-amber-700 dark:bg-amber-900/10"
-              : "border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-950"
+              ? "border-[#e0b21c] bg-[#fff8e2]"
+              : "border-[#d8c6ab] bg-white/80"
         }`}
       >
         {placed.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-zinc-400">
+          <p className="px-2 py-6 text-center text-sm font-bold text-[#8b7a67]">
             したの カードを おして、ことばを ならべよう
           </p>
         ) : (
@@ -125,10 +125,10 @@ function TaskCard({
                 key={`${i}-${pos}`}
                 onClick={() => unplace(i)}
                 disabled={solved}
-                className={`rounded-xl px-3 py-2 text-base font-semibold shadow-sm transition ${
+                className={`min-h-11 rounded-2xl px-4 py-2 text-base font-extrabold shadow-[0_3px_0_rgba(61,50,41,0.22)] transition ${
                   solved
-                    ? "bg-emerald-500 text-white"
-                    : "bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+                    ? "bg-[#6cc24a] text-white"
+                    : "bg-badge text-white hover:-translate-y-0.5 hover:bg-[#75492e]"
                 }`}
               >
                 {task.words[i]}
@@ -141,32 +141,30 @@ function TaskCard({
       {/* フィードバック */}
       <div aria-live="polite" className="min-h-12">
         {result?.verdict === "correct" && (
-          <div className="mt-3 rounded-2xl bg-emerald-50 p-4 text-center dark:bg-emerald-900/20">
-            <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
-              ✅ せいかい！
-            </p>
-            <p className="mt-2 text-base">
+          <div className="mt-3 rounded-[22px] border-4 border-white bg-[#eef7e2] p-4 text-center shadow-[0_6px_16px_rgba(122,104,87,0.12)]">
+            <p className="text-xl font-extrabold text-[#38702f]">✅ せいかい！</p>
+            <p className="mt-2 text-base font-bold text-ink">
               {task.replyEmoji} {task.speaker}: “{task.reply}”
             </p>
             {attempts === 0 && (
-              <p className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
+              <p className="mt-1 text-sm font-extrabold text-[#38702f]">
                 ⭐ ノーミス！
               </p>
             )}
           </div>
         )}
         {result?.verdict === "grammar" && (
-          <p className="mt-3 rounded-2xl bg-amber-50 p-3 text-center text-sm font-medium text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+          <p className="mt-3 rounded-[22px] bg-[#fff8e2] p-3 text-center text-sm font-extrabold text-[#8a5a12]">
             📝 {result.detail ?? "ぶんぽうを たしかめてみよう"}
           </p>
         )}
         {result?.verdict === "wrong-order" && (
-          <p className="mt-3 rounded-2xl bg-amber-50 p-3 text-center text-sm font-medium text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+          <p className="mt-3 rounded-[22px] bg-[#fff8e2] p-3 text-center text-sm font-extrabold text-[#8a5a12]">
             🤔 ことばは あってるよ！じゅんばんを かんがえてみよう
           </p>
         )}
         {result?.verdict === "wrong-words" && (
-          <p className="mt-3 rounded-2xl bg-amber-50 p-3 text-center text-sm font-medium text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+          <p className="mt-3 rounded-[22px] bg-[#fff8e2] p-3 text-center text-sm font-extrabold text-[#8a5a12]">
             🤔 おしい！つかう ことばを えらびなおしてみよう
           </p>
         )}
@@ -179,7 +177,7 @@ function TaskCard({
             key={i}
             onClick={() => place(i)}
             disabled={solved}
-            className="rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-base font-semibold shadow-sm transition hover:-translate-y-0.5 hover:bg-zinc-200 active:translate-y-0 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+            className="min-h-11 rounded-2xl border-2 border-white bg-[#fff6e3] px-4 py-2 text-base font-extrabold text-ink shadow-[0_4px_0_rgba(122,104,87,0.16)] transition hover:-translate-y-0.5 hover:bg-white active:translate-y-0.5 active:shadow-none disabled:opacity-40"
           >
             {task.words[i]}
           </button>
@@ -191,7 +189,7 @@ function TaskCard({
         {solved ? (
           <button
             onClick={onNext}
-            className="rounded-full bg-emerald-600 px-8 py-3 text-base font-bold text-white shadow transition hover:bg-emerald-700"
+            className="min-h-12 rounded-full bg-[#6cc24a] px-8 py-3 text-base font-extrabold text-white shadow-[0_4px_0_#4a9b2f] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
           >
             つぎへ →
           </button>
@@ -199,14 +197,14 @@ function TaskCard({
           <>
             <button
               onClick={clearAll}
-              className="rounded-full border border-zinc-300 px-5 py-3 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="min-h-12 rounded-full border-2 border-[#e0cdb0] bg-white px-5 py-3 text-sm font-extrabold text-[#5b4a3c] transition hover:-translate-y-0.5 hover:bg-[#fff6e3]"
             >
               やりなおす
             </button>
             <button
               onClick={submit}
               disabled={placed.length === 0}
-              className="rounded-full bg-zinc-900 px-8 py-3 text-base font-bold text-white shadow transition hover:bg-zinc-700 disabled:opacity-40 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="min-h-12 rounded-full bg-[#f4801f] px-8 py-3 text-base font-extrabold text-white shadow-[0_4px_0_#c25f0d] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:bg-[#cdbba2] disabled:text-[#f6ecdc] disabled:shadow-[0_4px_0_#b8a68d]"
             >
               できた！
             </button>
@@ -247,38 +245,42 @@ export default function WordOrderingPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-5 py-8">
-      <header className="flex items-center justify-between">
+    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-4 py-6 sm:px-6 sm:py-8">
+      <header className="flex items-center justify-between gap-3 rounded-full border-2 border-white bg-white/85 px-3 py-2.5 shadow-[0_5px_16px_rgba(122,104,87,0.12)] sm:px-4">
         <Link
           href="/"
-          className="text-sm text-zinc-500 transition hover:text-zinc-900 dark:hover:text-zinc-100"
+          className="rounded-full px-3 py-1.5 text-sm font-extrabold text-[#5b4a3c] transition hover:bg-[#fff6e3] hover:text-ink"
         >
           ← ホーム
         </Link>
-        <h1 className="text-lg font-bold">🧩 単語ならべかえ</h1>
-        <span className="w-14 text-right text-sm text-zinc-400">
+        <h1 className="text-base font-extrabold text-ink sm:text-lg">
+          単語ならべかえ
+        </h1>
+        <span className="rounded-full bg-[#fff3d6] px-3 py-1.5 text-xs font-extrabold text-[#a85f08]">
           ⭐ {cleared}
         </span>
       </header>
 
       <div className="mt-6 flex-1">
         {finished ? (
-          <div className="flex flex-col items-center rounded-3xl border border-zinc-200 bg-zinc-50 px-6 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex flex-col items-center rounded-[32px] border-4 border-white bg-white/85 px-6 py-12 text-center shadow-[0_12px_30px_rgba(122,104,87,0.16)]">
             <p className="text-5xl">🎊</p>
-            <h2 className="mt-4 text-2xl font-bold">ぜんぶ できた！</h2>
-            <p className="mt-2 text-lg text-zinc-600 dark:text-zinc-400">
+            <h2 className="mt-4 text-2xl font-extrabold text-ink">
+              ぜんぶ できた！
+            </h2>
+            <p className="mt-2 text-lg font-bold text-[#5b4a3c]">
               ⭐ {cleared} / {total} 問 クリア
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <button
                 onClick={restart}
-                className="rounded-full bg-zinc-900 px-7 py-3 text-base font-bold text-white shadow transition hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+                className="min-h-12 rounded-full bg-[#f4801f] px-7 py-3 text-base font-extrabold text-white shadow-[0_4px_0_#c25f0d] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
               >
                 もういちど
               </button>
               <Link
                 href="/"
-                className="rounded-full border border-zinc-300 px-7 py-3 text-base font-medium text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className="min-h-12 rounded-full border-2 border-[#e0cdb0] bg-white px-7 py-3 text-base font-extrabold text-[#5b4a3c] transition hover:-translate-y-0.5 hover:bg-[#fff6e3]"
               >
                 ホームへ
               </Link>
