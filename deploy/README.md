@@ -11,7 +11,7 @@ GitHub Actions (CI: PR時 / Deploy: main時)
    │                    git reset --hard origin/main → npm ci → npm run build
    │                    systemctl --user restart english-for-kids → healthcheck
    ▼
-Cloudflare Tunnel ── yy.english.kids.com ──► http://127.0.0.1:3000 (Next.js)
+Cloudflare Tunnel ── (公開ホスト名) ──► http://127.0.0.1:3000 (Next.js)
 ```
 
 ## 構成要素
@@ -47,7 +47,7 @@ cloudflared tunnel --no-autoupdate run --token ***
 # systemd 化は cloudflared service install <TOKEN> が便利
 ```
 トンネルの **Public Hostname** に以下を設定:
-- Hostname: `yy.english.kids.com`
+- Hostname: 自分の管理下のドメイン（例: `kids.example.com`）
 - Service: `http://127.0.0.1:3000`
 
 ### 3. デプロイ用 SSH 鍵
@@ -98,7 +98,17 @@ Deployments は書けるが、**リポジトリ設定 (About の Website 欄) �
 （トークン未設定でも、上記 2〜3 でリポジトリページから URL は辿れる）
 
 ### 恒久的にURLを固定したい場合
-Quick Tunnel を使う限り URL は不安定。恒久化するなら Cloudflare の**名前付きトンネル**を作り、
-`yy.english.kids.com` → `http://127.0.0.1:3000` を Public Hostname に設定したうえで、
-`cloudflared` をトンネルトークン付きで起動する (`cloudflared service install <TOKEN>` 相当)。
-その場合は `cloudflared-quick.service` を無効化し、Website 欄もこの固定URLにすれば更新不要になる。
+Quick Tunnel を使う限り URL は不安定。恒久化するなら Cloudflare の**名前付きトンネル**を使う。
+Cloudflare Tunnel は **全プラン (Free 含む) で利用可能**で、トンネル自体に費用はかからない。
+必要なのは **自分が DNS を管理しているドメイン**だけ（Cloudflare にゾーンを無料で追加する）。
+
+1. Cloudflare にゾーン（自分のドメイン）を追加し、ネームサーバーを Cloudflare に向ける
+2. ダッシュボードで名前付きトンネルを作成し、Public Hostname を
+   `kids.example.com` → `http://127.0.0.1:3000` のように設定
+3. VPS 側は `cloudflared` を**トンネルトークン付き**で起動（`cloudflared service install <TOKEN>` 相当）
+4. `cloudflared-quick.service` を disable し、Website 欄もこの固定URLにすれば更新不要
+
+> 補足: 以前この README では `yy.english.kids.com` を前提にしていたが、現時点で
+> `english.kids.com` は **このリポジトリの管理者が DNS を管理しているゾーンではない**
+> （`kids.com` は別 Registrar 管理で、`yy.english.kids.com` は AWS Global Accelerator を向いている）。
+> 固定URLを作る際は、管理下のドメインに読み替えること。
