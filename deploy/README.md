@@ -11,13 +11,15 @@ GitHub Actions (CI: PR時 / Deploy: main時)
    │                    git reset --hard origin/main → npm ci → npm run build
    │                    systemctl --user restart english-for-kids → healthcheck
    ▼
-Cloudflare Tunnel ── yy.english.kids.com ──► http://127.0.0.1:3000 (Next.js)
+Cloudflare Tunnel ── (公開ホスト名) ──► http://127.0.0.1:3000 (Next.js)
 ```
 
 ## 構成要素
 - **アプリ**: Next.js (`.next`) を `next start` で常駐。`127.0.0.1:3000` のみ listen (外部非公開)。
 - **プロセス管理**: systemd **user** unit `english-for-kids.service` (linger 有効なので再起動後も自動起動)。
-- **公開**: `cloudflared` のトンネルで `yy.english.kids.com` → `http://127.0.0.1:3000`。
+- **公開**: `cloudflared` のトンネルで `http://127.0.0.1:3000` を外部公開。
+  **現状は Quick Tunnel** (`https://<random>.trycloudflare.com`、再起動でURLが変わる)。
+  詳細は下記「サイトURLの扱い (issue #18)」を参照。
 - **デプロイ**: main マージ時に **GitHub ホステッドランナー** が VPS へ **SSH** して実行。
 
 ## なぜセルフホストランナーを使わないか
@@ -45,7 +47,7 @@ cloudflared tunnel --no-autoupdate run --token ***
 # systemd 化は cloudflared service install <TOKEN> が便利
 ```
 トンネルの **Public Hostname** に以下を設定:
-- Hostname: `yy.english.kids.com`
+- Hostname: 自分の管理下のドメイン（例: `kids.example.com`）
 - Service: `http://127.0.0.1:3000`
 
 ### 3. デプロイ用 SSH 鍵
@@ -73,3 +75,41 @@ chmod 600 ~/.ssh/authorized_keys
 - トークン / credentials は **GitHub Secrets か VPS 上のファイル**に置き、リポジトリに含めない。
 - デプロイ鍵は `restrict` 付き。より厳しくするなら `command="~/bin/efk-deploy.sh"` の
   強制コマンド化 (秘密鍵が漏れてもデプロイ script しか実行できない) を検討。
+
+## サイトURLの扱い (issue #18)
+
+公開URLは現状 **Cloudflare Quick Tunnel** (`cloudflared-quick.service`) 由来で、
+`https://<ランダム>.trycloudflare.com` の形をしている。**cloudflared を再起動すると URL が変わる**
+(アプリ自体の再起動やデプロイでは変わらない)。そのため、リポジトリ側に URL を固定で書くと
+すぐ古くなる。
+
+### 自動でやっていること (Deploy ワークフロー)
+1. デプロイ後、VPS の `journalctl --user -u cloudflared-quick` から**現在の公開URLを取得**
+2. `deployments` API で **environment `production` の `environment_url`** に設定
+   → リポジトリの **Deployments / Environments** に最新URLが出る
+3. Actions の **Job Summary** にも `🚀 Live site: <URL>` を出力
+
+`permissions` は `contents: read` + `deployments: write` のみ。`GITHUB_TOKEN` でも
+Deployments は書けるが、**リポジトリ設定 (About の Website 欄) は書けない** (administration 権限が必要)。
+
+### About の Website 欄 (手動・1回だけ)
+Website 欄の更新は **`Administration: write`** が必要で、`GITHUB_TOKEN` では書けない
+（`PATCH /repos/{owner}/{repo}` は 403 `Resource not accessible by integration`）。
+このため Website 欄はデプロイからの自動更新の対象にせず、**初回だけ手動で設定**する運用にしている。
+URL が変わるのは cloudflared の再起動時のみなので、実質メンテ不要。
+
+### 恒久的にURLを固定したい場合
+Quick Tunnel を使う限り URL は不安定。恒久化するなら Cloudflare の**名前付きトンネル**を使う。
+Cloudflare Tunnel は **全プラン (Free 含む) で利用可能**で、トンネル自体に費用はかからない。
+必要なのは **自分が DNS を管理しているドメイン**だけ（Cloudflare にゾーンを無料で追加する）。
+
+1. Cloudflare にゾーン（自分のドメイン）を追加し、ネームサーバーを Cloudflare に向ける
+2. ダッシュボードで名前付きトンネルを作成し、Public Hostname を
+   `kids.example.com` → `http://127.0.0.1:3000` のように設定
+3. VPS 側は `cloudflared` を**トンネルトークン付き**で起動（`cloudflared service install <TOKEN>` 相当）
+4. `cloudflared-quick.service` を disable し、Website 欄もこの固定URLにすれば更新不要
+
+> 補足: 以前この README では `yy.english.kids.com` を前提にしていたが、現時点で
+> `english.kids.com` は **このリポジトリの管理者が DNS を管理しているゾーンではない**
+> （`kids.com` は別 Registrar 管理で、`yy.english.kids.com` は AWS Global Accelerator を向いている）。
+> 固定URLを作る際は、管理下のドメインに読み替えること。

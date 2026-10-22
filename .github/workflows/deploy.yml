@@ -21,6 +21,8 @@ concurrency:
 
 permissions:
   contents: read
+  # リポジトリページに「本番環境のURL」を出すために Deployments を書く (issue #18)
+  deployments: write
 
 jobs:
   deploy:
@@ -28,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy over SSH
+        id: deploy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
@@ -43,4 +46,44 @@ jobs:
               -o StrictHostKeyChecking=accept-new \
               -o ServerAliveInterval=30 \
               "${VPS_USER}@${VPS_HOST}" \
-              'set -euo pipefail; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; cd "$HOME/apps/english-for-kids"; git fetch --prune origin; git reset --hard origin/main; npm ci; npm run build; systemctl --user restart english-for-kids.service; sleep 2; curl -fsS -o /dev/null http://127.0.0.1:3000/ && echo "deploy OK"'
+              'set -euo pipefail; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; cd "$HOME/apps/english-for-kids"; git fetch --prune origin; git reset --hard origin/main; npm ci; npm run build; systemctl --user restart english-for-kids.service; sleep 2; curl -fsS -o /dev/null http://127.0.0.1:3000/ && echo "deploy OK"; URL=$(journalctl --user -u cloudflared-quick -o cat --no-pager | grep -Eo "https://[a-z0-9-]+\.trycloudflare\.com" | tail -1 || true); echo "SITE_URL=${URL}"' \
+              | tee /tmp/deploy.log
+
+          # 公開URLは quick tunnel 由来で再起動ごとに変わる。デプロイのたびに
+          # 現在のURLを拾ってリポジトリ側へ流す (issue #18)。
+          SITE_URL=$(sed -n 's/^SITE_URL=//p' /tmp/deploy.log | tail -1)
+          if [ -n "$SITE_URL" ]; then
+            echo "url=$SITE_URL" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::公開URLを取得できませんでした (cloudflared-quick のログを確認)"
+          fi
+
+      # リポジトリページの Deployments / Environments に本番URLを表示する。
+      # GITHUB_TOKEN でも deployments: write があれば実行できる。
+      - name: Publish live URL on the repository page
+        if: steps.deploy.outputs.url != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SITE_URL: ${{ steps.deploy.outputs.url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          echo "### 🚀 Live site: <$SITE_URL>" >> "$GITHUB_STEP_SUMMARY"
+
+          # デプロイ自体は成功しているので、URL の公開に失敗しても赤くしない
+          if ! DEP_ID=$(gh api -X POST "repos/${GITHUB_REPOSITORY}/deployments" \
+            -f ref="${GITHUB_SHA}" \
+            -f environment=production \
+            -f description="Deploy ${GITHUB_SHA:0:7}" \
+            --jq .id); then
+            echo "::warning::deployment の作成に失敗しました (deployments: write を確認)"
+            exit 0
+          fi
+
+          if ! gh api -X POST "repos/${GITHUB_REPOSITORY}/deployments/${DEP_ID}/statuses" \
+            -f state=success \
+            -f environment_url="$SITE_URL" \
+            -f log_url="$RUN_URL" \
+            --jq '"environment_url = " + .environment_url'; then
+            echo "::warning::environment_url の設定に失敗しました"
+          fi
