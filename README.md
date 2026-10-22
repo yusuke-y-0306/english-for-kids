@@ -25,8 +25,8 @@
 
 ## 公開サイト 🌐
 
-本番URLはデプロイのたびに更新されます (Cloudflare Quick Tunnel のため固定ではありません)。
-最新URLはこちら:
+Cloudflare Quick Tunnel を使っているため、URL は cloudflared の再起動時に変わることがあります。
+**最新URLは常にこちら**（ページの中身が自動更新されます）:
 
 - Deployments (environment: `production`) — https://github.com/yusuke-y-0306/english-for-kids/deployments
 - 各デプロイの Actions **Job Summary** にも `🚀 Live site:` として表示

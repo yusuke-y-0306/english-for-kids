@@ -71,11 +71,21 @@ jobs:
           echo "### 🚀 Live site: <$SITE_URL>" >> "$GITHUB_STEP_SUMMARY"
 
           # デプロイ自体は成功しているので、URL の公開に失敗しても赤くしない
-          if ! DEP_ID=$(gh api -X POST "repos/${GITHUB_REPOSITORY}/deployments" \
-            -f ref="${GITHUB_SHA}" \
-            -f environment=production \
-            -f description="Deploy ${GITHUB_SHA:0:7}" \
-            --jq .id); then
+          #
+          # required_contexts を空配列で明示するのが要点。
+          # 省略すると GitHub は必須ステータスチェックの成功を要求し、
+          # main のマージコミットには CI のチェックが無いため
+          # "409 Conflict: Commit status checks failed" で失敗する。
+          DEP_BODY=$(jq -n \
+            --arg ref "$GITHUB_SHA" \
+            --arg env production \
+            --arg desc "Deploy ${GITHUB_SHA:0:7}" \
+            '{ref: $ref, environment: $env, description: $desc,
+              required_contexts: [], auto_merge: false}')
+
+          if ! DEP_ID=$(printf '%s' "$DEP_BODY" \
+            | gh api -X POST "repos/${GITHUB_REPOSITORY}/deployments" \
+                --input - --jq .id); then
             echo "::warning::deployment の作成に失敗しました (deployments: write を確認)"
             exit 0
           fi

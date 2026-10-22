@@ -92,6 +92,10 @@ chmod 600 ~/.ssh/authorized_keys
 `permissions` は `contents: read` + `deployments: write` のみ。`GITHUB_TOKEN` でも
 Deployments は書けるが、**リポジトリ設定 (About の Website 欄) は書けない** (administration 権限が必要)。
 
+> ハマりどころ: deployments 作成時に `required_contexts` を省略すると、GitHub は
+> 「必須ステータスチェックの成功」を要求し、main のマージコミットに CI のチェックが無いため
+> `409 Conflict: Commit status checks failed` で失敗する。空配列 `[]` を明示して回避している。
+
 ### About の Website 欄 (手動・1回だけ)
 Website 欄の更新は **`Administration: write`** が必要で、`GITHUB_TOKEN` では書けない
 （`PATCH /repos/{owner}/{repo}` は 403 `Resource not accessible by integration`）。
