@@ -28,10 +28,6 @@ jobs:
   deploy:
     name: deploy to VPS (ssh)
     runs-on: ubuntu-latest
-    env:
-      # 任意。設定するとリポジトリの About > Website 欄も自動更新する。
-      # 未設定なら空文字になり、そのステップはスキップされる。
-      SITE_SYNC_TOKEN: ${{ secrets.SITE_SYNC_TOKEN }}
     steps:
       - name: Deploy over SSH
         id: deploy
@@ -90,22 +86,4 @@ jobs:
             -f log_url="$RUN_URL" \
             --jq '"environment_url = " + .environment_url'; then
             echo "::warning::environment_url の設定に失敗しました"
-          fi
-
-      # 任意: About の Website 欄まで自動更新したい場合のみ。
-      # SITE_SYNC_TOKEN には repo の Administration: write (or fine-grained: Administration)
-      # を持つトークンが必要。未設定ならこのステップはスキップされる。
-      - name: Sync repository "Website" field
-        if: env.SITE_SYNC_TOKEN != '' && steps.deploy.outputs.url != ''
-        env:
-          SITE_URL: ${{ steps.deploy.outputs.url }}
-        run: |
-          set -euo pipefail
-          if ! curl -fsS -X PATCH \
-            -H "Authorization: Bearer ${SITE_SYNC_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}" \
-            -d "{\"homepage\":\"${SITE_URL}\"}" \
-            | jq -r '"homepage = " + (.homepage // "(none)")'; then
-            echo "::warning::Website 欄の更新に失敗しました (SITE_SYNC_TOKEN の権限を確認)"
           fi

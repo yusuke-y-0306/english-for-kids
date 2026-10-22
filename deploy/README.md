@@ -92,10 +92,11 @@ chmod 600 ~/.ssh/authorized_keys
 `permissions` は `contents: read` + `deployments: write` のみ。`GITHUB_TOKEN` でも
 Deployments は書けるが、**リポジトリ設定 (About の Website 欄) は書けない** (administration 権限が必要)。
 
-### About の Website 欄まで自動更新したい場合 (任意)
-`Administration: write` を持つトークンを **`SITE_SYNC_TOKEN`** という名前で Secrets に登録すると、
-同じデプロイ内で Website 欄も更新される。未設定ならそのステップはスキップされる。
-（トークン未設定でも、上記 2〜3 でリポジトリページから URL は辿れる）
+### About の Website 欄 (手動・1回だけ)
+Website 欄の更新は **`Administration: write`** が必要で、`GITHUB_TOKEN` では書けない
+（`PATCH /repos/{owner}/{repo}` は 403 `Resource not accessible by integration`）。
+このため Website 欄はデプロイからの自動更新の対象にせず、**初回だけ手動で設定**する運用にしている。
+URL が変わるのは cloudflared の再起動時のみなので、実質メンテ不要。
 
 ### 恒久的にURLを固定したい場合
 Quick Tunnel を使う限り URL は不安定。恒久化するなら Cloudflare の**名前付きトンネル**を使う。
