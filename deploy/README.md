@@ -17,7 +17,9 @@ Cloudflare Tunnel ── yy.english.kids.com ──► http://127.0.0.1:3000 (Ne
 ## 構成要素
 - **アプリ**: Next.js (`.next`) を `next start` で常駐。`127.0.0.1:3000` のみ listen (外部非公開)。
 - **プロセス管理**: systemd **user** unit `english-for-kids.service` (linger 有効なので再起動後も自動起動)。
-- **公開**: `cloudflared` のトンネルで `yy.english.kids.com` → `http://127.0.0.1:3000`。
+- **公開**: `cloudflared` のトンネルで `http://127.0.0.1:3000` を外部公開。
+  **現状は Quick Tunnel** (`https://<random>.trycloudflare.com`、再起動でURLが変わる)。
+  詳細は下記「サイトURLの扱い (issue #18)」を参照。
 - **デプロイ**: main マージ時に **GitHub ホステッドランナー** が VPS へ **SSH** して実行。
 
 ## なぜセルフホストランナーを使わないか
@@ -73,3 +75,30 @@ chmod 600 ~/.ssh/authorized_keys
 - トークン / credentials は **GitHub Secrets か VPS 上のファイル**に置き、リポジトリに含めない。
 - デプロイ鍵は `restrict` 付き。より厳しくするなら `command="~/bin/efk-deploy.sh"` の
   強制コマンド化 (秘密鍵が漏れてもデプロイ script しか実行できない) を検討。
+
+## サイトURLの扱い (issue #18)
+
+公開URLは現状 **Cloudflare Quick Tunnel** (`cloudflared-quick.service`) 由来で、
+`https://<ランダム>.trycloudflare.com` の形をしている。**cloudflared を再起動すると URL が変わる**
+(アプリ自体の再起動やデプロイでは変わらない)。そのため、リポジトリ側に URL を固定で書くと
+すぐ古くなる。
+
+### 自動でやっていること (Deploy ワークフロー)
+1. デプロイ後、VPS の `journalctl --user -u cloudflared-quick` から**現在の公開URLを取得**
+2. `deployments` API で **environment `production` の `environment_url`** に設定
+   → リポジトリの **Deployments / Environments** に最新URLが出る
+3. Actions の **Job Summary** にも `🚀 Live site: <URL>` を出力
+
+`permissions` は `contents: read` + `deployments: write` のみ。`GITHUB_TOKEN` でも
+Deployments は書けるが、**リポジトリ設定 (About の Website 欄) は書けない** (administration 権限が必要)。
+
+### About の Website 欄まで自動更新したい場合 (任意)
+`Administration: write` を持つトークンを **`SITE_SYNC_TOKEN`** という名前で Secrets に登録すると、
+同じデプロイ内で Website 欄も更新される。未設定ならそのステップはスキップされる。
+（トークン未設定でも、上記 2〜3 でリポジトリページから URL は辿れる）
+
+### 恒久的にURLを固定したい場合
+Quick Tunnel を使う限り URL は不安定。恒久化するなら Cloudflare の**名前付きトンネル**を作り、
+`yy.english.kids.com` → `http://127.0.0.1:3000` を Public Hostname に設定したうえで、
+`cloudflared` をトンネルトークン付きで起動する (`cloudflared service install <TOKEN>` 相当)。
+その場合は `cloudflared-quick.service` を無効化し、Website 欄もこの固定URLにすれば更新不要になる。

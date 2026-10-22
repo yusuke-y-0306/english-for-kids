@@ -23,6 +23,14 @@
 
 チケット管理は GitHub Issues で運用: https://github.com/yusuke-y-0306/english-for-kids/issues
 
+## 公開サイト 🌐
+
+本番URLはデプロイのたびに更新されます (Cloudflare Quick Tunnel のため固定ではありません)。
+最新URLはこちら:
+
+- Deployments (environment: `production`) — https://github.com/yusuke-y-0306/english-for-kids/deployments
+- 各デプロイの Actions **Job Summary** にも `🚀 Live site:` として表示
+
 ## セットアップ
 
 ```bash
