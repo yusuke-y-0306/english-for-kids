@@ -96,6 +96,10 @@ Deployments は書けるが、**リポジトリ設定 (About の Website 欄) �
 > 「必須ステータスチェックの成功」を要求し、main のマージコミットに CI のチェックが無いため
 > `409 Conflict: Commit status checks failed` で失敗する。空配列 `[]` を明示して回避している。
 
+> 注意: **Deployments / Environments ページは GitHub にログインしないと閲覧できない**
+> （未ログインでは 404。実ブラウザで確認済み）。公開向けの導線には使わず、
+> URL は About の Website 欄と Actions の Job Summary で示す方針にしている。
+
 ### About の Website 欄 (手動・1回だけ)
 Website 欄の更新は **`Administration: write`** が必要で、`GITHUB_TOKEN` では書けない
 （`PATCH /repos/{owner}/{repo}` は 403 `Resource not accessible by integration`）。
