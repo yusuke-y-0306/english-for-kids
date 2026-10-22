@@ -38,6 +38,12 @@ export default function SiteHeader() {
               ぶんを つくる
             </Link>
             <Link
+              href="/quiz"
+              className="hidden rounded-full px-3 py-2 text-sm font-extrabold text-[#5b4a3c] transition hover:bg-white hover:text-ink sm:inline-block sm:px-4"
+            >
+              クイズ
+            </Link>
+            <Link
               href="#menu"
               className="rounded-full bg-rainbow-orange px-4 py-2 text-sm font-extrabold text-white shadow-[0_3px_0_#d9701f] transition hover:-translate-y-0.5 hover:shadow-[0_5px_0_#d9701f] active:translate-y-0.5 active:shadow-[0_1px_0_#d9701f] sm:px-5"
             >
