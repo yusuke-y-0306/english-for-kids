@@ -32,6 +32,55 @@ type ApiErr = { ok: false; error: string };
    (SSR 時は対応している前提で描画し、ハイドレート後に実際の値へ追従) */
 const noopSubscribe = () => () => {};
 
+/**
+ * アプリ内ブラウザ (Telegram / LINE / Instagram など) を検出する。
+ * これらは WebView で動くため WebAuthn (指紋・顔) が使えないことが多い。
+ * その場合は「Safari で ひらいてね」と案内する。
+ */
+function detectInAppBrowser(): string | null {
+  if (typeof navigator === "undefined") return null;
+  const ua = navigator.userAgent;
+  if (/Telegram/i.test(ua)) return "Telegram";
+  if (/\bLine\//i.test(ua)) return "LINE";
+  if (/Instagram/i.test(ua)) return "Instagram";
+  if (/FBAN|FBAV|FB_IAB/i.test(ua)) return "Facebook";
+  if (/MicroMessenger/i.test(ua)) return "WeChat";
+  if (/\bTwitter\b|\bX\b.*Twitter/i.test(ua)) return "X";
+  return null;
+}
+
+function useInAppBrowser(): string | null {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => detectInAppBrowser(),
+    () => null,
+  );
+}
+
+/**
+ * iOS のサードパーティ製ブラウザ (Chrome / Firefox / Edge) を検出する。
+ * iOS の Chrome (WKWebView) は isUserVerifyingPlatformAuthenticatorAvailable() が
+ * 常に false を返す既知の不具合があり、実際には登録できるのに「非対応」と
+ * 誤判定される。そのため判定結果で処理を止めず、案内だけ出す。
+ */
+function detectIOSThirdPartyBrowser(): string | null {
+  if (typeof navigator === "undefined") return null;
+  const ua = navigator.userAgent;
+  if (!/iPhone|iPad|iPod/.test(ua)) return null;
+  if (/CriOS/i.test(ua)) return "Chrome";
+  if (/FxiOS/i.test(ua)) return "Firefox";
+  if (/EdgiOS/i.test(ua)) return "Edge";
+  return null;
+}
+
+function useIOSThirdPartyBrowser(): string | null {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => detectIOSThirdPartyBrowser(),
+    () => null,
+  );
+}
+
 async function postJson<T>(url: string, body: unknown): Promise<ApiOk<T>> {
   const res = await fetch(url, {
     method: "POST",
@@ -58,7 +107,7 @@ function friendlyError(error: unknown): string {
     return "この たんまつは すでに とうろく されています";
   }
   if (name === "NotSupportedError") {
-    return "この ブラウザでは ゆび/かお ログインが つかえません";
+    return "この ブラウザでは ゆび/かお が つかえません。iPhone は Safari で ひらいてね";
   }
   const message = (error as Error)?.message;
   return message && message.length < 120
@@ -68,6 +117,8 @@ function friendlyError(error: unknown): string {
 
 export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
   const router = useRouter();
+  const inAppBrowser = useInAppBrowser();
+  const iosThirdParty = useIOSThirdPartyBrowser();
   const supported = useSyncExternalStore(
     noopSubscribe,
     () => browserSupportsWebAuthn(),
@@ -125,10 +176,13 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
       if (!browserSupportsWebAuthn()) {
         throw new Error("この ブラウザでは ゆび/かお を とうろく できません");
       }
-      const available = await platformAuthenticatorIsAvailable().catch(() => true);
-      if (!available) {
+      /* 生体認証の有無は「ヒント」として扱う。
+         iOS の Chrome は isUVPAA() が常に false を返す既知の不具合があるため、
+         false でも登録を試みる (実際には成功することがある)。 */
+      const platformAvailable = await platformAuthenticatorIsAvailable().catch(() => true);
+      if (!platformAvailable && !iosThirdParty) {
         setNotice(
-          "この たんまつには ゆび/かお の きのうが 見つかりません。パスキー対応の ブラウザで ためしてね。",
+          "この ブラウザは ゆび/かお を うまく つかめない かも。うまく いかない ときは Safari で ひらいてね。",
         );
       }
 
@@ -179,6 +233,29 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
 
   return (
     <div className="mt-8">
+      {inAppBrowser && (
+        <div className="mx-auto mb-5 max-w-md rounded-2xl border-2 border-[#e0b21c] bg-[#fff8e1] px-4 py-3 text-center text-xs leading-relaxed font-extrabold text-[#a85f08]">
+          いま {inAppBrowser} の なか で ひらいています。
+          <br />
+          ゆび/かお ログインは つかえないので、
+          <br />
+          画面の うえ の「…」や 共有ボタン から
+          <br />
+          <span className="text-[#b03a63]">「Safari で ひらく」</span> を えらんでね。
+        </div>
+      )}
+      {!inAppBrowser && iosThirdParty && (
+        <div className="mx-auto mb-5 max-w-md rounded-2xl border-2 border-[#e0b21c] bg-[#fff8e1] px-4 py-3 text-center text-xs leading-relaxed font-extrabold text-[#a85f08]">
+          iPhone / iPad の {iosThirdParty} では、
+          <br />
+          ゆび/かお の とうろくが うまく いかない ことが あります。
+          <br />
+          うまく いかない ときは
+          <br />
+          <span className="text-[#b03a63]">Safari で ひらいてね</span>
+          （iOS 26.3 で かいぜん されます）。
+        </div>
+      )}
       {error && (
         <p
           role="alert"
