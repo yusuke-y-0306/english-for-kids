@@ -206,8 +206,12 @@ export default function HeroScene({ className = "" }: { className?: string }) {
       </g>
 
       {/* クマ（Buddy） */}
-      <ellipse cx="512" cy="562" rx="98" ry="15" fill="#3f7a2a" opacity="0.18" />
-      <g className="anim-step" transform="translate(430 300)">
+      <ellipse cx="491" cy="562" rx="98" ry="15" fill="#3f7a2a" opacity="0.18" />
+      {/* NOTE: CSS の transform (アニメーション) は SVG の transform 属性より優先される。
+          そのため「位置」と「ゆれ」は別の <g> に分ける (同じ要素に持たせると
+          キャラクターが原点付近に吹き飛ぶ)。 */}
+      <g transform="translate(409 300)">
+        <g className="anim-step">
         {/* 脚 */}
         <g>
           <rect x="34" y="196" width="30" height="56" rx="15" fill="#86593a" />
@@ -289,11 +293,13 @@ export default function HeroScene({ className = "" }: { className?: string }) {
             strokeLinecap="round"
           />
         </g>
+        </g>
       </g>
 
       {/* ウサギ */}
-      <ellipse cx="726" cy="556" rx="70" ry="12" fill="#3f7a2a" opacity="0.18" />
-      <g className="anim-step" style={{ animationDelay: "0.6s" }} transform="translate(660 344)">
+      <ellipse cx="705" cy="556" rx="70" ry="12" fill="#3f7a2a" opacity="0.18" />
+      <g transform="translate(639 344)">
+        <g className="anim-step" style={{ animationDelay: "0.6s" }}>
         {/* 脚 */}
         <rect x="26" y="160" width="24" height="46" rx="12" fill="#f0e6ea" />
         <rect x="74" y="156" width="24" height="50" rx="12" fill="#f0e6ea" />
@@ -357,6 +363,7 @@ export default function HeroScene({ className = "" }: { className?: string }) {
             fill="none"
             strokeLinecap="round"
           />
+        </g>
         </g>
       </g>
 
