@@ -57,6 +57,30 @@ function useInAppBrowser(): string | null {
   );
 }
 
+/**
+ * iOS のサードパーティ製ブラウザ (Chrome / Firefox / Edge) を検出する。
+ * iOS の Chrome (WKWebView) は isUserVerifyingPlatformAuthenticatorAvailable() が
+ * 常に false を返す既知の不具合があり、実際には登録できるのに「非対応」と
+ * 誤判定される。そのため判定結果で処理を止めず、案内だけ出す。
+ */
+function detectIOSThirdPartyBrowser(): string | null {
+  if (typeof navigator === "undefined") return null;
+  const ua = navigator.userAgent;
+  if (!/iPhone|iPad|iPod/.test(ua)) return null;
+  if (/CriOS/i.test(ua)) return "Chrome";
+  if (/FxiOS/i.test(ua)) return "Firefox";
+  if (/EdgiOS/i.test(ua)) return "Edge";
+  return null;
+}
+
+function useIOSThirdPartyBrowser(): string | null {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => detectIOSThirdPartyBrowser(),
+    () => null,
+  );
+}
+
 async function postJson<T>(url: string, body: unknown): Promise<ApiOk<T>> {
   const res = await fetch(url, {
     method: "POST",
@@ -83,7 +107,7 @@ function friendlyError(error: unknown): string {
     return "この たんまつは すでに とうろく されています";
   }
   if (name === "NotSupportedError") {
-    return "この ブラウザでは ゆび/かお ログインが つかえません";
+    return "この ブラウザでは ゆび/かお が つかえません。iPhone は Safari で ひらいてね";
   }
   const message = (error as Error)?.message;
   return message && message.length < 120
@@ -94,6 +118,7 @@ function friendlyError(error: unknown): string {
 export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
   const router = useRouter();
   const inAppBrowser = useInAppBrowser();
+  const iosThirdParty = useIOSThirdPartyBrowser();
   const supported = useSyncExternalStore(
     noopSubscribe,
     () => browserSupportsWebAuthn(),
@@ -151,12 +176,13 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
       if (!browserSupportsWebAuthn()) {
         throw new Error("この ブラウザでは ゆび/かお を とうろく できません");
       }
-      const available = await platformAuthenticatorIsAvailable().catch(() => true);
-      if (!available) {
-        throw new Error(
-          inAppBrowser
-            ? "アプリの なか では ゆび/かお が つかえません。Safari で ひらいてね"
-            : "この たんまつでは ゆび/かお が つかえません。iPhone は「画面ロック（パスコード）」を せってい して、Safari で ひらいてね",
+      /* 生体認証の有無は「ヒント」として扱う。
+         iOS の Chrome は isUVPAA() が常に false を返す既知の不具合があるため、
+         false でも登録を試みる (実際には成功することがある)。 */
+      const platformAvailable = await platformAuthenticatorIsAvailable().catch(() => true);
+      if (!platformAvailable && !iosThirdParty) {
+        setNotice(
+          "この ブラウザは ゆび/かお を うまく つかめない かも。うまく いかない ときは Safari で ひらいてね。",
         );
       }
 
@@ -216,6 +242,18 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
           画面の うえ の「…」や 共有ボタン から
           <br />
           <span className="text-[#b03a63]">「Safari で ひらく」</span> を えらんでね。
+        </div>
+      )}
+      {!inAppBrowser && iosThirdParty && (
+        <div className="mx-auto mb-5 max-w-md rounded-2xl border-2 border-[#e0b21c] bg-[#fff8e1] px-4 py-3 text-center text-xs leading-relaxed font-extrabold text-[#a85f08]">
+          iPhone / iPad の {iosThirdParty} では、
+          <br />
+          ゆび/かお の とうろくが うまく いかない ことが あります。
+          <br />
+          うまく いかない ときは
+          <br />
+          <span className="text-[#b03a63]">Safari で ひらいてね</span>
+          （iOS 26.3 で かいぜん されます）。
         </div>
       )}
       {error && (
