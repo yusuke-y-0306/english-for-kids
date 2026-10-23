@@ -32,6 +32,31 @@ type ApiErr = { ok: false; error: string };
    (SSR 時は対応している前提で描画し、ハイドレート後に実際の値へ追従) */
 const noopSubscribe = () => () => {};
 
+/**
+ * アプリ内ブラウザ (Telegram / LINE / Instagram など) を検出する。
+ * これらは WebView で動くため WebAuthn (指紋・顔) が使えないことが多い。
+ * その場合は「Safari で ひらいてね」と案内する。
+ */
+function detectInAppBrowser(): string | null {
+  if (typeof navigator === "undefined") return null;
+  const ua = navigator.userAgent;
+  if (/Telegram/i.test(ua)) return "Telegram";
+  if (/\bLine\//i.test(ua)) return "LINE";
+  if (/Instagram/i.test(ua)) return "Instagram";
+  if (/FBAN|FBAV|FB_IAB/i.test(ua)) return "Facebook";
+  if (/MicroMessenger/i.test(ua)) return "WeChat";
+  if (/\bTwitter\b|\bX\b.*Twitter/i.test(ua)) return "X";
+  return null;
+}
+
+function useInAppBrowser(): string | null {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => detectInAppBrowser(),
+    () => null,
+  );
+}
+
 async function postJson<T>(url: string, body: unknown): Promise<ApiOk<T>> {
   const res = await fetch(url, {
     method: "POST",
@@ -68,6 +93,7 @@ function friendlyError(error: unknown): string {
 
 export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
   const router = useRouter();
+  const inAppBrowser = useInAppBrowser();
   const supported = useSyncExternalStore(
     noopSubscribe,
     () => browserSupportsWebAuthn(),
@@ -127,8 +153,10 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
       }
       const available = await platformAuthenticatorIsAvailable().catch(() => true);
       if (!available) {
-        setNotice(
-          "この たんまつには ゆび/かお の きのうが 見つかりません。パスキー対応の ブラウザで ためしてね。",
+        throw new Error(
+          inAppBrowser
+            ? "アプリの なか では ゆび/かお が つかえません。Safari で ひらいてね"
+            : "この たんまつでは ゆび/かお が つかえません。iPhone は「画面ロック（パスコード）」を せってい して、Safari で ひらいてね",
         );
       }
 
@@ -179,6 +207,17 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
 
   return (
     <div className="mt-8">
+      {inAppBrowser && (
+        <div className="mx-auto mb-5 max-w-md rounded-2xl border-2 border-[#e0b21c] bg-[#fff8e1] px-4 py-3 text-center text-xs leading-relaxed font-extrabold text-[#a85f08]">
+          いま {inAppBrowser} の なか で ひらいています。
+          <br />
+          ゆび/かお ログインは つかえないので、
+          <br />
+          画面の うえ の「…」や 共有ボタン から
+          <br />
+          <span className="text-[#b03a63]">「Safari で ひらく」</span> を えらんでね。
+        </div>
+      )}
       {error && (
         <p
           role="alert"
