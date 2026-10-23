@@ -2,6 +2,9 @@ import Link from "next/link";
 import HeroScene from "@/components/HeroScene";
 import SiteHeader from "@/components/SiteHeader";
 import FeatureIcon, { type FeatureIconName } from "@/components/FeatureIcon";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getUserContent } from "@/lib/auth/content";
+import { pickDailyWord, todayInTokyo } from "@/lib/daily";
 
 type Feature = {
   icon: FeatureIconName;
@@ -65,10 +68,56 @@ const features: Feature[] = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
+  if (!user) {
+    // (protected)/layout.tsx が先に /login へ送るので、ここは保険
+    return null;
+  }
+  const content = await getUserContent(user.id);
+  const daily = pickDailyWord(user.id, todayInTokyo());
+
   return (
     <>
       <SiteHeader />
+
+      {/* ---------------------------------------------------------------
+          きょうの ごあいさつ（ユーザーごとの内容）
+      ---------------------------------------------------------------- */}
+      <section className="mx-auto w-full max-w-6xl px-4 pt-5 sm:px-6">
+        <div className="flex flex-col gap-3 rounded-[26px] border-4 border-white bg-white/75 px-4 py-4 shadow-[0_8px_20px_rgba(122,104,87,0.12)] sm:flex-row sm:items-center sm:gap-5 sm:px-6">
+          <span className="flex items-center gap-3">
+            <span
+              aria-hidden
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-2xl shadow-[0_3px_0_rgba(61,50,41,0.12)]"
+              style={{ backgroundColor: user.color }}
+            >
+              {user.avatar}
+            </span>
+            <span className="text-base font-extrabold text-ink sm:text-lg">
+              こんにちは、{user.displayName}！
+              <span className="ml-1.5 text-xs font-bold text-[#8f7a5e]">
+                {content.visits} かいめ
+              </span>
+            </span>
+          </span>
+
+          <div className="flex items-center gap-3 rounded-2xl bg-[#fff8e1] px-3 py-2 sm:ml-auto">
+            <span aria-hidden className="text-2xl">
+              {daily.word.emoji}
+            </span>
+            <span className="leading-tight">
+              <span className="block text-[0.62rem] font-extrabold tracking-widest text-[#8f7a5e]">
+                きょうの カード（{daily.categoryEmoji} {daily.categoryLabel}）
+              </span>
+              <span className="block text-sm font-extrabold text-ink">
+                {daily.word.en}
+                <span className="ml-1.5 text-xs font-bold text-[#5b4a3c]">{daily.word.ja}</span>
+              </span>
+            </span>
+          </div>
+        </div>
+      </section>
 
       {/* ---------------------------------------------------------------
           ヒーロー：左にことば、右にえ（重ならない2カラム構成）

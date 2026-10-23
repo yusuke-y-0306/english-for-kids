@@ -1,13 +1,39 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { judgeAnswer, tasks, type Judgment, type Task } from "@/lib/sentences";
 
-function shuffle<T>(arr: T[]): T[] {
+/* SSR とハイドレーションで同じ並び順になるよう、シャッフルの種は
+   「クライアントでのマウント後にだけ」決める。サーバー側は 0 を返し、
+   ハイドレーション後に実際の種へ切り替わる (getSnapshot は外部ストア読み取り)。
+   初期 state に Math.random を入れるとハイドレーションが壊れるので避ける。 */
+const subscribeNoop = () => () => {};
+let clientSeed: number | null = null;
+
+function readClientSeed(): number {
+  if (clientSeed === null) {
+    clientSeed = Math.floor(Math.random() * 0x7fffffff) || 1;
+  }
+  return clientSeed;
+}
+
+function useClientSeed(): number {
+  return useSyncExternalStore(subscribeNoop, readClientSeed, () => 0);
+}
+
+/** 種から決まるシャッフル (同じ種なら同じ並び) */
+function seededShuffle<T>(arr: T[], seed: number): T[] {
   const a = [...arr];
+  let state = seed || 1;
+  const next = () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(next() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -28,10 +54,14 @@ function TaskCard({
   total: number;
   onNext: () => void;
 }) {
-  // カードの並びはタスクごとに1回だけシャッフルする
+  // カードの並びはタスクごとに1回だけシャッフルする (種はクライアントで確定)
+  const seed = useClientSeed();
   const cardOrder = useMemo(
-    () => shuffle(task.words.map((_, i) => i)),
-    [task],
+    () =>
+      seed === 0
+        ? task.words.map((_, i) => i)
+        : seededShuffle(task.words.map((_, i) => i), seed + task.id.length),
+    [task, seed],
   );
 
   const [placed, setPlaced] = useState<number[]>([]);
@@ -220,7 +250,12 @@ function TaskCard({
  * ---------------------------------------------------------------- */
 
 export default function WordOrderingPage() {
-  const [deck, setDeck] = useState<Task[]>(() => shuffle(tasks));
+  const seed = useClientSeed();
+  const [round, setRound] = useState(0);
+  const deck = useMemo<Task[]>(
+    () => (seed === 0 ? tasks : seededShuffle(tasks, seed + round * 7919)),
+    [seed, round],
+  );
   const [index, setIndex] = useState(0);
   const [cleared, setCleared] = useState(0);
   const [finished, setFinished] = useState(false);
@@ -238,7 +273,7 @@ export default function WordOrderingPage() {
   }
 
   function restart() {
-    setDeck(shuffle(tasks));
+    setRound((r) => r + 1);
     setIndex(0);
     setCleared(0);
     setFinished(false);

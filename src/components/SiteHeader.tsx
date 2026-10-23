@@ -1,4 +1,5 @@
 import Link from "next/link";
+import UserChip from "@/components/UserChip";
 
 /**
  * SiteHeader — ロゴ(s)・サイト名・「Buddy & Friends」バッジ・ナビゲーション。
@@ -23,6 +24,8 @@ export default function SiteHeader() {
           <span className="ml-2 hidden rounded-full bg-badge px-3 py-1.5 font-display text-xs font-semibold tracking-wide text-cream shadow-[0_2px_0_rgba(61,50,41,0.25)] md:inline-block">
             Buddy &amp; Friends
           </span>
+
+          <UserChip />
 
           <nav className="ml-auto flex items-center gap-1.5 sm:gap-2">
             <Link
