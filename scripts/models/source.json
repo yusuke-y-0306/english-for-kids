@@ -1,0 +1,74 @@
+{
+  "note": "Moonshine カタログのスナップショット (issue #30)。実行時には使わず、取得スクリプトの入力としてのみ使う。",
+  "model": "tiny-streaming-en",
+  "variant": "q8_2026-07-30",
+  "modelArch": "TinyStreaming (2)",
+  "language": "en",
+  "upstreamBaseUrl": "https://download.moonshine.ai/model/tiny-streaming-en/quantized_26_07_30",
+  "capturedAt": "2026-10-28",
+  "files": [
+    {
+      "name": "adapter.ort",
+      "bytes": 1319664,
+      "sourceUrl": "https://download.moonshine.ai/model/tiny-streaming-en/quantized_26_07_30/adapter.ort",
+      "upstreamChecksum": {
+        "type": "crc32c",
+        "value": "kwQ+Bw=="
+      }
+    },
+    {
+      "name": "cross_kv.ort",
+      "bytes": 1287544,
+      "sourceUrl": "https://download.moonshine.ai/model/tiny-streaming-en/quantized_26_07_30/cross_kv.ort",
+      "upstreamChecksum": {
+        "type": "crc32c",
+        "value": "76wzFQ=="
+      }
+    },
+    {
+      "name": "decoder_kv.ort",
+      "bytes": 32583720,
+      "sourceUrl": "https://download.moonshine.ai/model/tiny-streaming-en/quantized_26_07_30/decoder_kv.ort",
+      "upstreamChecksum": {
+        "type": "crc32c",
+        "value": "KJjeNw=="
+      }
+    },
+    {
+      "name": "encoder.ort",
+      "bytes": 7675440,
+      "sourceUrl": "https://download.moonshine.ai/model/tiny-streaming-en/quantized_26_07_30/encoder.ort",
+      "upstreamChecksum": {
+        "type": "crc32c",
+        "value": "UjAIpQ=="
+      }
+    },
+    {
+      "name": "frontend.ort",
+      "bytes": 8324920,
+      "sourceUrl": "https://download.moonshine.ai/model/tiny-streaming-en/quantized_26_07_30/frontend.ort",
+      "upstreamChecksum": {
+        "type": "crc32c",
+        "value": "AW9qsg=="
+      }
+    },
+    {
+      "name": "streaming_config.json",
+      "bytes": 509,
+      "sourceUrl": "https://download.moonshine.ai/model/tiny-streaming-en/quantized_26_07_30/streaming_config.json",
+      "upstreamChecksum": {
+        "type": "crc32c",
+        "value": "HGL0Ug=="
+      }
+    },
+    {
+      "name": "tokenizer.bin",
+      "bytes": 249974,
+      "sourceUrl": "https://download.moonshine.ai/model/tiny-streaming-en/quantized_26_07_30/tokenizer.bin",
+      "upstreamChecksum": {
+        "type": "crc32c",
+        "value": "B7s10Q=="
+      }
+    }
+  ]
+}

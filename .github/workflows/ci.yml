@@ -28,5 +28,8 @@ jobs:
         run: npx tsc --noEmit
       - name: Lint
         run: npm run lint
+      # 音声モデルの manifest が壊れていないか (issue #30)。ネットワークには出ない。
+      - name: Check model manifest
+        run: npm run models:check
       - name: Build
         run: npm run build
