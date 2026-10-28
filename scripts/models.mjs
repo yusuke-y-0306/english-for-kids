@@ -396,7 +396,10 @@ async function cmdCheck(argv) {
   for (const [name, entry] of Object.entries(manifest.files)) {
     const url = `${origin}/${manifest.pathPrefix}/${name}`;
     try {
-      const res = await fetch(url, { method: "HEAD" });
+      // GitHub Pages は Accept-Encoding を見て圧縮版を返し、そのとき content-length は
+      // 圧縮後のサイズになる。manifest は非圧縮のバイト数を載せているので、
+      // identity を明示して「実際に展開されるサイズ」で比較する。
+      const res = await fetch(url, { method: "HEAD", headers: { "accept-encoding": "identity" } });
       const len = Number(res.headers.get("content-length"));
       const okLen = !len || len === entry.bytes;
       console.log(`  ${res.ok && okLen ? "OK " : "NG "} ${name} (${res.status}${len ? `, ${len} bytes` : ""})`);
@@ -405,6 +408,23 @@ async function cmdCheck(argv) {
       console.log(`  NG  ${name}: ${error.message}`);
       failed += 1;
     }
+  }
+
+  // 一番小さいファイルだけ実際にダウンロードしてハッシュまで確かめる
+  // (サイズだけ合っていても中身が違う可能性を潰す。全ファイルの照合はブラウザ側の #29 が行う)
+  const [smokeName, smokeEntry] = Object.entries(manifest.files).sort((a, b) => a[1].bytes - b[1].bytes)[0];
+  try {
+    const res = await fetch(`${origin}/${manifest.pathPrefix}/${smokeName}`, {
+      headers: { "accept-encoding": "identity" },
+    });
+    const buf = Buffer.from(await res.arrayBuffer());
+    const actual = createHash("sha256").update(buf).digest("hex");
+    const ok = actual === smokeEntry.sha256;
+    console.log(`  ${ok ? "OK " : "NG "} ${smokeName} の sha256 照合 (${buf.byteLength} bytes)`);
+    if (!ok) failed += 1;
+  } catch (error) {
+    console.log(`  NG  ${smokeName} の sha256 照合: ${error.message}`);
+    failed += 1;
   }
   if (failed > 0) process.exit(1);
 }
