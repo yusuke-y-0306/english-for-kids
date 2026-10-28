@@ -69,6 +69,29 @@ node scripts/models.mjs check --remote
 古いパスは残るが、`AssetDownloader` のキャッシュ名も `MODEL_SET_HASH` 由来にする（issue #29）ことで
 古いキャッシュを確実に捨てる。
 
+## 何がどこから来るか（オリジンの分担）
+
+| 成果物 | サイズ | 配信元 |
+|---|---|---|
+| `moonshine.wasm`（推論エンジン本体。VAD も内蔵） | 13,155,937 bytes | **アプリと同じオリジン**（`npm ci` → Next の静的アセット `/_next/static/media/moonshine.<hash>.wasm`） |
+| `moonshine.mjs`（Emscripten のグルー） | 156,457 bytes | 同上（バンドルに含まれる） |
+| モデル 7 ファイル（`encoder.ort` ほか） | 51,441,771 bytes | **別オリジン**（GitHub Pages） |
+
+エンジン（wasm）は**コード**なので、アプリと同じ信頼境界に置くのが正しい。分けると次の問題が出る:
+`moonshine.wasm` の位置は、既定では `new URL("moonshine.wasm", import.meta.url)` で解決される。
+`locateFile` を明示的に渡すと `scriptDirectory + path` 経路に変わり、`import.meta.url` が `blob:` に
+なる文脈（クロスオリジンの pthread worker）では自前で固定しないと解決できない。
+つまり **wasm を別オリジンに出すと、この分岐に踏み込んで worker が壊れやすい**。だから動かさない。
+
+一方モデルはデータなので、汚染されてもセッションに波及しないよう別オリジンに隔離する（本ドキュメントの主題）。
+
+### 実装時に確認すること（#2 / #33）
+
+- Network に `/_next/static/media/moonshine.<hash>.wasm` が出る（404 が無い）
+- CSP は `script-src 'self' 'wasm-unsafe-eval'`、worker は同一オリジンなので `worker-src 'self'` で足りる
+  （`blob:` が要るのはクロスオリジン配信にした場合だけ）
+- `locateFile` を渡す実装にしない（渡すなら `public/` に置いて明示パスにする）
+
 ## ライセンス / 帰属
 
 - `@moonshine-ai/moonshine-wasm` は MIT。
