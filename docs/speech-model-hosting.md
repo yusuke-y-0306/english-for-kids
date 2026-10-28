@@ -105,6 +105,12 @@ node scripts/models.mjs check --remote
 
 ## 既知の制約
 
+- **GitHub Pages は `Cache-Control` を指定できない**（実測: `max-age=600`、`Vary: Accept-Encoding`）。
+  `immutable` を前提にした HTTP キャッシュ設計は使えないので、**再取得の抑制は Cache Storage（#29）側で行う**。
+  完全性も HTTP キャッシュではなく manifest の sha256 で担保する。
+- **`Vary: Accept-Encoding` により `content-length` は圧縮後のサイズになりうる**（実測: `streaming_config.json`
+  は 509 → 234 bytes）。`models:check --remote` は `Accept-Encoding: identity` を明示して比較している。
+
 - 本番 URL は GitHub に依存する。GitHub 障害時、**未キャッシュの端末**はモデルを取得できない
   （キャッシュ済みなら動く）。可用性を上げたくなったら独自ドメイン + 自前配信へ移行する。
 - `github.io` をブロックするネットワークでは初回取得に失敗する。その場合も
