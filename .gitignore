@@ -43,3 +43,7 @@ next-env.d.ts
 
 # auth data (ユーザープール / ユーザーごとのコンテンツ)
 /data
+
+# 音声モデル (issue #30): 取得物と公開用の一時ツリーはコミットしない
+/models-cache/
+/.tmp-gh-pages/

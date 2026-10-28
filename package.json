@@ -8,7 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "auth:keygen": "node scripts/auth-keygen.mjs",
-    "auth:users": "node scripts/auth-users.mjs"
+    "auth:users": "node scripts/auth-users.mjs",
+    "models:fetch": "node scripts/models.mjs fetch",
+    "models:manifest": "node scripts/models.mjs manifest --init",
+    "models:verify": "node scripts/models.mjs verify",
+    "models:publish": "node scripts/models.mjs publish",
+    "models:serve": "node scripts/models.mjs serve",
+    "models:check": "node scripts/models.mjs check"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^14.0.0",
