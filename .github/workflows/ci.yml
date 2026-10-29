@@ -33,3 +33,14 @@ jobs:
         run: npm run models:check
       - name: Build
         run: npm run build
+      # セキュリティヘッダと CSP (issue #33)。必ず production build (next start) に対して確認する。
+      - name: Security headers smoke test
+        run: |
+          npm run start -- -p 3100 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          for _ in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:3100/login && break
+            sleep 1
+          done
+          BASE_URL=http://127.0.0.1:3100 npm run headers:check
