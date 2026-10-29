@@ -44,7 +44,8 @@ jobs:
             sleep 1
           done
           BASE_URL=http://127.0.0.1:3100 npm run headers:check
-      # 発音結果 API の認可テスト (issue #32)。一時データディレクトリで実サーバを起動し、
-      # 未ログイン / 改ざん cookie / 他人の userId を HTTP 越しに確かめる。
-      - name: API authorization tests
-        run: npm run test:api
+      # 発音判定の単体テスト (issue #2) と、発音結果 API の認可テスト (issue #32)。
+      # 後者は一時データディレクトリで実サーバを起動し、未ログイン / 改ざん cookie /
+      # 他人の userId を HTTP 越しに確かめる。
+      - name: Unit / API tests
+        run: npm run test

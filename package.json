@@ -16,7 +16,9 @@
     "models:serve": "node scripts/models.mjs serve",
     "models:check": "node scripts/models.mjs check",
     "headers:check": "node scripts/check-headers.mjs",
-    "test:api": "node --test tests/api/*.test.mjs"
+    "test:api": "node --test tests/api/*.test.mjs",
+    "test:unit": "node --test tests/unit/*.test.mjs",
+    "test": "npm run test:unit && npm run test:api"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^14.0.0",
