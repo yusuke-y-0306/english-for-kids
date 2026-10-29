@@ -1,4 +1,5 @@
 import { getUserContent, updateUserContent } from "@/lib/auth/content";
+import { isPronunciationScore, type PronunciationScore } from "./scores";
 
 /**
  * 発音練習の結果を保存する — issue #32
@@ -10,13 +11,8 @@ import { getUserContent, updateUserContent } from "@/lib/auth/content";
  * #4 (進捗管理) も同じストアに載る想定なので、キーは機能ごとに分けて衝突を避ける。
  */
 
-export const PRONUNCIATION_SCORES = ["ok", "close", "retry"] as const;
-
-export type PronunciationScore = (typeof PRONUNCIATION_SCORES)[number];
-
-export function isPronunciationScore(value: unknown): value is PronunciationScore {
-  return typeof value === "string" && (PRONUNCIATION_SCORES as readonly string[]).includes(value);
-}
+export { PRONUNCIATION_SCORES, isPronunciationScore } from "./scores";
+export type { PronunciationScore } from "./scores";
 
 export type PronunciationWordState = {
   /** 直近の判定 */

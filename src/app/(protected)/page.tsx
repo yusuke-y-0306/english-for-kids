@@ -43,6 +43,7 @@ const features: Feature[] = [
     title: "発音練習",
     en: "Speak",
     desc: "声に出して、はきはき えいご。",
+    href: "/pronunciation",
     bg: "bg-[#ffeaf1]",
     ink: "text-[#b03a63]",
     ring: "#ff8fb0",

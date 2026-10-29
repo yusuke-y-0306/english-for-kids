@@ -41,6 +41,12 @@ export default function SiteHeader() {
               ぶんを つくる
             </Link>
             <Link
+              href="/pronunciation"
+              className="hidden rounded-full px-3 py-2 text-sm font-extrabold text-[#5b4a3c] transition hover:bg-white hover:text-ink sm:inline-block sm:px-4"
+            >
+              発音
+            </Link>
+            <Link
               href="/quiz"
               className="hidden rounded-full px-3 py-2 text-sm font-extrabold text-[#5b4a3c] transition hover:bg-white hover:text-ink sm:inline-block sm:px-4"
             >
