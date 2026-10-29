@@ -96,6 +96,23 @@ Deployments は書けるが、**リポジトリ設定 (About の Website 欄) �
 > 「必須ステータスチェックの成功」を要求し、main のマージコミットに CI のチェックが無いため
 > `409 Conflict: Commit status checks failed` で失敗する。空配列 `[]` を明示して回避している。
 
+### トンネルのホスト名は「失効する」(issue: Deployments リンクが開けない)
+
+2026-10-29、Deployments の URL を開いても **DNS が引けない** (`NXDOMAIN`) 状態になった。
+cloudflared のプロセスは 3 週間動き続けていたが、その間に Cloudflare 側で
+quick tunnel のホスト名が回収されていた。つまり「URL が変わる」だけでなく **古い URL は死ぬ**。
+
+対策として、URL を拾う側を次のようにした (Deploy ワークフロー / Site URL ワークフロー共通)。
+
+1. journal から読んだ URL を **実際に `curl` して確かめる** (200 が返るか)
+2. 死んでいたら `cloudflared-quick` を **再起動して新しい URL を得る** (最大 60 秒待つ)
+3. 取れた URL を Deployments に流す
+
+さらに `.github/workflows/site-url.yml` が **6 時間ごと**に同じ確認を行い、
+URL が変わっていれば既存 deployment の `environment_url` を更新する。デプロイを待たずに自己修復する。
+
+> それでも Quick Tunnel である以上、URL は不定期に変わる。恒久化は下記「名前付きトンネル」を参照。
+
 ### About の Website 欄 (手動・1回だけ)
 Website 欄の更新は **`Administration: write`** が必要で、`GITHUB_TOKEN` では書けない
 （`PATCH /repos/{owner}/{repo}` は 403 `Resource not accessible by integration`）。
