@@ -1,0 +1,88 @@
+name: Site URL
+
+# quick tunnel の URL は cloudflared の再起動で変わる。しかも Cloudflare 側の都合で
+# ホスト名が失効することがある (DNS が NXDOMAIN になる)。デプロイ時だけ URL を拾う運用だと、
+# その間にリポジトリの Deployments リンクが「開けない住所」を指したままになる。
+#
+# ここでは定期的に VPS のトンネル URL を読み直し、
+#  - 失効していれば cloudflared を再起動して新しい URL を得る
+#  - 変わっていれば Deployments の environment_url を更新する
+#
+# 秘密は既存のデプロイと同じ SSH キーのみ (VPS 側に GitHub の資格情報は置かない)。
+
+on:
+  schedule:
+    # 6 時間ごと (UTC)。cron は最短 5 分間隔だが、SSH 1 回で済むので頻度は控えめに。
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: site-url
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: refresh deployment URL
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read the live tunnel URL from the VPS
+        id: live
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT:-22}" \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=accept-new \
+              "${VPS_USER}@${VPS_HOST}" \
+              'set -euo pipefail; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; url_from_log() { journalctl --user -u cloudflared-quick -o cat --no-pager 2>/dev/null | grep -Eo "https://[a-z0-9-]+\.trycloudflare\.com" | tail -1; }; URL=$(url_from_log || true); if [ -z "${URL}" ] || ! curl -fsS -o /dev/null --max-time 10 "${URL}/login"; then echo "stale tunnel URL (${URL:-none}) - restarting" >&2; systemctl --user restart cloudflared-quick; URL=""; for _ in $(seq 1 20); do sleep 3; URL=$(url_from_log || true); if [ -n "${URL}" ] && curl -fsS -o /dev/null --max-time 10 "${URL}/login"; then break; fi; URL=""; done; fi; if [ -z "${URL}" ]; then echo "tunnel URL not available" >&2; else echo "SITE_URL=${URL}"; fi' \
+              | tee /tmp/site-url.log
+
+          SITE_URL=$(sed -n 's/^SITE_URL=//p' /tmp/site-url.log | tail -1)
+          if [ -z "$SITE_URL" ]; then
+            echo "::warning::トンネル URL を取得できませんでした"
+            exit 0
+          fi
+          if ! curl -fsS -o /dev/null --max-time 15 "${SITE_URL}/login"; then
+            echo "::warning::${SITE_URL} がランナーから開けません (DNS/トンネルを確認)"
+          fi
+          echo "url=$SITE_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Update the deployment's environment URL
+        if: steps.live.outputs.url != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SITE_URL: ${{ steps.live.outputs.url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          echo "### 🌐 Live site: <$SITE_URL>" >> "$GITHUB_STEP_SUMMARY"
+
+          # 直近の production deployment を取り、environment_url が変わったときだけ更新する
+          DEP_ID=$(gh api "repos/${GITHUB_REPOSITORY}/deployments?environment=production&per_page=1" --jq '.[0].id // empty')
+          if [ -z "$DEP_ID" ]; then
+            echo "::warning::production の deployment がありません (初回デプロイ後に再実行されます)"
+            exit 0
+          fi
+
+          CURRENT=$(gh api "repos/${GITHUB_REPOSITORY}/deployments/${DEP_ID}/statuses?per_page=1" --jq '.[0].environment_url // empty')
+          if [ "$CURRENT" = "$SITE_URL" ]; then
+            echo "URL は最新です: $SITE_URL"
+            exit 0
+          fi
+
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/deployments/${DEP_ID}/statuses" \
+            -f state=success \
+            -f environment_url="$SITE_URL" \
+            -f log_url="$RUN_URL" \
+            --jq '"environment_url = " + .environment_url'
