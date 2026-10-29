@@ -111,3 +111,43 @@ export const categories: Category[] = [
     ],
   },
 ];
+
+/* ------------------------------------------------------------------ */
+/* 単語 ID (issue #32)                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 単語の安定した ID。`<categoryId>/<en>` 形式 (例: `animals/dog`)。
+ *
+ * 外部から ID を受け取る経路 (発音結果の保存など) では、
+ * **この形式で `findWordById()` が引けるものだけ**を受理する。
+ * 配列の添字や表示名を ID にしないこと (並び替えや文言修正で壊れる)。
+ */
+export function wordId(categoryId: string, word: Word): string {
+  return `${categoryId}/${word.en}`;
+}
+
+export type IdentifiedWord = {
+  id: string;
+  categoryId: string;
+  word: Word;
+};
+
+const WORDS_BY_ID: ReadonlyMap<string, IdentifiedWord> = new Map(
+  categories.flatMap((category) =>
+    category.words.map((word): [string, IdentifiedWord] => [
+      wordId(category.id, word),
+      { id: wordId(category.id, word), categoryId: category.id, word },
+    ]),
+  ),
+);
+
+/** ID から単語を引く。無ければ null (ホワイトリストとして使う) */
+export function findWordById(id: string): IdentifiedWord | null {
+  return WORDS_BY_ID.get(id) ?? null;
+}
+
+/** 存在する単語 ID の一覧 */
+export function allWordIds(): string[] {
+  return [...WORDS_BY_ID.keys()];
+}

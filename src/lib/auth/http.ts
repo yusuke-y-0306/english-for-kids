@@ -21,6 +21,55 @@ export async function readJson<T>(request: Request): Promise<T | null> {
   }
 }
 
+export type LimitedJsonResult<T> =
+  | { ok: true; body: T }
+  | { ok: false; reason: "too-large" | "invalid" };
+
+/**
+ * サイズ上限つきで JSON を読む (issue #32)。
+ *
+ * `content-length` は自己申告なので**信用せず**、ストリームを数えながら読む
+ * (chunked で送られた場合もそこで打ち切る)。上限を超えたら読み込みを中止して 413 にする。
+ */
+export async function readJsonLimited<T>(request: Request, limitBytes: number): Promise<LimitedJsonResult<T>> {
+  const declared = Number(request.headers.get("content-length") ?? "");
+  if (Number.isFinite(declared) && declared > limitBytes) {
+    return { ok: false, reason: "too-large" };
+  }
+  if (!request.body) return { ok: false, reason: "invalid" };
+
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  let text = "";
+  let total = 0;
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limitBytes) {
+        await reader.cancel().catch(() => {});
+        return { ok: false, reason: "too-large" };
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
+  } catch {
+    return { ok: false, reason: "invalid" };
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { ok: false, reason: "invalid" };
+    }
+    return { ok: true, body: parsed as T };
+  } catch {
+    return { ok: false, reason: "invalid" };
+  }
+}
+
 /** レート制限用のクライアント識別子 */
 export async function clientKey(): Promise<string> {
   const h = await headers();
