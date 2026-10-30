@@ -62,6 +62,11 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: SECURITY_HEADERS,
       },
+      {
+        // 計測用のページ (issue #40) は開発・検証専用。検索結果に出さない。
+        source: "/lab/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
     ];
   },
 };

@@ -65,9 +65,11 @@ export default function PronunciationPanel() {
   // 経路の判定はブラウザ API を触るので、描画中ではなくマウント後に 1 回だけ行う。
   useEffect(() => {
     let alive = true;
-    // TODO(#41): WASM 推論エンジンを組み込んだら、ここを
+    // TODO(#40): WASM 推論エンジンを組み込んだら、ここを
     // `await isModelReady() && engine.available()` に置き換える。
     // それまでは「端末内認識 → 自己申告」の 2 経路で動かす。
+    // 優先順位は policy 側 (device → wasm → self-report) が持つので、
+    // ここは「wasm がまだ無い」ことを伝えるだけでよい。
     void resolveRecognitionDecision(false).then((resolved) => {
       if (!alive) return;
       setDecision({ path: resolved.path, reason: resolved.reason });
