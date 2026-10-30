@@ -15,6 +15,7 @@ import {
   type DeviceAvailability,
   type DeviceRecognitionReport,
   type PathDecision,
+  type PathPreference,
 } from "./recognition-policy";
 
 export const DEVICE_RECOGNITION_LANG = "en-US";
@@ -116,10 +117,18 @@ export async function detectDeviceRecognition(): Promise<DeviceRecognitionReport
 
 export type RecognitionDecision = PathDecision & { report: DeviceRecognitionReport };
 
-/** wasm が使えるかと端末内認識の可否から経路を決める */
-export async function resolveRecognitionDecision(wasmReady: boolean): Promise<RecognitionDecision> {
+/**
+ * wasm が使えるかと端末内認識の可否から経路を決める。
+ *
+ * `prefer` は**両方使える**ときの優先順位 (既定 `device`)。
+ * 計測ページだけが `wasm` を渡して、同じ音声で 2 エンジンを比べる (issue #40)。
+ */
+export async function resolveRecognitionDecision(
+  wasmReady: boolean,
+  prefer: PathPreference = "device",
+): Promise<RecognitionDecision> {
   const report = await detectDeviceRecognition();
-  return { ...decideRecognitionPath({ wasmReady, device: report }), report };
+  return { ...decideRecognitionPath({ wasmReady, device: report, prefer }), report };
 }
 
 /**
