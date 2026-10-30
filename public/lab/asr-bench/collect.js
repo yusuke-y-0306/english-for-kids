@@ -20,7 +20,13 @@ const TARGET_SAMPLE_RATE = 16000;
 const RECORD_MS = 4000;
 const AVAILABILITY_TIMEOUT_MS = 1500;
 const RECOGNIZE_TIMEOUT_MS = 8000;
-const WORDS_URL = "./words.json";
+/**
+ * 資産のパスは**絶対パス**で書く。
+ * `/lab/asr-bench` (末尾スラッシュなし) でも配るように rewrite してあるので、
+ * 相対パスだと `/lab/words.json` に化けて 404 になる。
+ */
+const WORDS_URL = "/lab/asr-bench/words.json";
+const WORKLET_URL = "/lab/asr-bench/recorder-worklet.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -60,7 +66,7 @@ async function ensureAudioContext() {
   // サンプルレートは端末に任せる (Safari は AudioContext に 16kHz を指定できない)。
   // 変換は resampleTo16k() で明示的に行う。
   const ctx = new Ctx();
-  await ctx.audioWorklet.addModule("./recorder-worklet.js");
+  await ctx.audioWorklet.addModule(WORKLET_URL);
   state.audioContext = ctx;
   return ctx;
 }

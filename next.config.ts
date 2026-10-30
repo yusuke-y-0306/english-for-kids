@@ -56,6 +56,19 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   // サーバの種類を晒さない
   poweredByHeader: false,
+  async rewrites() {
+    return [
+      {
+        // 計測ページ (issue #40)。`public/lab/asr-bench/index.html` は
+        // `/lab/asr-bench/index.html` でしか届かない。Next は public の
+        // ディレクトリインデックスを解決せず、さらに `/lab/asr-bench/` は
+        // trailingSlash: false の 308 で `/lab/asr-bench` に戻されるため、
+        // 人が打つ URL が 404 になる (実際に踏んだ)。ここで繋ぐ。
+        source: "/lab/asr-bench",
+        destination: "/lab/asr-bench/index.html",
+      },
+    ];
+  },
   async headers() {
     return [
       {
