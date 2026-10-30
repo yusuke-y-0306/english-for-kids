@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 計測用のブラウザスクリプト (issue #40)。Node ではなくブラウザでしか動かないので、
+    // Next 向けのルールセットで検査しても意味がない (AudioWorklet などは globals が無い)。
+    "public/lab/**",
   ]),
 ]);
 

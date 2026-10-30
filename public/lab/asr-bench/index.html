@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>音声認識の計測 — english-for-kids</title>
+    <!--
+      計測用の静的ページ (issue #40)。
+
+      - ここで録った音声は**この端末のメモリから出ない**。サーバへは何も送らない
+        (CSP の connect-src も 'self' だけなので、送ろうとしても失敗する)。
+      - インラインスクリプト禁止 (CSP: script-src-attr 'none') なので、
+        ロジックは collect.js / recorder-worklet.js 側だけに置く。
+      - 公開ディレクトリにあるが、next.config.ts で X-Robots-Tag: noindex を付けている。
+    -->
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        background: #f4f7f4;
+        color: #22301f;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 1.2rem;
+        margin: 0 0 4px;
+      }
+      .lead {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        color: #4c5a48;
+        margin: 0 0 16px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #d9e4d6;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+      .word {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+      .ja {
+        font-size: 0.9rem;
+        color: #5b6b57;
+      }
+      button {
+        font: inherit;
+        font-weight: 700;
+        padding: 12px 18px;
+        border-radius: 10px;
+        border: 1px solid #7aa86f;
+        background: #8fd06a;
+        color: #16240f;
+      }
+      button.secondary {
+        background: #fff;
+        border-color: #c8d6c4;
+        color: #3c4a38;
+      }
+      button:disabled {
+        opacity: 0.5;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 0.85rem;
+        padding: 6px 0;
+        border-bottom: 1px dashed #e2ebdf;
+      }
+      .row:last-child {
+        border-bottom: 0;
+      }
+      .tag {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #eef4ec;
+        color: #43503f;
+      }
+      .tag.ok {
+        background: #d9f2cc;
+      }
+      .tag.close {
+        background: #fdeec7;
+      }
+      .tag.retry {
+        background: #d9ecfb;
+      }
+      #status {
+        font-size: 0.9rem;
+        font-weight: 700;
+        min-height: 1.4em;
+      }
+      #log {
+        font-size: 0.75rem;
+        line-height: 1.5;
+        color: #55634f;
+        white-space: pre-wrap;
+        max-height: 180px;
+        overflow: auto;
+        margin: 0;
+      }
+      label.opt {
+        font-size: 0.85rem;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 8px;
+        color: #3c4a38;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>音声認識の計測</h1>
+      <p class="lead">
+        単語を 1 つずつ録音して、あとで Moonshine (WASM) に通し、端末内認識と比べます。
+        音声はどこにも送りません。終わったら「結果を JSON で保存」を押して、そのファイルを
+        <code>scripts/asr-bench/</code> の手順に渡してください。
+      </p>
+
+      <div class="card">
+        <div id="status">はじめます…</div>
+        <label class="opt">
+          <input type="checkbox" id="with-device" />
+          端末内認識も いっしょに ためす（Chrome / Edge / Android のみ。テスト用 Chromium では外す）
+        </label>
+      </div>
+
+      <div class="card" id="current">
+        <div class="word" id="word-en">—</div>
+        <div class="ja" id="word-ja"></div>
+        <div class="actions">
+          <button id="record">この単語を とる</button>
+          <button id="skip" class="secondary">とばす</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="rows"></div>
+        <div class="actions">
+          <button id="save" class="secondary" disabled>結果を JSON で保存</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <pre id="log"></pre>
+      </div>
+    </main>
+    <script type="module" src="./collect.js"></script>
+  </body>
+</html>

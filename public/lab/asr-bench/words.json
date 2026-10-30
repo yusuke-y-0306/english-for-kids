@@ -1,0 +1,62 @@
+[
+  {
+    "id": "animals/dog",
+    "en": "dog",
+    "ja": "いぬ"
+  },
+  {
+    "id": "food/apple",
+    "en": "apple",
+    "ja": "りんご"
+  },
+  {
+    "id": "colors/red",
+    "en": "red",
+    "ja": "あか"
+  },
+  {
+    "id": "numbers/one",
+    "en": "one",
+    "ja": "1"
+  },
+  {
+    "id": "body/head",
+    "en": "head",
+    "ja": "あたま"
+  },
+  {
+    "id": "family/mother",
+    "en": "mother",
+    "ja": "おかあさん"
+  },
+  {
+    "id": "animals/cat",
+    "en": "cat",
+    "ja": "ねこ"
+  },
+  {
+    "id": "food/banana",
+    "en": "banana",
+    "ja": "バナナ"
+  },
+  {
+    "id": "colors/blue",
+    "en": "blue",
+    "ja": "あお"
+  },
+  {
+    "id": "numbers/two",
+    "en": "two",
+    "ja": "2"
+  },
+  {
+    "id": "body/eye",
+    "en": "eye",
+    "ja": "め"
+  },
+  {
+    "id": "family/father",
+    "en": "father",
+    "ja": "おとうさん"
+  }
+]
