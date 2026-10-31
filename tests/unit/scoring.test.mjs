@@ -70,3 +70,37 @@ test("score は 3 値のいずれか", () => {
     assert.ok(["ok", "close", "retry"].includes(scorePronunciation(said, "dog").score));
   }
 });
+
+/**
+ * 同音語・言い換えの吸収 — issue #40
+ *
+ * 認識器は音を文字に落とすので、綴りが違うだけの語を返す (two → "Too")。
+ * これを retry にすると「言えたのに もういちど」になり、一番やってはいけない誤検出になる。
+ */
+test("homophones: 同音の別綴りは ok", () => {
+  assert.equal(scorePronunciation("Too", "two", { homophones: ["too", "to"] }).score, "ok");
+  assert.equal(scorePronunciation("I", "eye", { homophones: ["i"] }).score, "ok");
+  assert.equal(scorePronunciation("Won!", "one", { homophones: ["won"] }).score, "ok");
+});
+
+test("homophones: 指定しなければ今までどおり落ちる", () => {
+  assert.equal(scorePronunciation("I", "eye").score, "retry");
+  assert.equal(scorePronunciation("Too", "two").score, "close");
+});
+
+test("homophones: 関係ない語は救わない", () => {
+  assert.equal(scorePronunciation("banana", "two", { homophones: ["too", "to"] }).score, "retry");
+});
+
+test("variants: 言い換えは close 止まり (お手本の語ではないので満点にしない)", () => {
+  assert.equal(scorePronunciation("Mom,", "mother", { variants: ["mom", "mum"] }).score, "close");
+  assert.equal(scorePronunciation("Dad", "father", { variants: ["dad"] }).score, "close");
+});
+
+test("variants: お手本どおりなら ok のまま", () => {
+  assert.equal(scorePronunciation("Mother", "mother", { variants: ["mom"] }).score, "ok");
+});
+
+test("許容は大文字・記号・全角を吸収したうえで比べる", () => {
+  assert.equal(scorePronunciation("ＴＯＯ！", "two", { homophones: ["Too"] }).score, "ok");
+});

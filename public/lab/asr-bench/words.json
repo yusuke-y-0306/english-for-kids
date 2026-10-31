@@ -12,12 +12,18 @@
   {
     "id": "colors/red",
     "en": "red",
-    "ja": "あか"
+    "ja": "あか",
+    "homophones": [
+      "read"
+    ]
   },
   {
     "id": "numbers/one",
     "en": "one",
-    "ja": "1"
+    "ja": "1",
+    "homophones": [
+      "won"
+    ]
   },
   {
     "id": "body/head",
@@ -27,7 +33,12 @@
   {
     "id": "family/mother",
     "en": "mother",
-    "ja": "おかあさん"
+    "ja": "おかあさん",
+    "variants": [
+      "mom",
+      "mum",
+      "mommy"
+    ]
   },
   {
     "id": "animals/cat",
@@ -42,21 +53,36 @@
   {
     "id": "colors/blue",
     "en": "blue",
-    "ja": "あお"
+    "ja": "あお",
+    "homophones": [
+      "blew"
+    ]
   },
   {
     "id": "numbers/two",
     "en": "two",
-    "ja": "2"
+    "ja": "2",
+    "homophones": [
+      "too",
+      "to"
+    ]
   },
   {
     "id": "body/eye",
     "en": "eye",
-    "ja": "め"
+    "ja": "め",
+    "homophones": [
+      "i"
+    ]
   },
   {
     "id": "family/father",
     "en": "father",
-    "ja": "おとうさん"
+    "ja": "おとうさん",
+    "variants": [
+      "dad",
+      "papa",
+      "daddy"
+    ]
   }
 ]
