@@ -21,6 +21,7 @@ const RECORD_MS = 4000;
 const AVAILABILITY_TIMEOUT_MS = 1500;
 const RECOGNIZE_TIMEOUT_MS = 8000;
 const WORDS_URL = "./words.json";
+const DEVICE_LANG = "en-US";
 
 const el = (id) => document.getElementById(id);
 
@@ -224,6 +225,74 @@ async function probeDevice() {
   }
 }
 
+/**
+ * 端末内認識の状態を画面に出す。
+ * device 列が空の記録は「比べられない」ので、録り始める前に理由が分かるようにする。
+ */
+function renderDeviceReport(report) {
+  const status = el("device-status");
+  const installButton = el("install-device");
+  installButton.hidden = true;
+
+  if (!report) {
+    status.textContent = "端末内認識: 状態が分かりません (device 列は空になります)";
+    return;
+  }
+  if (!report.present) {
+    status.textContent = "端末内認識: このブラウザに SpeechRecognition がありません (device 列は空になります)";
+    return;
+  }
+  if (!report.hasProcessLocally) {
+    status.textContent = "端末内認識: 端末内モード (processLocally) を持たないブラウザです (device 列は空になります)";
+    return;
+  }
+
+  switch (report.availability) {
+    case "available":
+      status.textContent = "端末内認識: つかえます";
+      el("with-device").checked = true;
+      break;
+    case "downloadable":
+      status.textContent = `端末内認識: ことばパック (${DEVICE_LANG}) が未取得です。入れると device 列も埋まります`;
+      installButton.hidden = false;
+      break;
+    case "downloading":
+      status.textContent = "端末内認識: ことばパックを ダウンロード中です。終わるまで待ってください";
+      break;
+    case "unavailable":
+      status.textContent = `端末内認識: この端末では ${DEVICE_LANG} を端末内で扱えません (device 列は空になります)`;
+      break;
+    default:
+      status.textContent = `端末内認識: 状態を確認できませんでした (${report.availability || "unknown"})`;
+  }
+}
+
+/** ことばパックを入れて、入ったかどうかをもう一度しらべる */
+async function installLanguagePack() {
+  const Ctor = getCtor();
+  if (!Ctor || typeof Ctor.install !== "function") {
+    log("install() が無い実装です");
+    return;
+  }
+  const button = el("install-device");
+  button.disabled = true;
+  setStatus("ことばパックを 入れています… (数十 MB)");
+  try {
+    await Ctor.install({ langs: [DEVICE_LANG], processLocally: true });
+    log(`install(${DEVICE_LANG}) が終わりました`);
+  } catch (error) {
+    log(`install() が失敗しました: ${String((error && error.message) || error)}`);
+    setStatus("ことばパックを 入れられませんでした");
+    button.disabled = false;
+    return;
+  }
+  state.deviceReport = await probeDevice();
+  log(`端末内認識: ${JSON.stringify(state.deviceReport)}`);
+  renderDeviceReport(state.deviceReport);
+  setStatus("じゅんび できました");
+  button.disabled = false;
+}
+
 function recognizeDevice() {
   return new Promise((resolve, reject) => {
     const Ctor = getCtor();
@@ -342,7 +411,11 @@ async function captureWord() {
   el("record").disabled = true;
 
   let device = null;
-  const withDevice = el("with-device").checked && state.deviceReport && state.deviceReport.present;
+  const withDevice =
+    el("with-device").checked &&
+    state.deviceReport &&
+    state.deviceReport.present &&
+    state.deviceReport.hasProcessLocally;
 
   // 認識と録音は同時に走らせる (1 回の発話を両方で観測する)
   let recognizing = null;
@@ -399,6 +472,9 @@ function saveJson() {
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
   setStatus("保存しました（Downloads を確認してください）");
+  if (!state.clips.some((clip) => clip.device && clip.device.transcript)) {
+    log("端末内認識の結果が 0 件です。この JSON では device 列を埋められません");
+  }
 }
 
 async function main() {
@@ -422,9 +498,8 @@ async function main() {
 
   state.deviceReport = await probeDevice();
   log(`端末内認識: ${JSON.stringify(state.deviceReport)}`);
-  if (state.deviceReport.present && state.deviceReport.availability === "available") {
-    el("with-device").checked = true;
-  }
+  renderDeviceReport(state.deviceReport);
+  el("install-device").addEventListener("click", () => void installLanguagePack());
   el("with-device").addEventListener("change", (event) => {
     if (event.target.checked) log("端末内認識も ためします (テスト用 Chromium では ページが落ちることがあります)");
   });
