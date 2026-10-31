@@ -9,18 +9,41 @@
  */
 
 import { readFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { scorePronunciation } from "../../src/lib/speech/scoring.ts";
 
 const MARKS = { ok: "🎉", close: "😊", retry: "🔁" };
+const WORDS_JSON = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../public/lab/asr-bench/words.json",
+);
 
-function judge(transcript, expected) {
+/**
+ * 単語ごとの許容 (同音語・言い換え) を words.json から引く。
+ * 出典は収録ページと同じ (`src/lib/words.ts` から生成) なので、アプリ本体と判定がズレない。
+ */
+async function loadScoreOptions() {
+  try {
+    const words = JSON.parse(await readFile(WORDS_JSON, "utf8"));
+    const map = new Map();
+    for (const word of words) {
+      map.set(word.id, { homophones: word.homophones, variants: word.variants });
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
+function judge(transcript, expected, options) {
   if (!transcript) return { score: "retry", distance: null, hint: "認識できず" };
-  return scorePronunciation(transcript, expected);
+  return scorePronunciation(transcript, expected, options);
 }
 
 /** 1 エンジンぶんの集計 */
-function summarize(rows, field) {
+function summarize(rows, field, optionsById) {
   const stats = { ok: 0, close: 0, retry: 0, missing: 0, exact: 0, latencies: [] };
   for (const row of rows) {
     const engine = row[field];
@@ -29,7 +52,7 @@ function summarize(rows, field) {
       continue;
     }
     const transcript = engine.transcript ?? "";
-    const result = judge(transcript, row.expected);
+    const result = judge(transcript, row.expected, optionsById.get(row.wordId));
     stats[result.score] += 1;
     if (transcript.trim().toLowerCase() === row.expected.toLowerCase()) stats.exact += 1;
     if (typeof engine.ms === "number") stats.latencies.push(engine.ms);
@@ -64,6 +87,7 @@ async function main() {
     process.exit(2);
   }
 
+  const optionsById = await loadScoreOptions();
   const hasDevice = rows.some((row) => row.device);
   const hasMoonshine = rows.some((row) => row.moonshine);
 
@@ -85,20 +109,23 @@ async function main() {
     const moon = row.moonshine;
     const deviceText = device && !device.error ? `\`${device.transcript}\`` : "—";
     const moonText = moon && !moon.error ? `\`${moon.transcript}\`` : "—";
-    const deviceScore = device && !device.error ? MARKS[judge(device.transcript, row.expected).score] : "—";
-    const moonScore = moon && !moon.error ? MARKS[judge(moon.transcript, row.expected).score] : "—";
+    const options = optionsById.get(row.wordId);
+    const deviceScore =
+      device && !device.error ? MARKS[judge(device.transcript, row.expected, options).score] : "—";
+    const moonScore =
+      moon && !moon.error ? MARKS[judge(moon.transcript, row.expected, options).score] : "—";
     const infer = moon && typeof moon.inferMs === "number" ? `${moon.inferMs}ms` : "—";
     console.log(`| ${row.expected} | ${deviceText} | ${deviceScore} | ${moonText} | ${moonScore} | ${infer} |`);
   }
   console.log("");
 
   if (hasDevice) {
-    const device = summarize(rows, "device");
+    const device = summarize(rows, "device", optionsById);
     console.log(`- ${line("端末内認識", device)}`);
     if (device.exact) console.log(`  完全一致 ${device.exact}/${rows.length}`);
   }
   if (hasMoonshine) {
-    const moonshine = summarize(rows, "moonshine");
+    const moonshine = summarize(rows, "moonshine", optionsById);
     console.log(`- ${line("Moonshine", moonshine)}`);
     if (moonshine.exact) console.log(`  完全一致 ${moonshine.exact}/${rows.length}`);
   }
@@ -106,8 +133,10 @@ async function main() {
   // 判定が割れた単語を先に見る (どちらが厳しすぎるかはここで分かる)
   if (hasDevice && hasMoonshine) {
     const disagree = rows.filter((row) => {
-      const a = row.device && !row.device.error ? judge(row.device.transcript, row.expected).score : null;
-      const b = row.moonshine && !row.moonshine.error ? judge(row.moonshine.transcript, row.expected).score : null;
+      const options = optionsById.get(row.wordId);
+      const a = row.device && !row.device.error ? judge(row.device.transcript, row.expected, options).score : null;
+      const b =
+        row.moonshine && !row.moonshine.error ? judge(row.moonshine.transcript, row.expected, options).score : null;
       return a !== b;
     });
     console.log("");
@@ -124,7 +153,7 @@ async function main() {
   const falseNegatives = rows.filter((row) => {
     const engine = row.moonshine ?? row.device;
     if (!engine || engine.error) return false;
-    return judge(engine.transcript, row.expected).score === "retry";
+    return judge(engine.transcript, row.expected, optionsById.get(row.wordId)).score === "retry";
   });
   if (falseNegatives.length) {
     console.log("");

@@ -25,7 +25,11 @@ for (let rank = 0; rank < PER_CATEGORY && words.length < LIMIT; rank += 1) {
   for (const category of categories) {
     const word = category.words[rank];
     if (!word || words.length >= LIMIT) continue;
-    words.push({ id: wordId(category.id, word), en: word.en, ja: word.ja });
+    const entry = { id: wordId(category.id, word), en: word.en, ja: word.ja };
+    // 採点の許容 (同音語・言い換え) は収録ページとレポートの両方が使うので一緒に配る
+    if (word.homophones?.length) entry.homophones = word.homophones;
+    if (word.variants?.length) entry.variants = word.variants;
+    words.push(entry);
   }
 }
 
