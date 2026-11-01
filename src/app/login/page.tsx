@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { adminPassphrase } from "@/lib/auth/config";
 import { listUsersForPicker, readPool } from "@/lib/auth/pool";
 import { getCurrentUser } from "@/lib/auth/session";
 import LoginPanel from "./LoginPanel";
@@ -33,7 +32,6 @@ export default async function LoginPage() {
       <LoginPanel
         users={users}
         needsSetup={pool.users.length === 0}
-        adminEnabled={Boolean(adminPassphrase())}
       />
     </main>
   );

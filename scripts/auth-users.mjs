@@ -21,7 +21,10 @@ try {
   const users = Array.isArray(pool.users) ? pool.users : [];
   console.log(`ユーザープール: ${file}`);
   console.log(`最終更新: ${pool.updatedAt ?? "-"}`);
-  console.log(`ユーザー数: ${users.length}\n`);
+  console.log(`ユーザー数: ${users.length}`);
+  console.log(
+    `おうちの 合言葉: ${pool.familySecret ? "設定済み" : "未設定 (旧形式: いずれかの こどもの 秘密が 兼ねる)"}\n`,
+  );
   for (const user of users) {
     const credentials = Array.isArray(user.credentials) ? user.credentials : [];
     console.log(
@@ -29,7 +32,6 @@ try {
         `- ${user.avatar ?? "?"} ${user.displayName}`,
         `id=${user.id}`,
         `端末=${credentials.length}`,
-        `秘密=${user.secret ? "暗号化済み" : "なし"}`,
         `作成=${user.createdAt ?? "-"}`,
       ].join("  "),
     );

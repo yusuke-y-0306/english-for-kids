@@ -21,7 +21,6 @@ import type { PickerUser } from "@/lib/auth/pool";
 type Props = {
   users: PickerUser[];
   needsSetup: boolean;
-  adminEnabled: boolean;
 };
 
 type SetupMode = "first" | "new" | "device";
@@ -116,7 +115,7 @@ function friendlyError(error: unknown): string {
     : "うまく いきませんでした。もういちど おねがいします";
 }
 
-export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
+export default function LoginPanel({ users, needsSetup }: Props) {
   const router = useRouter();
   const inAppBrowser = useInAppBrowser();
   const iosThirdParty = useIOSThirdPartyBrowser();
@@ -135,16 +134,13 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
   const [displayName, setDisplayName] = useState("");
   const [avatar, setAvatar] = useState(AVATARS[0].emoji);
   const [passphrase, setPassphrase] = useState("");
-  const [admin, setAdmin] = useState("");
   const [targetUserId, setTargetUserId] = useState(users[0]?.id ?? "");
 
   const selectedUserId = targetUserId || users[0]?.id || "";
   const passphraseLabel =
-    mode === "new"
-      ? "この こどもの 保護者パスフレーズ（8もじ いじょう）"
-      : mode === "first"
-        ? "保護者パスフレーズ（8もじ いじょう）"
-        : "この こどもの 保護者パスフレーズ";
+    mode === "first"
+      ? "おうちの 合言葉を きめる（8もじ いじょう）"
+      : "おうちの 合言葉（保護者パスフレーズ）";
 
   function goHome() {
     router.replace("/");
@@ -198,7 +194,6 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
         guardianPassphrase: normalizePassphrase(passphrase),
       };
       if (mode === "device") payload.userId = selectedUserId;
-      if (mode === "new") payload.adminPassphrase = normalizePassphrase(admin);
       if (mode === "first" || mode === "new") {
         payload.displayName = displayName;
         payload.avatar = avatar;
@@ -328,9 +323,11 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
             おうちの ひと メニュー
           </h2>
           <p className="mt-2 text-center text-xs leading-relaxed font-bold text-[#8f7a5e]">
-            子どもは ID・パスワードを うちません。保護者パスフレーズは
+            子どもは ID・パスワードを うちません。
             <br className="hidden sm:block" />
-            この 端末を 新しく つかえるように するときだけ つかいます。
+            おうちの 合言葉（保護者パスフレーズ）は 1 つだけ。
+            <br className="hidden sm:block" />
+            こどもを ふやす ときも、端末を ふやす ときも 同じ 合言葉です。
           </p>
 
           {!needsSetup && (
@@ -340,13 +337,11 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
                 onClick={() => setMode("device")}
                 label="この たんまつを とうろく"
               />
-              {adminEnabled && (
-                <ModeButton
-                  active={mode === "new"}
-                  onClick={() => setMode("new")}
-                  label="あたらしい こどもを ふやす"
-                />
-              )}
+              <ModeButton
+                active={mode === "new"}
+                onClick={() => setMode("new")}
+                label="あたらしい こどもを ふやす"
+              />
             </div>
           )}
 
@@ -406,32 +401,14 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
               </label>
             )}
 
-            {mode === "new" && (
-              <label className="block">
-                <span className="text-xs font-extrabold text-[#5b4a3c]">
-                  管理者パスフレーズ（おうちの ひと専用）
-                </span>
-                <span className="mt-1 block text-[0.7rem] leading-relaxed font-bold text-[#8f7a5e]">
-                  アプリを はじめた ときの パスフレーズです。
-                  <br />
-                  下の 保護者パスフレーズ（この こども用）とは べつ です。
-                </span>
-                <input
-                  type="password"
-                  value={admin}
-                  onChange={(e) => setAdmin(e.target.value)}
-                  autoComplete="off"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  className="mt-1 w-full rounded-xl border-2 border-[#e6d9c8] bg-white px-3 py-2.5 text-base font-bold text-ink outline-none focus:border-[#f4801f]"
-                />
-              </label>
-            )}
-
             <label className="block">
               <span className="text-xs font-extrabold text-[#5b4a3c]">
                 {passphraseLabel}
+              </span>
+              <span className="mt-1 block text-[0.7rem] leading-relaxed font-bold text-[#8f7a5e]">
+                {mode === "first"
+                  ? "これが おうち 共通の 合言葉に なります。わすれないように メモしてね。"
+                  : "おうちの ひとが さいしょに きめた 合言葉です。"}
               </span>
               <input
                 type="password"

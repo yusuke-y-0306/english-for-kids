@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "auth:keygen": "node scripts/auth-keygen.mjs",
+    "auth:passphrase": "node scripts/auth-passphrase.mjs",
     "auth:users": "node scripts/auth-users.mjs",
     "models:fetch": "node scripts/models.mjs fetch",
     "models:manifest": "node scripts/models.mjs manifest --init",
