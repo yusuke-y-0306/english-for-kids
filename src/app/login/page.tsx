@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { listUsersForPicker, readPool } from "@/lib/auth/pool";
 import { getCurrentUser } from "@/lib/auth/session";
 import LoginPanel from "./LoginPanel";
@@ -9,10 +8,15 @@ export const metadata = {
   title: "ログイン | こども英語ひろば",
 };
 
-/** ログイン画面 — アバターを えらんで、ゆび/かお で ログイン */
+/**
+ * ログイン画面 — アバターを えらんで、ゆび/かお で ログイン
+ *
+ * ログイン中でも この画面を 開けるようにしている (リダイレクトしない)。
+ * 家族で 1 台を 共有していると「いま だれで ログインしているか」を
+ * 切りかえたいし、こどもを 追加する 入口も ここにしかないため。
+ */
 export default async function LoginPage() {
   const current = await getCurrentUser();
-  if (current) redirect("/");
 
   const [users, pool] = await Promise.all([listUsersForPicker(), readPool()]);
 
@@ -32,6 +36,16 @@ export default async function LoginPage() {
       <LoginPanel
         users={users}
         needsSetup={pool.users.length === 0}
+        currentUser={
+          current
+            ? {
+                id: current.id,
+                displayName: current.displayName,
+                avatar: current.avatar,
+                color: current.color,
+              }
+            : null
+        }
       />
     </main>
   );
