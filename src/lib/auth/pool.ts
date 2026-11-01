@@ -114,6 +114,17 @@ export async function findUser(userId: string): Promise<PoolUser | undefined> {
   return pool.users.find((u) => u.id === userId);
 }
 
+/**
+ * credential (端末の鍵) からユーザーを引く。
+ * ログイン画面で なまえを 出さずに「ゆび/かお で ログイン」できるようにするため。
+ */
+export async function findUserByCredential(
+  credentialId: string,
+): Promise<PoolUser | undefined> {
+  const pool = await readPool();
+  return pool.users.find((u) => u.credentials.some((c) => c.id === credentialId));
+}
+
 export type PickerUser = {
   id: string;
   displayName: string;

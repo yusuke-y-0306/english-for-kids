@@ -4,7 +4,8 @@ import {
 } from "@simplewebauthn/server";
 import { fromBase64UrlBytes } from "@/lib/auth/crypto";
 import { jsonError, jsonOk, readJson } from "@/lib/auth/http";
-import { findUser, touchCredential } from "@/lib/auth/pool";
+import { rememberDeviceUser } from "@/lib/auth/device";
+import { findUser, findUserByCredential, touchCredential } from "@/lib/auth/pool";
 import { relyingParty } from "@/lib/auth/rp";
 import {
   clearChallengeCookie,
@@ -17,17 +18,23 @@ export const dynamic = "force-dynamic";
 
 /** 生体認証の結果を検証してセッションを開始する */
 export async function POST(request: Request) {
-  const body = await readJson<{ userId?: string; response?: AuthenticationResponseJSON }>(
-    request,
-  );
-  if (!body?.userId || !body.response) return jsonError("リクエストが不正です");
+  const body = await readJson<{ userId?: string; response?: AuthenticationResponseJSON }>(request);
+  if (!body?.response) return jsonError("リクエストが不正です");
 
   const pending = await readChallengeCookie();
-  if (!pending || pending.mode !== "login" || pending.userId !== body.userId) {
+  if (!pending || pending.mode !== "login") {
     return jsonError("認証の有効期限が切れました。もういちど おねがいします", 400);
   }
 
-  const user = await findUser(body.userId);
+  /* アバターを選ばずに来た場合 (userless) は、届いた credential から相手を探す */
+  const userless = pending.userId === "";
+  if (!userless && pending.userId !== body.userId) {
+    return jsonError("認証の有効期限が切れました。もういちど おねがいします", 400);
+  }
+
+  const user = userless
+    ? await findUserByCredential(body.response.id)
+    : await findUser(pending.userId);
   if (!user) return jsonError("ユーザーが見つかりません", 404);
 
   const credential = user.credentials.find((c) => c.id === body.response?.id);
@@ -61,6 +68,7 @@ export async function POST(request: Request) {
 
   await touchCredential(user.id, credential.id, verification.authenticationInfo.newCounter);
   await setSessionCookie(user.id);
+  await rememberDeviceUser(user.id);
   await clearChallengeCookie();
   const content = await recordVisit(user.id);
 

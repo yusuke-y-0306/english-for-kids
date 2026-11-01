@@ -3,6 +3,7 @@ import {
   type RegistrationResponseJSON,
 } from "@simplewebauthn/server";
 import { toBase64Url } from "@/lib/auth/crypto";
+import { rememberDeviceUser } from "@/lib/auth/device";
 import { jsonError, jsonOk, readJson } from "@/lib/auth/http";
 import { addCredential, createUser, findUser, readPool } from "@/lib/auth/pool";
 import { relyingParty } from "@/lib/auth/rp";
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
   }
 
   await setSessionCookie(pending.userId);
+  await rememberDeviceUser(pending.userId);
   await clearChallengeCookie();
   await recordVisit(pending.userId);
 

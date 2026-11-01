@@ -9,10 +9,33 @@ export const dynamic = "force-dynamic";
 
 /**
  * 生体認証 (ログイン) の options を作る。
- * 子どもは ID / パスワードを打てないので、ここは「アバターを選ぶだけ」で到達できる。
+ *
+ * 2 通りある:
+ * - アバターを選んだ (userId あり): その子の credential に絞る
+ * - userless (usernameless: true): 端末にあるパスキーを そのまま使う。
+ *   新しい端末で「家族の なまえ」を出さずにログインできるようにするため。
  */
 export async function POST(request: Request) {
-  const body = await readJson<{ userId?: string }>(request);
+  const body = await readJson<{ userId?: string; usernameless?: boolean }>(request);
+  const { rpID } = await relyingParty();
+
+  if (body?.usernameless) {
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials: [],
+      userVerification: "required",
+    });
+
+    await setChallengeCookie({
+      challenge: options.challenge,
+      mode: "login",
+      userId: "",
+      exp: Math.floor(Date.now() / 1000) + CHALLENGE_MAX_AGE_SEC,
+    });
+
+    return jsonOk({ options });
+  }
+
   if (!body?.userId) return jsonError("ユーザーが選ばれていません");
 
   const user = await findUser(body.userId);
@@ -21,7 +44,6 @@ export async function POST(request: Request) {
     return jsonError("この ユーザーは まだ 端末が とうろく されていません", 409);
   }
 
-  const { rpID } = await relyingParty();
   const options = await generateAuthenticationOptions({
     rpID,
     allowCredentials: user.credentials.map((credential) => ({
