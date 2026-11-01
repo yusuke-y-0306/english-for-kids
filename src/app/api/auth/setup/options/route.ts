@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth/config";
 import { encryptSecret, randomId, safeEqual } from "@/lib/auth/crypto";
 import { clientKey, jsonError, jsonOk, readJson } from "@/lib/auth/http";
+import { normalizePassphrase } from "@/lib/auth/passphrase";
 import { findUser, readPool, verifyGuardianPassphrase } from "@/lib/auth/pool";
 import { relyingParty } from "@/lib/auth/rp";
 import { setChallengeCookie } from "@/lib/auth/session";
@@ -63,9 +64,17 @@ export async function POST(request: Request) {
         );
       }
       if (isLocked(`setup:${ip}`)) return jsonError(lockMessage(), 429);
-      if (!safeEqual(body.adminPassphrase ?? "", admin)) {
+      if (
+        !safeEqual(
+          normalizePassphrase(body.adminPassphrase ?? ""),
+          normalizePassphrase(admin),
+        )
+      ) {
         recordFailure(`setup:${ip}`);
-        return jsonError("管理者パスフレーズが ちがいます", 403);
+        return jsonError(
+          "管理者パスフレーズが ちがいます（保護者パスフレーズとは べつの ものです）",
+          403,
+        );
       }
       clearFailures(`setup:${ip}`);
     }
@@ -76,7 +85,7 @@ export async function POST(request: Request) {
     if (pool.users.some((u) => u.displayName === displayName)) {
       return jsonError(`「${displayName}」は すでに います`, 409);
     }
-    const passphrase = (body.guardianPassphrase ?? "").trim();
+    const passphrase = normalizePassphrase(body.guardianPassphrase ?? "");
     if (passphrase.length < 8) {
       return jsonError("保護者パスフレーズは 8 もじいじょうに してください");
     }

@@ -9,6 +9,7 @@ import {
   safeEqual,
   type EncryptedSecret,
 } from "./crypto";
+import { normalizePassphrase } from "./passphrase";
 
 /**
  * ユーザープール — DB を使わず、テキストファイル (JSON) で管理する。
@@ -180,7 +181,10 @@ export function verifyGuardianPassphrase(user: PoolUser, passphrase: string): bo
       guardianPassphrase?: string;
     };
     if (typeof decrypted.guardianPassphrase !== "string") return false;
-    return safeEqual(passphrase, decrypted.guardianPassphrase);
+    return safeEqual(
+      normalizePassphrase(passphrase),
+      normalizePassphrase(decrypted.guardianPassphrase),
+    );
   } catch {
     return false;
   }

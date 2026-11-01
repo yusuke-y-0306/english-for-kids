@@ -15,6 +15,7 @@ import type {
   RegistrationResponseJSON,
 } from "@simplewebauthn/server";
 import { AVATARS } from "@/lib/auth/avatars";
+import { normalizePassphrase } from "@/lib/auth/passphrase";
 import type { PickerUser } from "@/lib/auth/pool";
 
 type Props = {
@@ -138,6 +139,12 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
   const [targetUserId, setTargetUserId] = useState(users[0]?.id ?? "");
 
   const selectedUserId = targetUserId || users[0]?.id || "";
+  const passphraseLabel =
+    mode === "new"
+      ? "この こどもの 保護者パスフレーズ（8もじ いじょう）"
+      : mode === "first"
+        ? "保護者パスフレーズ（8もじ いじょう）"
+        : "この こどもの 保護者パスフレーズ";
 
   function goHome() {
     router.replace("/");
@@ -188,10 +195,10 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
 
       const payload: Record<string, unknown> = {
         mode,
-        guardianPassphrase: passphrase,
+        guardianPassphrase: normalizePassphrase(passphrase),
       };
       if (mode === "device") payload.userId = selectedUserId;
-      if (mode === "new") payload.adminPassphrase = admin;
+      if (mode === "new") payload.adminPassphrase = normalizePassphrase(admin);
       if (mode === "first" || mode === "new") {
         payload.displayName = displayName;
         payload.avatar = avatar;
@@ -402,13 +409,21 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
             {mode === "new" && (
               <label className="block">
                 <span className="text-xs font-extrabold text-[#5b4a3c]">
-                  管理者パスフレーズ（おうちの ひと）
+                  管理者パスフレーズ（おうちの ひと専用）
+                </span>
+                <span className="mt-1 block text-[0.7rem] leading-relaxed font-bold text-[#8f7a5e]">
+                  アプリを はじめた ときの パスフレーズです。
+                  <br />
+                  下の 保護者パスフレーズ（この こども用）とは べつ です。
                 </span>
                 <input
                   type="password"
                   value={admin}
                   onChange={(e) => setAdmin(e.target.value)}
-                  autoComplete="current-password"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   className="mt-1 w-full rounded-xl border-2 border-[#e6d9c8] bg-white px-3 py-2.5 text-base font-bold text-ink outline-none focus:border-[#f4801f]"
                 />
               </label>
@@ -416,15 +431,16 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
 
             <label className="block">
               <span className="text-xs font-extrabold text-[#5b4a3c]">
-                {mode === "first" || mode === "new"
-                  ? "保護者パスフレーズ（8もじ いじょう）"
-                  : "この こどもの 保護者パスフレーズ"}
+                {passphraseLabel}
               </span>
               <input
                 type="password"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
                 autoComplete="new-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 className="mt-1 w-full rounded-xl border-2 border-[#e6d9c8] bg-white px-3 py-2.5 text-base font-bold text-ink outline-none focus:border-[#f4801f]"
               />
             </label>
