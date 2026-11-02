@@ -71,11 +71,6 @@ export function masterKey(): Buffer {
   return key;
 }
 
-/** 新しいユーザーを追加するときの管理者パスフレーズ (未設定なら「最初の1人」のみ作成可) */
-export function adminPassphrase(): string | undefined {
-  return readEnv("GUARDIAN_ADMIN_PASSPHRASE");
-}
-
 export const RP_NAME = readEnv("WEBAUTHN_RP_NAME") ?? "こども英語ひろば";
 
 /** RP ID を環境変数で固定する場合 (本番ドメイン確定後に設定する) */

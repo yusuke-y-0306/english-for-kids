@@ -9,12 +9,14 @@ import {
   safeEqual,
   type EncryptedSecret,
 } from "./crypto";
+import { normalizePassphrase } from "./passphrase";
 
 /**
  * ユーザープール — DB を使わず、テキストファイル (JSON) で管理する。
  *
  * - 保存先: data/users.json (リポジトリには含めない / .gitignore 済み)
- * - 各ユーザーの「秘密」(保護者パスフレーズ) は AES-256-GCM で暗号化して保存
+ * - 「おうち 共通の合言葉」(保護者パスフレーズ) を 1 つだけ持つ。新規追加も
+ *   端末追加も同じ合言葉で通す (守るべき秘密を増やさない)。AES-256-GCM で暗号化。
  * - 書き込みは tmp ファイル + rename のアトミック更新。プロセス内は直列化する
  */
 
@@ -35,7 +37,11 @@ export type PoolUser = {
   displayName: string;
   avatar: string;
   color: string;
-  /** 保護者パスフレーズ (暗号化)。ファイル上は平文で持たない */
+  /**
+   * 旧形式の ユーザーごとの保護者パスフレーズ (暗号化)。
+   * いまは「おうち 共通の合言葉」に統一したため読み取り専用の遺物。
+   * 既存インストールからの移行時に familySecret の種として使う。
+   */
   secret?: EncryptedSecret;
   credentials: StoredCredential[];
   createdAt: string;
@@ -45,6 +51,8 @@ export type PoolUser = {
 export type UserPool = {
   version: 1;
   updatedAt: string;
+  /** おうち 共通の合言葉 (暗号化)。これ 1 つで 新規追加 も 端末追加 も通す */
+  familySecret?: EncryptedSecret;
   users: PoolUser[];
 };
 
@@ -62,6 +70,7 @@ export async function readPool(): Promise<UserPool> {
     return {
       version: 1,
       updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : "",
+      familySecret: parsed.familySecret,
       users: parsed.users.filter(
         (u): u is PoolUser =>
           !!u && typeof u.id === "string" && typeof u.displayName === "string",
@@ -103,6 +112,17 @@ export function withPool<T>(mutator: (pool: UserPool) => Promise<T> | T): Promis
 export async function findUser(userId: string): Promise<PoolUser | undefined> {
   const pool = await readPool();
   return pool.users.find((u) => u.id === userId);
+}
+
+/**
+ * credential (端末の鍵) からユーザーを引く。
+ * ログイン画面で なまえを 出さずに「ゆび/かお で ログイン」できるようにするため。
+ */
+export async function findUserByCredential(
+  credentialId: string,
+): Promise<PoolUser | undefined> {
+  const pool = await readPool();
+  return pool.users.find((u) => u.credentials.some((c) => c.id === credentialId));
 }
 
 export type PickerUser = {
@@ -168,22 +188,59 @@ export async function createUser(input: CreateUserInput): Promise<PoolUser> {
       updatedAt: now,
     };
     pool.users.push(user);
+    /* 最初の 1 人を作った時点で、その合言葉が「おうち 共通」になる。
+       旧形式 (ユーザーごとの秘密しか無い) プールでも、ここで引き継がれる。 */
+    if (!pool.familySecret && user.secret) pool.familySecret = user.secret;
     return user;
   });
 }
 
-/** 保護者パスフレーズを照合する */
-export function verifyGuardianPassphrase(user: PoolUser, passphrase: string): boolean {
-  if (!user.secret) return false;
+/** 暗号化された秘密から パスフレーズを取り出す */
+function passphraseFromSecret(secret: EncryptedSecret): string | null {
   try {
-    const decrypted = JSON.parse(decryptSecret(user.secret, masterKey())) as {
+    const decrypted = JSON.parse(decryptSecret(secret, masterKey())) as {
       guardianPassphrase?: string;
     };
-    if (typeof decrypted.guardianPassphrase !== "string") return false;
-    return safeEqual(passphrase, decrypted.guardianPassphrase);
+    return typeof decrypted.guardianPassphrase === "string"
+      ? decrypted.guardianPassphrase
+      : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+function matchesSecret(secret: EncryptedSecret, normalizedInput: string): boolean {
+  const stored = passphraseFromSecret(secret);
+  return stored !== null && safeEqual(normalizedInput, normalizePassphrase(stored));
+}
+
+/**
+ * おうち 共通の合言葉 (保護者パスフレーズ) を照合する。
+ *
+ * 新規追加 (2 人目以降) も、既存の こどもへの端末追加も、この 1 つだけ。
+ * 旧形式のプール (familySecret 無し) では、いずれかの こどもの 秘密を
+ * 合言葉とみなす — 既存インストールが そのまま動き続けるように。
+ */
+export async function verifyFamilyPassphrase(input: string): Promise<boolean> {
+  const pool = await readPool();
+  const normalized = normalizePassphrase(input);
+  if (normalized === "") return false;
+  if (pool.familySecret) return matchesSecret(pool.familySecret, normalized);
+  return pool.users.some((u) => (u.secret ? matchesSecret(u.secret, normalized) : false));
+}
+
+/** おうち 共通の合言葉を 決め直す (初回セットアップ / 忘れたときの復旧) */
+export async function setFamilyPassphrase(nextPassphrase: string): Promise<void> {
+  const normalized = normalizePassphrase(nextPassphrase);
+  if (normalized.length < 8) {
+    throw new Error("合言葉は 8 もじ いじょうに してください");
+  }
+  await withPool((pool) => {
+    pool.familySecret = encryptSecret(
+      JSON.stringify({ guardianPassphrase: normalized }),
+      masterKey(),
+    );
+  });
 }
 
 export async function addCredential(
@@ -213,25 +270,6 @@ export async function touchCredential(
     credential.counter = counter;
     credential.lastUsedAt = new Date().toISOString();
     user.updatedAt = credential.lastUsedAt;
-  });
-}
-
-/** 保護者パスフレーズを変更する */
-export async function setGuardianPassphrase(
-  userId: string,
-  nextPassphrase: string,
-): Promise<void> {
-  if (nextPassphrase.trim().length < 8) {
-    throw new Error("保護者パスフレーズは8文字以上にしてください");
-  }
-  await withPool((pool) => {
-    const user = pool.users.find((u) => u.id === userId);
-    if (!user) throw new Error("ユーザーが見つかりません");
-    user.secret = encryptSecret(
-      JSON.stringify({ guardianPassphrase: nextPassphrase.trim() }),
-      masterKey(),
-    );
-    user.updatedAt = new Date().toISOString();
   });
 }
 

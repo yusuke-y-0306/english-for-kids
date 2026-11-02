@@ -15,12 +15,21 @@ import type {
   RegistrationResponseJSON,
 } from "@simplewebauthn/server";
 import { AVATARS } from "@/lib/auth/avatars";
+import { normalizePassphrase } from "@/lib/auth/passphrase";
 import type { PickerUser } from "@/lib/auth/pool";
 
 type Props = {
   users: PickerUser[];
   needsSetup: boolean;
-  adminEnabled: boolean;
+  /** プールには こどもが いるが、この端末では まだ だれも つかっていない */
+  firstTimeDevice?: boolean;
+  /** いま この端末で ログイン中のユーザー (いなければ null) */
+  currentUser?: {
+    id: string;
+    displayName: string;
+    avatar: string;
+    color: string;
+  } | null;
 };
 
 type SetupMode = "first" | "new" | "device";
@@ -115,7 +124,12 @@ function friendlyError(error: unknown): string {
     : "うまく いきませんでした。もういちど おねがいします";
 }
 
-export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
+export default function LoginPanel({
+  users,
+  needsSetup,
+  firstTimeDevice = false,
+  currentUser = null,
+}: Props) {
   const router = useRouter();
   const inAppBrowser = useInAppBrowser();
   const iosThirdParty = useIOSThirdPartyBrowser();
@@ -134,14 +148,50 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
   const [displayName, setDisplayName] = useState("");
   const [avatar, setAvatar] = useState(AVATARS[0].emoji);
   const [passphrase, setPassphrase] = useState("");
-  const [admin, setAdmin] = useState("");
   const [targetUserId, setTargetUserId] = useState(users[0]?.id ?? "");
+  const [logoutBusy, setLogoutBusy] = useState(false);
+  /* はじめての 端末では、合言葉を 確かめてから こどもの なまえを 出す */
+  const [unlockedChildren, setUnlockedChildren] = useState<PickerUser[] | null>(null);
+
+  const children = firstTimeDevice ? (unlockedChildren ?? []) : users;
 
   const selectedUserId = targetUserId || users[0]?.id || "";
+  const passphraseLabel =
+    mode === "first"
+      ? "おうちの 合言葉を きめる（8もじ いじょう）"
+      : "おうちの 合言葉（保護者パスフレーズ）";
 
   function goHome() {
     router.replace("/");
     router.refresh();
+  }
+
+  async function logout() {
+    setLogoutBusy(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.refresh();
+    } finally {
+      setLogoutBusy(false);
+    }
+  }
+
+  /** 合言葉を 確かめて、この端末で つかえる こどもの 一覧を 出す */
+  async function unlockChildren() {
+    setError(null);
+    setBusy(true);
+    try {
+      const { users: list } = await postJson<{ users: PickerUser[] }>(
+        "/api/auth/setup/children",
+        { guardianPassphrase: normalizePassphrase(passphrase) },
+      );
+      setUnlockedChildren(list);
+      if (list[0]) setTargetUserId(list[0].id);
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function login(userId: string) {
@@ -160,6 +210,34 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
         optionsJSON: options,
       });
       await postJson("/api/auth/login/verify", { userId, response });
+      goHome();
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * なまえを えらばずに、この端末に ある パスキーで ログインする。
+   * 「はじめての たんまつ」でも 家族の なまえを 画面に 出さずに済む。
+   */
+  async function loginWithPasskey() {
+    setError(null);
+    setNotice(null);
+    setBusy(true);
+    try {
+      if (!browserSupportsWebAuthn()) {
+        throw new Error("この ブラウザでは ゆび/かお ログインが つかえません");
+      }
+      const { options } = await postJson<{ options: PublicKeyCredentialRequestOptionsJSON }>(
+        "/api/auth/login/options",
+        { usernameless: true },
+      );
+      const response: AuthenticationResponseJSON = await startAuthentication({
+        optionsJSON: options,
+      });
+      await postJson("/api/auth/login/verify", { response });
       goHome();
     } catch (err) {
       setError(friendlyError(err));
@@ -188,10 +266,9 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
 
       const payload: Record<string, unknown> = {
         mode,
-        guardianPassphrase: passphrase,
+        guardianPassphrase: normalizePassphrase(passphrase),
       };
       if (mode === "device") payload.userId = selectedUserId;
-      if (mode === "new") payload.adminPassphrase = admin;
       if (mode === "first" || mode === "new") {
         payload.displayName = displayName;
         payload.avatar = avatar;
@@ -233,6 +310,28 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
 
   return (
     <div className="mt-8">
+      {currentUser && (
+        <div className="mx-auto mb-5 flex max-w-md items-center justify-between gap-3 rounded-2xl border-2 border-white bg-white/85 px-4 py-2.5 shadow-[0_4px_0_rgba(138,90,59,0.12)]">
+          <span className="flex items-center gap-2 text-xs font-extrabold text-[#5b4a3c]">
+            <span
+              aria-hidden
+              className="flex h-7 w-7 items-center justify-center rounded-full text-base"
+              style={{ backgroundColor: currentUser.color }}
+            >
+              {currentUser.avatar}
+            </span>
+            {currentUser.displayName} で ログインちゅう
+          </span>
+          <button
+            type="button"
+            onClick={logout}
+            disabled={logoutBusy}
+            className="rounded-full border-2 border-[#e6d9c8] px-3 py-1.5 text-xs font-extrabold text-[#5b4a3c] transition hover:border-[#f4801f] hover:text-[#c25f0d] disabled:opacity-50"
+          >
+            {logoutBusy ? "…" : "おわる"}
+          </button>
+        </div>
+      )}
       {inAppBrowser && (
         <div className="mx-auto mb-5 max-w-md rounded-2xl border-2 border-[#e0b21c] bg-[#fff8e1] px-4 py-3 text-center text-xs leading-relaxed font-extrabold text-[#a85f08]">
           いま {inAppBrowser} の なか で ひらいています。
@@ -270,6 +369,32 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
         </p>
       )}
 
+      {firstTimeDevice && (
+        <div className="mx-auto max-w-md rounded-[26px] border-4 border-white bg-white/85 p-5 text-center shadow-[0_8px_20px_rgba(122,104,87,0.14)] sm:p-6">
+          <p className="text-base font-extrabold text-ink">はじめての たんまつ ですね</p>
+          <p className="mt-2 text-xs leading-relaxed font-bold text-[#8f7a5e]">
+            この たんまつでは まだ だれも つかっていないので、
+            <br />
+            こどもの なまえは ひょうじ していません。
+            <br />
+            ここで とうろくした こどもだけが、つぎから 出るように なります。
+          </p>
+          <button
+            type="button"
+            onClick={loginWithPasskey}
+            disabled={busy}
+            className="mt-4 inline-flex min-h-12 items-center justify-center rounded-full bg-[#f4801f] px-6 py-3 text-base font-extrabold text-white shadow-[0_5px_0_#c25f0d] transition hover:-translate-y-0.5 hover:shadow-[0_7px_0_#c25f0d] active:translate-y-1 active:shadow-[0_2px_0_#c25f0d] disabled:opacity-60"
+          >
+            {busy ? "…" : "ゆび か かお で ログイン"}
+          </button>
+          <p className="mt-2 text-[0.7rem] leading-relaxed font-bold text-[#8f7a5e]">
+            この たんまつに パスキーが ある ときだけ つかえます。
+            <br />
+            ない ときは 下の「おうちの ひと」から とうろくしてね。
+          </p>
+        </div>
+      )}
+
       {users.length > 0 && !needsSetup && (
         <ul className={`grid grid-cols-2 gap-4 sm:grid-cols-3 ${busyClass}`}>
           {users.map((user) => (
@@ -297,6 +422,16 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
         </ul>
       )}
 
+      {users.length > 0 && !needsSetup && !firstTimeDevice && (
+        <p className="mx-auto mt-4 max-w-md text-center text-[0.7rem] leading-relaxed font-bold text-[#8f7a5e]">
+          はじめて つかう たんまつ の ときは、
+          <br className="sm:hidden" />
+          下の「おうちの ひと」から とうろくしてね。
+          <br />
+          あたらしい こどもを ふやす のも 同じ ばしょ です。
+        </p>
+      )}
+
       {needsSetup && (
         <p className="mb-6 rounded-2xl border-2 border-dashed border-[#e0b21c] bg-[#fff8e1] px-4 py-3 text-center text-sm font-extrabold text-[#a85f08]">
           はじめに、おうちの ひとが とうろくしてね
@@ -308,9 +443,10 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
           <button
             type="button"
             onClick={() => setParentOpen((open) => !open)}
-            className="text-sm font-extrabold text-[#8f7a5e] underline decoration-dotted underline-offset-4 transition hover:text-ink"
+            aria-expanded={parentOpen}
+            className="inline-flex min-h-12 items-center justify-center rounded-full border-2 border-[#d8c7b2] bg-white/80 px-5 py-2.5 text-sm font-extrabold text-[#5b4a3c] shadow-[0_3px_0_rgba(138,90,59,0.14)] transition hover:-translate-y-0.5 hover:border-[#f4801f] hover:text-[#c25f0d] active:translate-y-0.5"
           >
-            {parentOpen ? "とじる" : "おうちの ひとは こちら"}
+            {parentOpen ? "とじる" : "🔑 おうちの ひと（こども・端末を ふやす）"}
           </button>
         </div>
       )}
@@ -321,9 +457,11 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
             おうちの ひと メニュー
           </h2>
           <p className="mt-2 text-center text-xs leading-relaxed font-bold text-[#8f7a5e]">
-            子どもは ID・パスワードを うちません。保護者パスフレーズは
+            子どもは ID・パスワードを うちません。
             <br className="hidden sm:block" />
-            この 端末を 新しく つかえるように するときだけ つかいます。
+            おうちの 合言葉（保護者パスフレーズ）は 1 つだけ。
+            <br className="hidden sm:block" />
+            こどもを ふやす ときも、端末を ふやす ときも 同じ 合言葉です。
           </p>
 
           {!needsSetup && (
@@ -333,13 +471,11 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
                 onClick={() => setMode("device")}
                 label="この たんまつを とうろく"
               />
-              {adminEnabled && (
-                <ModeButton
-                  active={mode === "new"}
-                  onClick={() => setMode("new")}
-                  label="あたらしい こどもを ふやす"
-                />
-              )}
+              <ModeButton
+                active={mode === "new"}
+                onClick={() => setMode("new")}
+                label="あたらしい こどもを ふやす"
+              />
             </div>
           )}
 
@@ -382,7 +518,7 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
               </>
             )}
 
-            {mode === "device" && users.length > 0 && (
+            {mode === "device" && children.length > 0 && (
               <label className="block">
                 <span className="text-xs font-extrabold text-[#5b4a3c]">どの こども？</span>
                 <select
@@ -390,7 +526,7 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
                   onChange={(e) => setTargetUserId(e.target.value)}
                   className="mt-1 w-full rounded-xl border-2 border-[#e6d9c8] bg-white px-3 py-2.5 text-base font-bold text-ink outline-none focus:border-[#f4801f]"
                 >
-                  {users.map((user) => (
+                  {children.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.avatar} {user.displayName}
                     </option>
@@ -399,44 +535,54 @@ export default function LoginPanel({ users, needsSetup, adminEnabled }: Props) {
               </label>
             )}
 
-            {mode === "new" && (
-              <label className="block">
-                <span className="text-xs font-extrabold text-[#5b4a3c]">
-                  管理者パスフレーズ（おうちの ひと）
-                </span>
-                <input
-                  type="password"
-                  value={admin}
-                  onChange={(e) => setAdmin(e.target.value)}
-                  autoComplete="current-password"
-                  className="mt-1 w-full rounded-xl border-2 border-[#e6d9c8] bg-white px-3 py-2.5 text-base font-bold text-ink outline-none focus:border-[#f4801f]"
-                />
-              </label>
+            {mode === "device" && children.length === 0 && (
+              <p className="rounded-2xl border-2 border-dashed border-[#e0b21c] bg-[#fff8e1] px-4 py-3 text-center text-xs leading-relaxed font-extrabold text-[#a85f08]">
+                はじめての たんまつ なので、まだ なまえを 出していません。
+                <br />
+                おうちの 合言葉を いれて「つぎへ」を おしてね。
+              </p>
             )}
 
             <label className="block">
               <span className="text-xs font-extrabold text-[#5b4a3c]">
-                {mode === "first" || mode === "new"
-                  ? "保護者パスフレーズ（8もじ いじょう）"
-                  : "この こどもの 保護者パスフレーズ"}
+                {passphraseLabel}
+              </span>
+              <span className="mt-1 block text-[0.7rem] leading-relaxed font-bold text-[#8f7a5e]">
+                {mode === "first"
+                  ? "これが おうち 共通の 合言葉に なります。わすれないように メモしてね。"
+                  : "おうちの ひとが さいしょに きめた 合言葉です。"}
               </span>
               <input
                 type="password"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
                 autoComplete="new-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 className="mt-1 w-full rounded-xl border-2 border-[#e6d9c8] bg-white px-3 py-2.5 text-base font-bold text-ink outline-none focus:border-[#f4801f]"
               />
             </label>
 
-            <button
-              type="button"
-              onClick={register}
-              disabled={busy}
-              className="mt-1 inline-flex min-h-12 items-center justify-center rounded-full bg-[#f4801f] px-6 py-3 text-base font-extrabold text-white shadow-[0_5px_0_#c25f0d] transition hover:-translate-y-0.5 hover:shadow-[0_7px_0_#c25f0d] active:translate-y-1 active:shadow-[0_2px_0_#c25f0d] disabled:opacity-60"
-            >
-              {busy ? "とうろく ちゅう…" : "ゆび/かお を とうろく する"}
-            </button>
+            {mode === "device" && children.length === 0 ? (
+              <button
+                type="button"
+                onClick={unlockChildren}
+                disabled={busy}
+                className="mt-1 inline-flex min-h-12 items-center justify-center rounded-full bg-badge px-6 py-3 text-base font-extrabold text-white shadow-[0_5px_0_rgba(61,50,41,0.35)] transition hover:-translate-y-0.5 active:translate-y-1 disabled:opacity-60"
+              >
+                {busy ? "かくにん ちゅう…" : "つぎへ"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={register}
+                disabled={busy}
+                className="mt-1 inline-flex min-h-12 items-center justify-center rounded-full bg-[#f4801f] px-6 py-3 text-base font-extrabold text-white shadow-[0_5px_0_#c25f0d] transition hover:-translate-y-0.5 hover:shadow-[0_7px_0_#c25f0d] active:translate-y-1 active:shadow-[0_2px_0_#c25f0d] disabled:opacity-60"
+              >
+                {busy ? "とうろく ちゅう…" : "ゆび/かお を とうろく する"}
+              </button>
+            )}
           </div>
         </section>
       )}
