@@ -5,12 +5,31 @@ import {
   buildCsp,
   createNonce,
 } from "@/lib/security/csp";
+import { denialFor, evaluateRoute, isApiPath } from "@/lib/auth/gate";
+import { checkRequestSession } from "@/lib/auth/verify";
 
 /**
- * セキュリティヘッダ (issue #33)
+ * リクエストの入口 — **(1) 認可の強制 (2) セキュリティヘッダ**
+ *
+ * ## 1. 認可は default-deny
+ *
+ * 個人情報を出す前にセッションを検証する、という規則をここで **一箇所** に集約する。
+ * `gate.ts` の allowlist に載っている経路だけが素通りし、それ以外は全て
+ * 署名・期限・ユーザー存在を検証される。新しいページや API を足したときに
+ * 開発者が何もしなくても **守られる**（守り忘れという失敗の仕方を消す）。
+ *
+ * ここで閉じないもの:
+ *  - 静的資産 / Next.js の内部 (`/_next/`, `/favicon.ico`)
+ *  - ログイン手続き (`/login`, `/api/auth/login/*`, `/api/auth/setup/*`)
+ *  - `logout` (cookie を消すだけ)
+ *
+ * 二重の防御として、各 Route Handler も `requireUser()` を通す。proxy が
+ * 唯一の壁だと、proxy の設定ミスがそのまま全公開になるため。
+ *
+ * ## 2. CSP (issue #33)
  *
  * 値が固定のヘッダは next.config.ts の headers() にある。
- * ここでしか作れないのは **CSP** だけ:
+ * ここでしか作れないのは CSP だけ:
  *  - nonce がリクエストごとに変わる
  *  - Next.js は request の CSP ヘッダから nonce を抜き出して自前の inline script に付ける
  *
@@ -30,7 +49,31 @@ function isLoopbackHost(hostname: string): boolean {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  /* ---------- 1. 認可 (default-deny) ---------- */
+
+  if (evaluateRoute(pathname) === "session") {
+    const session = await checkRequestSession((name) => request.cookies.get(name)?.value);
+
+    if (!session.ok) {
+      const denial = denialFor(pathname);
+      if (denial.kind === "json") {
+        return NextResponse.json(
+          { ok: false, error: "ログインが必要です" },
+          { status: denial.status, headers: { "cache-control": "no-store" } },
+        );
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = denial.to;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  /* ---------- 2. CSP ---------- */
+
   const nonce = createNonce();
   const csp = buildCsp({
     nonce,
@@ -46,15 +89,22 @@ export function proxy(request: NextRequest) {
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set(headerName, csp);
+
+  // JSON に CSP は意味が無いので付けない (HTML を返す経路だけ)
+  if (isApiPath(pathname)) {
+    response.headers.delete(headerName);
+  }
+
   return response;
 }
 
 export const config = {
   /**
-   * HTML を返す経路だけを対象にする。
-   *  - `api/`: JSON しか返さない (CSP は無意味)
-   *  - `_next/static`, `_next/image`, `favicon.ico`: 静的なので nonce 不要
-   * 値が固定のヘッダ (COOP/COEP など) は next.config.ts 側で全経路に付く。
+   * **認可を掛けるために `api/` も対象にする** (以前は CSP の都合で除外していた)。
+   * 個人情報を含む JSON を返すのは API なので、ここを外すと入口の門番がいなくなる。
+   *
+   * 除外するのは「リクエストごとに何も変えなくてよい静的資産」だけ。
+   *  - `_next/static`, `_next/image`: ビルド成果物
    */
-  matcher: ["/((?!api/|_next/|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image).*)"],
 };

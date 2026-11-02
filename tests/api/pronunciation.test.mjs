@@ -128,8 +128,10 @@ before(async () => {
   const deadline = Date.now() + 60_000;
   for (;;) {
     try {
-      const res = await fetch(`${baseUrl}/api/auth/me`);
-      if (res.ok) break;
+      // 認可の入口 (proxy) が入ったので、未ログインの /api/auth/me は 401 を返す。
+      // 「応答が返ってきた = 起動した」と見なす (ステータスは問わない)。
+      await fetch(`${baseUrl}/api/auth/me`);
+      break;
     } catch {
       // まだ起動中
     }

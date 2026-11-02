@@ -1,5 +1,5 @@
 import { listUsersForPicker, readPool } from "@/lib/auth/pool";
-import { readDeviceUsers } from "@/lib/auth/device";
+import { deviceAccess } from "@/lib/auth/guard";
 import { getCurrentUser } from "@/lib/auth/session";
 import LoginPanel from "./LoginPanel";
 
@@ -19,15 +19,14 @@ export const metadata = {
 export default async function LoginPage() {
   const current = await getCurrentUser();
 
-  const [allUsers, pool, deviceUsers] = await Promise.all([
-    listUsersForPicker(),
-    readPool(),
-    readDeviceUsers(),
-  ]);
-
   /* この端末で つかったことのある こどもだけを出す。
-     URL を知っているだけの 新しい端末に 家族の なまえを 見せない。 */
-  const users = allUsers.filter((user) => deviceUsers.includes(user.id));
+     URL を知っているだけの 新しい端末に 家族の なまえを 見せない。
+     絞り込みは呼び出し側ではなく `deviceAccess()` の許可証が持っている
+     (listUsersForPicker は許可証の範囲外を返さない)。 */
+  const [users, pool] = await Promise.all([
+    listUsersForPicker(await deviceAccess()),
+    readPool(),
+  ]);
   const firstTimeDevice = pool.users.length > 0 && users.length === 0;
 
   return (
