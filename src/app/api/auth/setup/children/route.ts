@@ -1,5 +1,6 @@
 import { clientKey, jsonError, jsonOk, readJson } from "@/lib/auth/http";
-import { listUsersForPicker, verifyFamilyPassphrase } from "@/lib/auth/pool";
+import { listUsersForPicker } from "@/lib/auth/pool";
+import { guardianAccess } from "@/lib/auth/guard";
 import {
   clearFailures,
   isLocked,
@@ -23,11 +24,12 @@ export async function POST(request: Request) {
   const lockKey = `children:${ip}`;
   if (isLocked(lockKey)) return jsonError(lockMessage(), 429);
 
-  if (!(await verifyFamilyPassphrase(body?.guardianPassphrase ?? ""))) {
+  const access = await guardianAccess(body?.guardianPassphrase ?? "");
+  if (!access) {
     recordFailure(lockKey);
     return jsonError("合言葉（保護者パスフレーズ）が ちがいます", 403);
   }
   clearFailures(lockKey);
 
-  return jsonOk({ users: await listUsersForPicker() });
+  return jsonOk({ users: await listUsersForPicker(access) });
 }

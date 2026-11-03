@@ -10,6 +10,7 @@ import {
   type EncryptedSecret,
 } from "./crypto";
 import { normalizePassphrase } from "./passphrase";
+import { filterVisible, type PersonalDataAccess } from "./access";
 
 /**
  * ユーザープール — DB を使わず、テキストファイル (JSON) で管理する。
@@ -133,10 +134,17 @@ export type PickerUser = {
   credentialCount: number;
 };
 
-/** ログイン画面用の一覧 (秘密や公開鍵は返さない) */
-export async function listUsersForPicker(): Promise<PickerUser[]> {
+/**
+ * ログイン画面用の一覧 (秘密や公開鍵は返さない)。
+ *
+ * **`PersonalDataAccess` を要求する。** 認可を通していないコードは呼べない
+ * (コンパイルエラー)。返す範囲も許可証の `visibleUserIds` に絞られる。
+ */
+export async function listUsersForPicker(
+  access: PersonalDataAccess,
+): Promise<PickerUser[]> {
   const pool = await readPool();
-  return pool.users.map((u) => ({
+  return filterVisible(pool.users, access).map((u) => ({
     id: u.id,
     displayName: u.displayName,
     avatar: u.avatar,
