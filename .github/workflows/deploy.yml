@@ -29,6 +29,10 @@ jobs:
     name: deploy to VPS (ssh)
     runs-on: ubuntu-latest
     steps:
+      # NOTE: ビルド前に `.next` を消す。VPS 上に古い `.next/dev/types/validator.ts` が
+      #   残っていると、削除したルート (例: /api/auth/users) を参照して `next build` の
+      #   型チェックが落ちる (2026-11-04 の #56 デプロイ失敗)。CI はクリーンな checkout
+      #   なので再現せず、本番だけが壊れる = 一番たちが悪い。
       - name: Deploy over SSH
         id: deploy
         env:
@@ -46,7 +50,7 @@ jobs:
               -o StrictHostKeyChecking=accept-new \
               -o ServerAliveInterval=30 \
               "${VPS_USER}@${VPS_HOST}" \
-              'set -euo pipefail; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; cd "$HOME/apps/english-for-kids"; git fetch --prune origin; git reset --hard origin/main; npm ci; npm run build; systemctl --user restart english-for-kids.service; sleep 2; curl -fsS -o /dev/null http://127.0.0.1:3000/ && echo "deploy OK"; url_from_log() { journalctl --user -u cloudflared-quick -o cat --no-pager 2>/dev/null | grep -Eo "https://[a-z0-9-]+\.trycloudflare\.com" | tail -1; }; URL=$(url_from_log || true); if [ -z "${URL}" ] || ! curl -fsS -o /dev/null --max-time 10 "${URL}/login"; then echo "stale tunnel URL (${URL:-none}) - restarting cloudflared-quick"; systemctl --user restart cloudflared-quick; URL=""; for _ in $(seq 1 20); do sleep 3; URL=$(url_from_log || true); if [ -n "${URL}" ] && curl -fsS -o /dev/null --max-time 10 "${URL}/login"; then break; fi; URL=""; done; fi; if [ -z "${URL}" ]; then echo "tunnel URL not available" >&2; else echo "SITE_URL=${URL}"; fi' \
+              'set -euo pipefail; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; cd "$HOME/apps/english-for-kids"; git fetch --prune origin; git reset --hard origin/main; rm -rf .next; npm ci; npm run build; systemctl --user restart english-for-kids.service; sleep 2; curl -fsS -o /dev/null http://127.0.0.1:3000/ && echo "deploy OK"; url_from_log() { journalctl --user -u cloudflared-quick -o cat --no-pager 2>/dev/null | grep -Eo "https://[a-z0-9-]+\.trycloudflare\.com" | tail -1; }; URL=$(url_from_log || true); if [ -z "${URL}" ] || ! curl -fsS -o /dev/null --max-time 10 "${URL}/login"; then echo "stale tunnel URL (${URL:-none}) - restarting cloudflared-quick"; systemctl --user restart cloudflared-quick; URL=""; for _ in $(seq 1 20); do sleep 3; URL=$(url_from_log || true); if [ -n "${URL}" ] && curl -fsS -o /dev/null --max-time 10 "${URL}/login"; then break; fi; URL=""; done; fi; if [ -z "${URL}" ]; then echo "tunnel URL not available" >&2; else echo "SITE_URL=${URL}"; fi' \
               | tee /tmp/deploy.log
 
           # 公開URLは quick tunnel 由来で再起動ごとに変わる。デプロイのたびに
