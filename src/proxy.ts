@@ -52,6 +52,27 @@ function isLoopbackHost(hostname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  /*
+   * CSP は **認可より先に** 組み立てる。
+   * 未ログインで /login へ返す 307 にもヘッダを付けたいため
+   * (「このアプリが出す HTML 系の応答には必ず CSP が付く」を例外なしにする)。
+   */
+  const nonce = createNonce();
+  const csp = buildCsp({
+    nonce,
+    development: isDevelopment,
+    upgradeInsecureRequests: !isLoopbackHost(request.nextUrl.hostname),
+  });
+
+  const headerName = reportOnly ? CSP_REPORT_ONLY_HEADER : CSP_HEADER;
+  const isApi = isApiPath(pathname);
+
+  /** HTML 系の応答には漏れなく CSP を付ける (JSON には意味が無いので付けない) */
+  const withCsp = <T extends NextResponse>(response: T): T => {
+    if (!isApi) response.headers.set(headerName, csp);
+    return response;
+  };
+
   /* ---------- 1. 認可 (default-deny) ---------- */
 
   if (evaluateRoute(pathname) === "session") {
@@ -68,34 +89,23 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = denial.to;
       url.search = "";
-      return NextResponse.redirect(url);
+      return withCsp(
+        NextResponse.redirect(url, {
+          // 認可の結果を CDN / ブラウザに覚えさせない (ログイン後に古い 307 を掴まない)
+          headers: { "cache-control": "no-store" },
+        }),
+      );
     }
   }
 
   /* ---------- 2. CSP ---------- */
-
-  const nonce = createNonce();
-  const csp = buildCsp({
-    nonce,
-    development: isDevelopment,
-    upgradeInsecureRequests: !isLoopbackHost(request.nextUrl.hostname),
-  });
-
-  const headerName = reportOnly ? CSP_REPORT_ONLY_HEADER : CSP_HEADER;
 
   const requestHeaders = new Headers(request.headers);
   // Next.js はこの request ヘッダを読んで nonce を inline script に付与する
   requestHeaders.set(headerName, csp);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
-  response.headers.set(headerName, csp);
-
-  // JSON に CSP は意味が無いので付けない (HTML を返す経路だけ)
-  if (isApiPath(pathname)) {
-    response.headers.delete(headerName);
-  }
-
-  return response;
+  return withCsp(response);
 }
 
 export const config = {
