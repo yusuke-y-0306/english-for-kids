@@ -1,6 +1,7 @@
 import { SESSION_COOKIE, sessionSecret, sessionUaStrict } from "./config";
 import { verifyToken } from "./crypto";
 import { findUser, type PoolUser } from "./pool";
+import { checkSessionFreshness } from "./session-check";
 import type { SessionPayload } from "./token";
 import { bindingOf, compareBinding } from "./ua";
 
@@ -26,7 +27,9 @@ export type SessionFailure =
   | "bad-signature"
   | "expired"
   | "no-user"
-  | "ua-mismatch";
+  | "ua-mismatch"
+  /** 失効済み (tokenVersion / device.version が上がっている) — issue #52 */
+  | "revoked";
 
 /**
  * `rebind` は「通すが、いまの端末の指紋で cookie を再発行したい」の意。
@@ -91,6 +94,9 @@ export async function checkSessionToken(
 
   const user = await findUser(base.session.uid);
   if (!user) return { ok: false, reason: "no-user" };
+
+  /* 失効していないか (全端末 / 端末単位)。issue #52 */
+  if (checkSessionFreshness(base.session, user)) return { ok: false, reason: "revoked" };
 
   return verdict === "ok"
     ? { ok: true, session: base.session, user }

@@ -38,7 +38,8 @@ function signToken(payload) {
 
 function sessionCookie(uid, { expired = false } = {}) {
   const now = Math.floor(Date.now() / 1000);
-  return signToken({ uid, iat: now - 60, exp: expired ? now - 10 : now + 3600 });
+  /* tv / dv はセッションの世代 (issue #52)。無いと失効扱いで 401 になる */
+  return signToken({ uid, iat: now - 60, exp: expired ? now - 10 : now + 3600, tv: 0, dv: 0 });
 }
 
 /** 末尾の署名を壊した cookie (フォーマットは正しい = 改ざんされた状態) */

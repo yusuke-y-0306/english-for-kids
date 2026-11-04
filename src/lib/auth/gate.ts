@@ -34,6 +34,16 @@ export const PUBLIC_EXACT: readonly PublicRoute[] = [
     path: "/api/auth/logout",
     reason: "cookie を消すだけで個人情報を返さない。セッションが死んでいても叩ける必要がある",
   },
+  {
+    path: "/api/auth/revoke",
+    reason:
+      "本人のセッション、または おうちの 合言葉を確かめてから失効する。合言葉が違えば 403 (issue #52)",
+  },
+  {
+    path: "/api/auth/devices",
+    reason:
+      "おうちの 合言葉を確かめてから、その子の端末一覧 (UA ハッシュ) だけを返す (issue #52)",
+  },
 ] as const;
 
 /** 前方一致で公開する経路 */

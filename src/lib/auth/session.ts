@@ -9,7 +9,8 @@ import {
   sessionUaStrict,
 } from "./config";
 import { signToken, verifyToken, type EncryptedSecret } from "./crypto";
-import { findUser, type PoolUser } from "./pool";
+import { findUser, recordLoginDevice, type PoolUser } from "./pool";
+import { checkSessionFreshness } from "./session-check";
 import { issueSessionToken, type SessionPayload } from "./token";
 import { bindingOf, compareBinding } from "./ua";
 
@@ -33,7 +34,10 @@ export async function setSessionCookie(userId: string): Promise<void> {
   const store = await cookies();
   /* 発行した端末を覚えておく。以後のリクエストで UA が変わっていたら弾く/再発行する */
   const binding = bindingOf((await headers()).get("user-agent"));
-  store.set(SESSION_COOKIE, issueSessionToken(userId, binding), {
+  /* この時点の世代を cookie に載せる。以後 tokenVersion / device.version が
+     上がれば、この cookie は即座に無効になる (issue #52) */
+  const versions = await recordLoginDevice(userId, binding);
+  store.set(SESSION_COOKIE, issueSessionToken(userId, binding, versions), {
     httpOnly: true,
     sameSite: "lax",
     secure: await isSecureRequest(),
@@ -84,7 +88,11 @@ export const getCurrentUser = cache(async (): Promise<PoolUser | null> => {
   const session = await readSession();
   if (!session) return null;
   const user = await findUser(session.uid);
-  return user ?? null;
+  if (!user) return null;
+  /* 失効 (全端末 / 端末単位) されていたら「ログインしていない」扱い。
+     ユーザーが消えている場合と同じ。issue #52 */
+  if (checkSessionFreshness(session, user)) return null;
+  return user;
 });
 
 /* ------------------------------------------------------------------ */

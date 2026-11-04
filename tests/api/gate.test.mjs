@@ -25,6 +25,14 @@ import { uaHashOf } from "../../src/lib/auth/ua.ts";
 const SESSION_SECRET = randomBytes(32).toString("hex");
 const USER_A = "u_alpha000000000000";
 
+/* issue #52 / #53 のテストで使う UA (端末の記録を before() で作る) */
+const UA_IPHONE =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1";
+const UA_IPHONE_UPDATED =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+const UA_ANDROID =
+  "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
+
 let baseUrl;
 let server;
 let dataDir;
@@ -37,7 +45,8 @@ function signToken(payload) {
 
 function sessionCookie(uid, binding) {
   const now = Math.floor(Date.now() / 1000);
-  return signToken({ uid, iat: now - 60, exp: now + 3600, ...(binding ?? {}) });
+  /* tv / dv は世代 (issue #52)。古い cookie の再現は signToken を直に使う */
+  return signToken({ uid, iat: now - 60, exp: now + 3600, tv: 0, dv: 0, ...(binding ?? {}) });
 }
 
 async function freePort() {
@@ -70,6 +79,13 @@ before(async () => {
           avatar: "fox",
           color: "#7dd3fc",
           credentials: [],
+          tokenVersion: 0,
+          devices: [UA_IPHONE, UA_IPHONE_UPDATED, UA_ANDROID].map((ua) => ({
+            ua: uaHashOf(ua),
+            uc: ua.includes("iPhone") ? "iphone" : "android",
+            version: 0,
+            lastSeenAt: new Date().toISOString(),
+          })),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -195,12 +211,9 @@ describe("公開経路は通る", () => {
  * 「ブラウザ更新で家族を締め出さない」ことを両方固定する。
  */
 describe("端末 (User-Agent) の紐付け", () => {
-  const IPHONE =
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1";
-  const IPHONE_UPDATED =
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
-  const ANDROID =
-    "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
+  const IPHONE = UA_IPHONE;
+  const IPHONE_UPDATED = UA_IPHONE_UPDATED;
+  const ANDROID = UA_ANDROID;
 
   const boundTo = (ua, cls) => sessionCookie(USER_A, { ua: uaHashOf(ua), uc: cls });
 

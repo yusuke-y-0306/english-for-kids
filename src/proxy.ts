@@ -9,6 +9,7 @@ import { SESSION_COOKIE, SESSION_MAX_AGE_SEC } from "@/lib/auth/config";
 import { denialFor, evaluateRoute, isApiPath } from "@/lib/auth/gate";
 import { issueSessionToken } from "@/lib/auth/token";
 import { bindingOf } from "@/lib/auth/ua";
+import { recordLoginDevice } from "@/lib/auth/pool";
 import { checkRequestSession } from "@/lib/auth/verify";
 
 /**
@@ -145,21 +146,20 @@ export async function proxy(request: NextRequest) {
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
 
-  /* 端末の指紋が変わっていたら、いまのリクエストの UA で cookie を更新する */
+  /* 端末の指紋が変わっていたら、いまのリクエストの UA で cookie を更新する。
+     端末の記録も更新する (version 0 の新しい端末として登録される) ので、
+     次のリクエストで「覚えの無い端末」にならない。issue #52 / #53 */
   if (rebind) {
-    response.cookies.set(
-      SESSION_COOKIE,
-      issueSessionToken(rebind.uid, bindingOf(request.headers.get("user-agent"))),
-      {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: isSecureRequest(request),
-        path: "/",
-        maxAge: SESSION_MAX_AGE_SEC,
-      },
-    );
+    const binding = bindingOf(request.headers.get("user-agent"));
+    const versions = await recordLoginDevice(rebind.uid, binding);
+    response.cookies.set(SESSION_COOKIE, issueSessionToken(rebind.uid, binding, versions), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isSecureRequest(request),
+      path: "/",
+      maxAge: SESSION_MAX_AGE_SEC,
+    });
   }
-
   return withCsp(response);
 }
 
