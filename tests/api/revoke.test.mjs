@@ -11,11 +11,11 @@ import { encryptSecret } from "../../src/lib/auth/crypto.ts";
 import { uaHashOf } from "../../src/lib/auth/ua.ts";
 
 /**
- * セッションの即時失効 — issue #52
+ * セッションの即時失効 — issue #52 / #62
  *
  * 署名 cookie はステートレスなので、放っておくと「発行済みのセッションを殺す手段」が
- * 無い（ログアウトは自分の cookie を消すだけ）。端末を失くした子のセッションを
- * 親が切れることを、HTTP 越しに固定する。
+ * 無い。端末を失くした子のセッションを親が切れること (#52) と、**本人がログアウトと
+ * 言ったときにサーバ側でも死ぬ**こと (#62) を、HTTP 越しに固定する。
  *
  * 実行: npm run build && npm run test:api
  */
@@ -27,6 +27,10 @@ const FAMILY = "family-passphrase-52";
 const USER_TOKEN = "u_token0000000000000";
 const USER_DEVICE = "u_device000000000000";
 const USER_GUARDIAN = "u_guardian000000000";
+/* ログアウト (#62) 用。端末 2 台ぶんの記録を持つ */
+const USER_LOGOUT = "u_logout0000000000000";
+/* 巻き添えが無いことを見るための赤の他人 */
+const USER_BYSTANDER = "u_bystander0000000000";
 
 const IPHONE =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1";
@@ -130,6 +134,17 @@ before(async () => {
         },
         /* 合言葉で切るテスト用 */
         { ...user(USER_GUARDIAN, "Guardian"), tokenVersion: 0, devices: [] },
+        /* ログアウトで端末単位に切るテスト用 (2 台ぶんの記録) */
+        {
+          ...user(USER_LOGOUT, "Logout"),
+          tokenVersion: 0,
+          devices: [
+            { ua: uaHashOf(IPHONE), uc: "iphone", version: 0, lastSeenAt: now },
+            { ua: uaHashOf(IPHONE_UPDATED), uc: "iphone", version: 0, lastSeenAt: now },
+          ],
+        },
+        /* 別人のセッションが巻き添えにならないことの確認用 */
+        { ...user(USER_BYSTANDER, "Bystander"), tokenVersion: 0, devices: [] },
       ],
     }),
   );
@@ -293,5 +308,82 @@ describe("合言葉による失効 (端末を失くした子)", () => {
   test("ログインしていない人の失効はできない", async () => {
     const res = await post("/api/auth/revoke", { scope: "all" });
     assert.equal(res.status, 401);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* ログアウトもサーバ側の失効を通ること — issue #62                      */
+/* ------------------------------------------------------------------ */
+
+/** users.json の現在の世代を読む (cookie を「いま正しい世代」で組み立てるため) */
+async function versionOf(uid, ua) {
+  const pool = JSON.parse(await readFile(path.join(dataDir, "users.json"), "utf8"));
+  const user = pool.users.find((x) => x.id === uid);
+  assert.ok(user, `ユーザー ${uid} が見つかりません`);
+  const device = (user.devices ?? []).find((d) => d.ua === uaHashOf(ua));
+  return { tokenVersion: user.tokenVersion ?? 0, deviceVersion: device?.version ?? 0 };
+}
+
+describe("ログアウト — サーバ側でも失効させる (issue #62)", () => {
+  test("ログアウトすると、その cookie はサーバ側でも通らなくなる", async () => {
+    const { tokenVersion, deviceVersion } = await versionOf(USER_LOGOUT, IPHONE);
+    const cookie = cookieFor(USER_LOGOUT, IPHONE, tokenVersion, deviceVersion);
+    assert.equal((await get("/api/auth/me", { cookie })).status, 200);
+
+    const res = await post("/api/auth/logout", {}, { cookie });
+    assert.equal(res.status, 200);
+    assert.equal((await res.json()).loggedOut, true);
+
+    /* ブラウザから消しただけでなく、同じ cookie を投げ直しても通らない */
+    assert.equal((await get("/api/auth/me", { cookie })).status, 401);
+    const html = await get("/quiz", { cookie });
+    assert.equal(html.status, 307);
+    assert.match(html.headers.get("location") ?? "", /\/login$/);
+
+    /* 端末の記憶 (efk_device) は消さない (次のログイン候補は残す) */
+    assert.ok(!(res.headers.get("set-cookie") ?? "").includes("efk_device=;"));
+  });
+
+  test("同じ端末の別タブも一緒に切れる", async () => {
+    const { tokenVersion, deviceVersion } = await versionOf(USER_LOGOUT, IPHONE);
+    const tab1 = cookieFor(USER_LOGOUT, IPHONE, tokenVersion, deviceVersion);
+    const tab2 = cookieFor(USER_LOGOUT, IPHONE, tokenVersion, deviceVersion);
+
+    assert.equal((await post("/api/auth/logout", {}, { cookie: tab1 })).status, 200);
+    assert.equal((await get("/api/auth/me", { cookie: tab2 })).status, 401);
+  });
+
+  test("他の端末と兄弟のセッションは巻き添えにならない", async () => {
+    const other = await versionOf(USER_LOGOUT, IPHONE_UPDATED);
+    const otherDevice = cookieFor(USER_LOGOUT, IPHONE_UPDATED, other.tokenVersion, other.deviceVersion);
+    const bystanderTv = (await versionOf(USER_BYSTANDER, IPHONE)).tokenVersion;
+    const bystander = sessionCookie(USER_BYSTANDER, { tv: bystanderTv });
+
+    const mine = await versionOf(USER_LOGOUT, IPHONE);
+    const cookie = cookieFor(USER_LOGOUT, IPHONE, mine.tokenVersion, mine.deviceVersion);
+    assert.equal((await post("/api/auth/logout", {}, { cookie })).status, 200);
+
+    assert.equal(
+      (await get("/api/auth/me", { cookie: otherDevice, ua: IPHONE_UPDATED })).status,
+      200,
+      "同じ子の別端末まで切ってはいけない",
+    );
+    assert.equal(
+      (await get("/api/auth/me", { cookie: bystander })).status,
+      200,
+      "他人のセッションを切ってはいけない",
+    );
+  });
+
+  test("ログアウト後に再ログインしたセッションは通る (世代が上がっても壊れない)", async () => {
+    const { tokenVersion, deviceVersion } = await versionOf(USER_LOGOUT, IPHONE);
+    const fresh = cookieFor(USER_LOGOUT, IPHONE, tokenVersion, deviceVersion);
+    assert.equal((await get("/api/auth/me", { cookie: fresh })).status, 200);
+  });
+
+  test("セッションが無くてもログアウトは成功する (cookie の掃除)", async () => {
+    const res = await post("/api/auth/logout", {});
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get("set-cookie") ?? "", /efk_session=;/);
   });
 });
