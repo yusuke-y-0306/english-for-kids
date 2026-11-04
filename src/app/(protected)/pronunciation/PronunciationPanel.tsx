@@ -27,7 +27,16 @@ import { categories, wordId } from "@/lib/words";
  *  - 記録に失敗しても練習は止めない (子どもの学習を通信の都合で妨げない)。
  */
 
-type PracticeWord = { id: string; en: string; ja: string; emoji: string };
+type PracticeWord = {
+  id: string;
+  en: string;
+  ja: string;
+  emoji: string;
+  /** 同音語 (two → "too")。採点で ok として吸収する */
+  homophones?: string[];
+  /** 言い換え (mother → "mom")。採点では close 止まり */
+  variants?: string[];
+};
 
 const PRACTICE_WORDS: PracticeWord[] = categories.flatMap((category) =>
   category.words.map((word) => ({
@@ -110,7 +119,11 @@ export default function PronunciationPanel() {
     try {
       const recognizer = createDeviceRecognizer(decision);
       const { transcript } = await listenOnce(recognizer);
-      const scored = scorePronunciation(transcript, word.en);
+      // 同音語・言い換えは単語データ側の許容を渡して吸収する (issue #40)
+      const scored = scorePronunciation(transcript, word.en, {
+        homophones: word.homophones,
+        variants: word.variants,
+      });
       finish(scored.score, scored.hint, transcript);
     } catch (error) {
       // 端末内と証明できない/エラーが出た経路は**リトライしない**。
@@ -126,7 +139,7 @@ export default function PronunciationPanel() {
       }
       setPhase("ready");
     }
-  }, [decision, finish, phase, word.en]);
+  }, [decision, finish, phase, word.en, word.homophones, word.variants]);
 
   /** 自己申告 (最後の砦) */
   const selfReport = useCallback(

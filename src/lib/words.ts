@@ -2,6 +2,13 @@ export type Word = {
   en: string;
   ja: string;
   emoji: string;
+  /**
+   * 同じ音で綴りが違う語。認識器は音を文字に落とすので、これらが返ってきても正解にする
+   * (two → "too" / eye → "I")。採点は `scorePronunciation()` の `homophones` に渡す。
+   */
+  homophones?: string[];
+  /** 意味は同じだが別の語 (mother → "mom")。お手本の語ではないので `ok` にはせず `close` 止まり */
+  variants?: string[];
 };
 
 export type Category = {
@@ -38,7 +45,7 @@ export const categories: Category[] = [
     words: [
       { en: "apple", ja: "りんご", emoji: "🍎" },
       { en: "banana", ja: "バナナ", emoji: "🍌" },
-      { en: "bread", ja: "パン", emoji: "🍞" },
+      { en: "bread", ja: "パン", emoji: "🍞", homophones: ["bred"] },
       { en: "milk", ja: "ぎゅうにゅう", emoji: "🥛" },
       { en: "rice", ja: "ごはん", emoji: "🍚" },
       { en: "egg", ja: "たまご", emoji: "🥚" },
@@ -52,8 +59,8 @@ export const categories: Category[] = [
     emoji: "🎨",
     color: "from-fuchsia-300 to-purple-400",
     words: [
-      { en: "red", ja: "あか", emoji: "🔴" },
-      { en: "blue", ja: "あお", emoji: "🔵" },
+      { en: "red", ja: "あか", emoji: "🔴", homophones: ["read"] },
+      { en: "blue", ja: "あお", emoji: "🔵", homophones: ["blew"] },
       { en: "yellow", ja: "きいろ", emoji: "🟡" },
       { en: "green", ja: "みどり", emoji: "🟢" },
       { en: "black", ja: "くろ", emoji: "⚫" },
@@ -68,14 +75,14 @@ export const categories: Category[] = [
     emoji: "🔢",
     color: "from-sky-300 to-blue-400",
     words: [
-      { en: "one", ja: "1", emoji: "1️⃣" },
-      { en: "two", ja: "2", emoji: "2️⃣" },
+      { en: "one", ja: "1", emoji: "1️⃣", homophones: ["won"] },
+      { en: "two", ja: "2", emoji: "2️⃣", homophones: ["too", "to"] },
       { en: "three", ja: "3", emoji: "3️⃣" },
-      { en: "four", ja: "4", emoji: "4️⃣" },
+      { en: "four", ja: "4", emoji: "4️⃣", homophones: ["for", "fore"] },
       { en: "five", ja: "5", emoji: "5️⃣" },
       { en: "six", ja: "6", emoji: "6️⃣" },
       { en: "seven", ja: "7", emoji: "7️⃣" },
-      { en: "eight", ja: "8", emoji: "8️⃣" },
+      { en: "eight", ja: "8", emoji: "8️⃣", homophones: ["ate"] },
     ],
   },
   {
@@ -85,13 +92,13 @@ export const categories: Category[] = [
     color: "from-emerald-300 to-teal-400",
     words: [
       { en: "head", ja: "あたま", emoji: "🗣️" },
-      { en: "eye", ja: "め", emoji: "👁️" },
+      { en: "eye", ja: "め", emoji: "👁️", homophones: ["i"] },
       { en: "ear", ja: "みみ", emoji: "👂" },
-      { en: "nose", ja: "はな", emoji: "👃" },
+      { en: "nose", ja: "はな", emoji: "👃", homophones: ["knows"] },
       { en: "mouth", ja: "くち", emoji: "👄" },
       { en: "hand", ja: "て", emoji: "✋" },
       { en: "foot", ja: "あし", emoji: "🦶" },
-      { en: "hair", ja: "かみ", emoji: "💇" },
+      { en: "hair", ja: "かみ", emoji: "💇", homophones: ["hare"] },
     ],
   },
   {
@@ -100,12 +107,12 @@ export const categories: Category[] = [
     emoji: "👨‍👩‍👧",
     color: "from-indigo-300 to-violet-400",
     words: [
-      { en: "mother", ja: "おかあさん", emoji: "👩" },
-      { en: "father", ja: "おとうさん", emoji: "👨" },
+      { en: "mother", ja: "おかあさん", emoji: "👩", variants: ["mom", "mum", "mommy"] },
+      { en: "father", ja: "おとうさん", emoji: "👨", variants: ["dad", "papa", "daddy"] },
       { en: "sister", ja: "おねえさん", emoji: "👧" },
       { en: "brother", ja: "おにいさん", emoji: "👦" },
-      { en: "grandmother", ja: "おばあちゃん", emoji: "👵" },
-      { en: "grandfather", ja: "おじいちゃん", emoji: "👴" },
+      { en: "grandmother", ja: "おばあちゃん", emoji: "👵", variants: ["grandma", "grandmom"] },
+      { en: "grandfather", ja: "おじいちゃん", emoji: "👴", variants: ["grandpa", "granddad"] },
       { en: "baby", ja: "あかちゃん", emoji: "👶" },
       { en: "family", ja: "かぞく", emoji: "👨‍👩‍👧‍👦" },
     ],
