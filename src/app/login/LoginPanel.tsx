@@ -23,6 +23,8 @@ type Props = {
   needsSetup: boolean;
   /** プールには こどもが いるが、この端末では まだ だれも つかっていない */
   firstTimeDevice?: boolean;
+  /** セッションの端末指紋が変わって /login に戻された (?reason=ua_changed) — issue #53 */
+  deviceChanged?: boolean;
   /** いま この端末で ログイン中のユーザー (いなければ null) */
   currentUser?: {
     id: string;
@@ -128,6 +130,7 @@ export default function LoginPanel({
   users,
   needsSetup,
   firstTimeDevice = false,
+  deviceChanged = false,
   currentUser = null,
 }: Props) {
   const router = useRouter();
@@ -354,6 +357,15 @@ export default function LoginPanel({
           <span className="text-[#b03a63]">Safari で ひらいてね</span>
           （iOS 26.3 で かいぜん されます）。
         </div>
+      )}
+      {deviceChanged && (
+        <p className="mx-auto mb-5 max-w-md rounded-2xl border-2 border-[#ffd6a5] bg-[#fff7ea] px-4 py-3 text-center text-xs leading-relaxed font-bold text-[#a85f08]">
+          ブラウザが あたらしく なったので、
+          <br />
+          もういちど ログインしてね。
+          <br />
+          なまえは そのまま のこって います。
+        </p>
       )}
       {error && (
         <p

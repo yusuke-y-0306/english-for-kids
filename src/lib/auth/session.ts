@@ -6,20 +6,20 @@ import {
   SESSION_COOKIE,
   SESSION_MAX_AGE_SEC,
   sessionSecret,
+  sessionUaStrict,
 } from "./config";
 import { signToken, verifyToken, type EncryptedSecret } from "./crypto";
 import { findUser, type PoolUser } from "./pool";
+import { issueSessionToken, type SessionPayload } from "./token";
+import { bindingOf, compareBinding } from "./ua";
 
 /**
  * セッション管理。
  * DB を使わないので、署名付き (HMAC-SHA256) の cookie にユーザー ID を入れて運ぶ。
  */
 
-export type SessionPayload = {
-  uid: string;
-  iat: number;
-  exp: number;
-};
+export type { SessionPayload } from "./token";
+export { issueSessionToken } from "./token";
 
 async function isSecureRequest(): Promise<boolean> {
   const h = await headers();
@@ -29,19 +29,11 @@ async function isSecureRequest(): Promise<boolean> {
   return !(host.startsWith("localhost") || host.startsWith("127.") || host.startsWith("[::1]"));
 }
 
-export function issueSessionToken(userId: string): string {
-  const now = Math.floor(Date.now() / 1000);
-  const payload: SessionPayload = {
-    uid: userId,
-    iat: now,
-    exp: now + SESSION_MAX_AGE_SEC,
-  };
-  return signToken(payload, sessionSecret());
-}
-
 export async function setSessionCookie(userId: string): Promise<void> {
   const store = await cookies();
-  store.set(SESSION_COOKIE, issueSessionToken(userId), {
+  /* 発行した端末を覚えておく。以後のリクエストで UA が変わっていたら弾く/再発行する */
+  const binding = bindingOf((await headers()).get("user-agent"));
+  store.set(SESSION_COOKIE, issueSessionToken(userId, binding), {
     httpOnly: true,
     sameSite: "lax",
     secure: await isSecureRequest(),
@@ -61,7 +53,7 @@ export async function clearSessionCookie(): Promise<void> {
   });
 }
 
-/** cookie からセッションを取り出す (署名検証 + 期限チェック) */
+/** cookie からセッションを取り出す (署名検証 + 期限チェック + 端末チェック) */
 export async function readSession(): Promise<SessionPayload | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
@@ -75,6 +67,12 @@ export async function readSession(): Promise<SessionPayload | null> {
   if (!payload || typeof payload.uid !== "string") return null;
   const now = Math.floor(Date.now() / 1000);
   if (typeof payload.exp !== "number" || payload.exp < now) return null;
+
+  /* 端末が変わっていたら「ログインしていない」扱い。
+     legacy / drift はそのまま通す (cookie の再発行は proxy が行う)。 */
+  const verdict = compareBinding(payload, bindingOf((await headers()).get("user-agent")), sessionUaStrict());
+  if (verdict === "mismatch") return null;
+
   return payload;
 }
 

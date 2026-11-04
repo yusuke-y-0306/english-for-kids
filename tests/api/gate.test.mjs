@@ -6,6 +6,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test, { after, before, describe } from "node:test";
+import { uaHashOf } from "../../src/lib/auth/ua.ts";
 
 /**
  * 認可の入口 (proxy.ts / gate.ts) の統合テスト — issue #54
@@ -34,9 +35,9 @@ function signToken(payload) {
   return `${body}.${sig}`;
 }
 
-function sessionCookie(uid) {
+function sessionCookie(uid, binding) {
   const now = Math.floor(Date.now() / 1000);
-  return signToken({ uid, iat: now - 60, exp: now + 3600 });
+  return signToken({ uid, iat: now - 60, exp: now + 3600, ...(binding ?? {}) });
 }
 
 async function freePort() {
@@ -47,11 +48,11 @@ async function freePort() {
   return port;
 }
 
-function get(pathname, { cookie, redirect = "manual" } = {}) {
-  return fetch(`${baseUrl}${pathname}`, {
-    redirect,
-    headers: cookie ? { cookie: `efk_session=${cookie}` } : {},
-  });
+function get(pathname, { cookie, redirect = "manual", ua } = {}) {
+  const headers = {};
+  if (cookie) headers.cookie = `efk_session=${cookie}`;
+  if (ua) headers["user-agent"] = ua;
+  return fetch(`${baseUrl}${pathname}`, { redirect, headers });
 }
 
 before(async () => {
@@ -184,5 +185,64 @@ describe("公開経路は通る", () => {
   test("正しいセッションなら保護ページが開く", async () => {
     const res = await get("/", { cookie: sessionCookie(USER_A) });
     assert.equal(res.status, 200);
+  });
+});
+
+/**
+ * セッション cookie と端末の紐付け — issue #53
+ *
+ * 「cookie をコピーして別の端末で使う」を検知できることと、
+ * 「ブラウザ更新で家族を締め出さない」ことを両方固定する。
+ */
+describe("端末 (User-Agent) の紐付け", () => {
+  const IPHONE =
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1";
+  const IPHONE_UPDATED =
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const ANDROID =
+    "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
+
+  const boundTo = (ua, cls) => sessionCookie(USER_A, { ua: uaHashOf(ua), uc: cls });
+
+  test("同じ UA なら従来どおり通る", async () => {
+    const res = await get("/api/auth/me", { cookie: boundTo(IPHONE, "iphone"), ua: IPHONE });
+    assert.equal(res.status, 200);
+  });
+
+  test("端末の種類が変わったら通らない", async () => {
+    const res = await get("/api/auth/me", { cookie: boundTo(IPHONE, "iphone"), ua: ANDROID });
+    assert.equal(res.status, 401);
+    const body = await res.json();
+    assert.equal(body.code, "ua_changed", "理由を返してログイン画面で案内できるようにする");
+  });
+
+  test("端末違いの HTML は /login?reason=ua_changed へ", async () => {
+    const res = await get("/quiz", { cookie: boundTo(IPHONE, "iphone"), ua: ANDROID });
+    assert.equal(res.status, 307);
+    assert.match(res.headers.get("location") ?? "", /\/login\?reason=ua_changed$/);
+  });
+
+  test("同じ種類でブラウザ更新 → 通す + cookie を再発行する", async () => {
+    const res = await get("/api/auth/me", { cookie: boundTo(IPHONE, "iphone"), ua: IPHONE_UPDATED });
+    assert.equal(res.status, 200, "ブラウザ更新で締め出さない");
+
+    const setCookie = res.headers.get("set-cookie") ?? "";
+    assert.match(setCookie, /efk_session=/, "新しい指紋で cookie を出し直す");
+
+    // 再発行された cookie は新しい UA で通る (次回以降は drift にならない)
+    const fresh = /efk_session=([^;]+)/.exec(setCookie)?.[1];
+    assert.ok(fresh);
+    const again = await get("/api/auth/me", { cookie: fresh, ua: IPHONE_UPDATED });
+    assert.equal(again.status, 200);
+
+    // 旧 UA に戻しても、新しい cookie は種類が同じなので通る (drift)
+    const back = await get("/api/auth/me", { cookie: fresh, ua: IPHONE });
+    assert.equal(back.status, 200);
+  });
+
+  test("ua を持たない古い cookie は通して移行する", async () => {
+    const res = await get("/api/auth/me", { cookie: sessionCookie(USER_A), ua: IPHONE });
+    assert.equal(res.status, 200, "既存の家族を強制ログアウトさせない");
+    assert.match(res.headers.get("set-cookie") ?? "", /efk_session=/);
   });
 });

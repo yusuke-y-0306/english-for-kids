@@ -16,7 +16,13 @@ export const metadata = {
  * 家族で 1 台を 共有していると「いま だれで ログインしているか」を
  * 切りかえたいし、こどもを 追加する 入口も ここにしかないため。
  */
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  /** proxy が付ける `?reason=ua_changed` (端末の指紋が変わった) を拾う — issue #53 */
+  searchParams: Promise<{ reason?: string }>;
+}) {
+  const reason = (await searchParams)?.reason;
   const current = await getCurrentUser();
 
   /* この端末で つかったことのある こどもだけを出す。
@@ -56,6 +62,7 @@ export default async function LoginPage() {
         users={users}
         needsSetup={pool.users.length === 0}
         firstTimeDevice={firstTimeDevice}
+        deviceChanged={reason === "ua_changed"}
         currentUser={
           current
             ? {
