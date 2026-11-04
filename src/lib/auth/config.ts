@@ -43,6 +43,17 @@ export const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 30;
 /** WebAuthn チャレンジの有効期間: 5 分 */
 export const CHALLENGE_MAX_AGE_SEC = 60 * 5;
 
+/**
+ * UA の完全一致を要求するか (issue #53)。
+ *
+ * 既定は「端末の種類 (iphone / android / mac ...) が変わったら無効」。
+ * `SESSION_UA_STRICT=1` で「1 文字でも違えば無効」に切り替わる。
+ * 既定を厳しくしない理由は `ua.ts` のコメントを参照（ブラウザ更新で子どもが詰む）。
+ */
+export function sessionUaStrict(): boolean {
+  return readEnv("SESSION_UA_STRICT") === "1";
+}
+
 /** セッション cookie の署名鍵 (32 文字以上) */
 export function sessionSecret(): string {
   const secret = readEnv("SESSION_SECRET");
