@@ -19,15 +19,30 @@ export type SessionPayload = {
   ua?: string;
   /** 発行時の端末の種類 (iphone / ipad / android / mac / windows / linux / other) */
   uc?: string;
+  /** 発行時のユーザーの世代。users.json 側と違えば全端末失効 (issue #52) */
+  tv?: number;
+  /** 発行時の端末の世代。users.json 側と違えばその端末だけ失効 (issue #52) */
+  dv?: number;
 };
 
-export function issueSessionToken(userId: string, binding?: DeviceBinding): string {
+/** セッションに載せる世代の組 (ログイン時に users.json から読む) */
+export type SessionVersions = {
+  tokenVersion: number;
+  deviceVersion: number;
+};
+
+export function issueSessionToken(
+  userId: string,
+  binding?: DeviceBinding,
+  versions?: SessionVersions,
+): string {
   const now = Math.floor(Date.now() / 1000);
   const payload: SessionPayload = {
     uid: userId,
     iat: now,
     exp: now + SESSION_MAX_AGE_SEC,
     ...(binding ?? {}),
+    ...(versions ? { tv: versions.tokenVersion, dv: versions.deviceVersion } : {}),
   };
   return signToken(payload, sessionSecret());
 }

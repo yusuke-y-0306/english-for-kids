@@ -11,6 +11,7 @@ import {
 } from "./crypto";
 import { normalizePassphrase } from "./passphrase";
 import { filterVisible, type PersonalDataAccess } from "./access";
+import type { DeviceBinding } from "./ua";
 
 /**
  * ユーザープール — DB を使わず、テキストファイル (JSON) で管理する。
@@ -39,6 +40,18 @@ export type PoolUser = {
   avatar: string;
   color: string;
   /**
+   * セッションの世代 (issue #52)。上げると、それ以前に発行した
+   * セッション cookie が全て無効になる (= 全端末からログアウト)。
+   * 古い users.json には無いので、読むときに 0 で補う。
+   */
+  tokenVersion?: number;
+  /**
+   * この子がログインしたことのある端末 (issue #52 / #53)。
+   * `version` を上げると、その端末の cookie だけが無効になる。
+   * 端末の識別子は `User-Agent` のハッシュ (ua.ts)。
+   */
+  devices?: StoredDevice[];
+  /**
    * 旧形式の ユーザーごとの保護者パスフレーズ (暗号化)。
    * いまは「おうち 共通の合言葉」に統一したため読み取り専用の遺物。
    * 既存インストールからの移行時に familySecret の種として使う。
@@ -47,6 +60,18 @@ export type PoolUser = {
   credentials: StoredCredential[];
   createdAt: string;
   updatedAt: string;
+};
+
+/** 端末 1 台分の記録 (セッションの失効単位) */
+export type StoredDevice = {
+  /** `User-Agent` のハッシュ (40 文字ではなく 16 文字の指紋) */
+  ua: string;
+  /** 端末の種類 (iphone / ipad / android / mac / windows / linux / other) */
+  uc: string;
+  /** この端末のセッション世代。上げるとこの端末だけログアウトする */
+  version: number;
+  /** 最後にログイン / アクセスした日時 */
+  lastSeenAt: string;
 };
 
 export type UserPool = {
@@ -72,10 +97,17 @@ export async function readPool(): Promise<UserPool> {
       version: 1,
       updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : "",
       familySecret: parsed.familySecret,
-      users: parsed.users.filter(
-        (u): u is PoolUser =>
-          !!u && typeof u.id === "string" && typeof u.displayName === "string",
-      ),
+      users: parsed.users
+        .filter(
+          (u): u is PoolUser =>
+            !!u && typeof u.id === "string" && typeof u.displayName === "string",
+        )
+        /* 古いファイルには tokenVersion / devices が無い (issue #52)。0 と空で補う */
+        .map((u) => ({
+          ...u,
+          tokenVersion: typeof u.tokenVersion === "number" ? u.tokenVersion : 0,
+          devices: Array.isArray(u.devices) ? u.devices : [],
+        })),
     };
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
@@ -124,6 +156,95 @@ export async function findUserByCredential(
 ): Promise<PoolUser | undefined> {
   const pool = await readPool();
   return pool.users.find((u) => u.credentials.some((c) => c.id === credentialId));
+}
+
+/* ------------------------------------------------------------------ */
+/* セッションの世代 — 即時失効 (issue #52)                          */
+/* ------------------------------------------------------------------ */
+
+/** 1 ユーザーが覚えておく端末の上限 (古いものから捨てる) */
+const MAX_DEVICES = 12;
+
+/** 古い users.json を読んでも 0 が返るようにする */
+export function tokenVersionOf(user: PoolUser): number {
+  return typeof user.tokenVersion === "number" ? user.tokenVersion : 0;
+}
+
+/** 端末 (UA の指紋) の記録を引く。無ければ undefined */
+export function deviceOf(user: PoolUser, uaHash: string | undefined): StoredDevice | undefined {
+  if (!uaHash) return undefined;
+  return (user.devices ?? []).find((device) => device.ua === uaHash);
+}
+
+/**
+ * ログインした端末を記録し、いまの世代を返す。
+ *
+ * ここで返した `tokenVersion` / `deviceVersion` をセッション cookie に載せ、
+ * 以後のリクエストで照合する。世代を上げれば、その cookie は即座に死ぬ。
+ */
+export async function recordLoginDevice(
+  userId: string,
+  binding: DeviceBinding,
+): Promise<{ tokenVersion: number; deviceVersion: number } | undefined> {
+  return withPool((pool) => {
+    const user = pool.users.find((u) => u.id === userId);
+    if (!user) return undefined;
+
+    const now = new Date().toISOString();
+    const devices = user.devices ?? [];
+    let device = devices.find((d) => d.ua === binding.ua);
+    if (device) {
+      device.uc = binding.uc;
+      device.lastSeenAt = now;
+    } else {
+      device = { ua: binding.ua, uc: binding.uc, version: 0, lastSeenAt: now };
+      devices.push(device);
+    }
+    /* 上限を超えたら、最後に見たのが古い順に捨てる (消えた端末の記録が溜まらない) */
+    devices.sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt));
+    user.devices = devices.slice(0, MAX_DEVICES);
+
+    return { tokenVersion: tokenVersionOf(user), deviceVersion: device.version };
+  });
+}
+
+/**
+ * **全端末**からログアウトする (tokenVersion を 1 つ上げる)。
+ * 戻り値は新しい世代。ユーザーがいなければ undefined。
+ */
+export async function revokeAllSessions(userId: string): Promise<number | undefined> {
+  return withPool((pool) => {
+    const user = pool.users.find((u) => u.id === userId);
+    if (!user) return undefined;
+    user.tokenVersion = tokenVersionOf(user) + 1;
+    user.updatedAt = new Date().toISOString();
+    return user.tokenVersion;
+  });
+}
+
+/**
+ * **その端末だけ**ログアウトする (device.version を 1 つ上げる)。
+ * 戻り値は新しい世代。該当端末の記録が無ければ undefined。
+ */
+export async function revokeDeviceSessions(
+  userId: string,
+  uaHash: string,
+): Promise<number | undefined> {
+  return withPool((pool) => {
+    const user = pool.users.find((u) => u.id === userId);
+    if (!user) return undefined;
+    const device = deviceOf(user, uaHash);
+    if (!device) return undefined;
+    device.version += 1;
+    user.updatedAt = new Date().toISOString();
+    return device.version;
+  });
+}
+
+/** 端末の一覧 (親が「どの端末を切るか」を選ぶため) */
+export async function listDevices(userId: string): Promise<StoredDevice[] | undefined> {
+  const user = await findUser(userId);
+  return user ? [...(user.devices ?? [])] : undefined;
 }
 
 export type PickerUser = {
