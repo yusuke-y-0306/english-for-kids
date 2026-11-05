@@ -1,4 +1,5 @@
 import { getUserContent, updateUserContent } from "@/lib/auth/content";
+import { withUserLock } from "@/lib/store/lock";
 import { isPronunciationScore, type PronunciationScore } from "./scores";
 
 /**
@@ -76,26 +77,9 @@ export function normalizePronunciationState(raw: unknown): PronunciationState {
  * ユーザーごとの直列化。
  *
  * `updateUserContent()` は read-modify-write なので、同じ子が連打すると
- * 更新が取りこぼされる。単一プロセスで動く前提の簡易ロックで直列化する
- * (再起動で消えるが、失われるのは同時実行時の競合だけ)。
+ * 更新が取りこぼされる。進捗 (#4) も同じファイルを書くため、ロックは
+ * `src/lib/store/lock.ts` に切り出して **共有** している。
  */
-const locks = new Map<string, Promise<void>>();
-
-async function withUserLock<T>(userId: string, task: () => Promise<T>): Promise<T> {
-  const previous = locks.get(userId) ?? Promise.resolve();
-  const current = previous.then(task, task);
-  const guard = current.then(
-    () => undefined,
-    () => undefined,
-  );
-  locks.set(userId, guard);
-  try {
-    return await current;
-  } finally {
-    // 自分が最後の番なら後片付けする (Map が無限に増えないように)
-    if (locks.get(userId) === guard) locks.delete(userId);
-  }
-}
 
 /** 現在の状態を読む (存在しなければ空) */
 export async function getPronunciationState(userId: string): Promise<PronunciationState> {
