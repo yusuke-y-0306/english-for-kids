@@ -1,0 +1,70 @@
+import { getUserContent, updateUserContent } from "@/lib/auth/content";
+import { withUserLock } from "@/lib/store/lock";
+import {
+  applyPronunciationAttempt,
+  applyQuizRound,
+  normalizeProgressState,
+  type PronunciationInput,
+  type ProgressState,
+  type QuizRoundInput,
+} from "./state";
+
+/**
+ * 学習履歴の保存 — issue #4 (進捗管理)
+ *
+ * 保存先は既存の **ユーザー単位 JSON** (`data/content/<uid>.json`) の
+ * `data.progress`。DB は使わない方針 (#32 の発音ストアと同じ場所・同じ流儀)。
+ *
+ * この層の責任は「読み書きと直列化」だけ。数字の作り方は `state.ts` (純粋関数) にある。
+ * `userId` は **呼び出し側 (Route Handler) がセッションから取った値** を渡すこと。
+ * リクエストボディの値をそのまま通すと他人の学習履歴を書き換えられる (#32 の IDOR 対策)。
+ */
+
+export type { ProgressState } from "./state";
+
+/** 現在の状態を読む (無ければ空。壊れていても空に正規化される) */
+export async function getProgressState(userId: string): Promise<ProgressState> {
+  const content = await getUserContent(userId);
+  return normalizeProgressState(content.data.progress);
+}
+
+/**
+ * 読み → 変換 → 書き をユーザー単位で直列化して行う。
+ *
+ * 発音ストアと同じロックを共有しているので、2 つの機能が同じ子のファイルを
+ * 同時に更新しても取りこぼさない。
+ */
+async function mutateProgress(
+  userId: string,
+  mutate: (state: ProgressState) => ProgressState,
+): Promise<ProgressState> {
+  return withUserLock(userId, async () => {
+    const content = await getUserContent(userId);
+    const state = normalizeProgressState(content.data.progress);
+    const next = mutate(state);
+    /* 既存のアトミック更新 (tmp + rename) をそのまま使う。他のキーは触らない */
+    await updateUserContent(userId, { progress: next });
+    return next;
+  });
+}
+
+/** クイズ 1 ラウンドを記録する (#65 から呼ぶ) */
+export function recordQuizRound(userId: string, input: QuizRoundInput): Promise<ProgressState> {
+  return mutateProgress(userId, (state) => applyQuizRound(state, input));
+}
+
+/** 発音 1 回を日次に記録する (#66 から呼ぶ) */
+export function recordPronunciationDay(
+  userId: string,
+  input: PronunciationInput,
+): Promise<ProgressState> {
+  return mutateProgress(userId, (state) => applyPronunciationAttempt(state, input));
+}
+
+/** 状態を直接置き換える (移行や保守用。通常は上の 2 つを使う) */
+export function saveProgressState(
+  userId: string,
+  next: ProgressState,
+): Promise<ProgressState> {
+  return mutateProgress(userId, () => next);
+}

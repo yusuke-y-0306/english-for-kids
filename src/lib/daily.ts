@@ -1,4 +1,5 @@
 import { categories, type Word } from "./words";
+import { dayKeyOf } from "./progress/day";
 
 /**
  * ユーザーごとの「きょうの カード」を決める。
@@ -14,15 +15,8 @@ function hash(value: string): number {
   return h >>> 0;
 }
 
-/** 日本時間の YYYY-MM-DD */
-export function todayInTokyo(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(now);
-}
+/** 日本時間の YYYY-MM-DD (実装は `progress/day.ts` に 1 つだけ置く) */
+export const todayInTokyo = dayKeyOf;
 
 export type DailyWord = {
   word: Word;
