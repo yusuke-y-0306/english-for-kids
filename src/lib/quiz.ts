@@ -73,6 +73,14 @@ export const quizLevels: QuizLevel[] = [
   },
 ];
 
+/**
+ * 外部入力（API のボディなど）がレベルの ID かどうか。
+ * `quizLevels` を唯一の正とし、増やしたときに検証側を直し忘れないようにする。
+ */
+export function isQuizLevelId(value: unknown): value is QuizLevelId {
+  return quizLevels.some((level) => level.id === value);
+}
+
 /* ------------------------------------------------------------------ *
  * ユーティリティ
  * ------------------------------------------------------------------ */

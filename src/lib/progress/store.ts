@@ -22,6 +22,9 @@ import {
 
 export type { ProgressState } from "./state";
 
+/** read-modify-write の結果。「書いたかどうか」も返す (無変更ならファイルに触らない) */
+type MutationResult = { state: ProgressState; changed: boolean };
+
 /** 現在の状態を読む (無ければ空。壊れていても空に正規化される) */
 export async function getProgressState(userId: string): Promise<ProgressState> {
   const content = await getUserContent(userId);
@@ -33,38 +36,53 @@ export async function getProgressState(userId: string): Promise<ProgressState> {
  *
  * 発音ストアと同じロックを共有しているので、2 つの機能が同じ子のファイルを
  * 同時に更新しても取りこぼさない。
+ *
+ * `mutate` が **同じ参照を返したら書かない**。たとえば同じ `roundId` の再送
+ * (#65) は「数えない」ので、更新日時だけが動く空振り書き込みを避ける。
  */
 async function mutateProgress(
   userId: string,
   mutate: (state: ProgressState) => ProgressState,
-): Promise<ProgressState> {
+): Promise<MutationResult> {
   return withUserLock(userId, async () => {
     const content = await getUserContent(userId);
     const state = normalizeProgressState(content.data.progress);
     const next = mutate(state);
+    if (next === state) return { state, changed: false };
     /* 既存のアトミック更新 (tmp + rename) をそのまま使う。他のキーは触らない */
     await updateUserContent(userId, { progress: next });
-    return next;
+    return { state: next, changed: true };
   });
 }
 
-/** クイズ 1 ラウンドを記録する (#65 から呼ぶ) */
-export function recordQuizRound(userId: string, input: QuizRoundInput): Promise<ProgressState> {
-  return mutateProgress(userId, (state) => applyQuizRound(state, input));
+/**
+ * クイズ 1 ラウンドを記録する (#65 から呼ぶ)。
+ *
+ * `duplicate: true` は「同じ `roundId` を既に処理していた」= 何も足していない。
+ * クライアントは成功として扱ってよい (リロードで 2 回送られても水増しされない)。
+ */
+export async function recordQuizRound(
+  userId: string,
+  input: QuizRoundInput,
+): Promise<{ state: ProgressState; duplicate: boolean }> {
+  const { state, changed } = await mutateProgress(userId, (current) => applyQuizRound(current, input));
+  return { state, duplicate: !changed };
 }
 
 /** 発音 1 回を日次に記録する (#66 から呼ぶ) */
-export function recordPronunciationDay(
+export async function recordPronunciationDay(
   userId: string,
   input: PronunciationInput,
 ): Promise<ProgressState> {
-  return mutateProgress(userId, (state) => applyPronunciationAttempt(state, input));
+  const { state } = await mutateProgress(userId, (current) => applyPronunciationAttempt(current, input));
+  return state;
 }
 
 /** 状態を直接置き換える (移行や保守用。通常は上の 2 つを使う) */
-export function saveProgressState(
+export async function saveProgressState(
   userId: string,
   next: ProgressState,
 ): Promise<ProgressState> {
-  return mutateProgress(userId, () => next);
+  const { state } = await mutateProgress(userId, () => next);
+  return state;
 }

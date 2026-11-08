@@ -41,6 +41,16 @@ export type ProgressState = {
   days: Record<string, ProgressDay>;
   /** 単語 ID → 正誤の累計 */
   words: Record<string, ProgressWordState>;
+  /**
+   * 直近に記録したクイズの `roundId` (新しい順)。#65 の **冪等キー**。
+   *
+   * クイズは「リロード」「二重タップ」「オフライン復帰後の再送」で同じ結果が
+   * 2 回届きうる。届いた順に数えると、がんばった子ほど数字が水増しされる。
+   * そこで最後に処理した ID を覚えておき、同じ ID は **数えない**。
+   * 1 件だけ覚えると「2 ラウンド前の再送」を弾けないので、直近
+   * `QUIZ_ROUND_MEMORY` 件を輪のように持つ (ファイルは数百バイト増えるだけ)。
+   */
+  quizRoundIds: string[];
   /** 最長の連続学習日数 (#69 が更新する。ここでは保存するだけ) */
   longestStreak: number;
   /** 最後に学習した日時 (ISO 8601)。まだ無ければ null */
@@ -53,6 +63,9 @@ export type ProgressState = {
 
 /** 日次データの保持期間。これを超えた古い日は落とす (ファイルが無限に育たない) */
 export const PROGRESS_RETENTION_DAYS = 400;
+
+/** 覚えておく `roundId` の件数 (#65)。32 ラウンド = 8 問 × 32 ≈ 256 問ぶん */
+export const QUIZ_ROUND_MEMORY = 32;
 
 const DAY_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -68,6 +81,7 @@ export function emptyProgressState(): ProgressState {
     version: 1,
     days: {},
     words: {},
+    quizRoundIds: [],
     longestStreak: 0,
     lastStudyAt: null,
     updatedAt: new Date(0).toISOString(),
@@ -131,10 +145,22 @@ export function normalizeProgressState(raw: unknown): ProgressState {
     }
   }
 
+  /* 冪等キーも「読める文字列だけ・重複なし・上限まで」に正規化する。
+     手編集で数千件入っていても、ここで切るので比較コストは増えない */
+  const quizRoundIds: string[] = [];
+  if (Array.isArray(source.quizRoundIds)) {
+    for (const id of source.quizRoundIds) {
+      if (typeof id !== "string" || id === "" || quizRoundIds.includes(id)) continue;
+      quizRoundIds.push(id);
+      if (quizRoundIds.length >= QUIZ_ROUND_MEMORY) break;
+    }
+  }
+
   return {
     version: 1,
     days,
     words,
+    quizRoundIds,
     longestStreak: count(source.longestStreak),
     lastStudyAt: isoOrNull(source.lastStudyAt),
     updatedAt:
@@ -162,28 +188,58 @@ export function pruneDays(
 }
 
 export type QuizRoundInput = {
+  /**
+   * クライアントが作る UUID。**冪等キー** (#65)。
+   * 空文字 / 未指定なら冪等性は効かない (テストや保守用の逃げ道)。
+   */
+  roundId: string;
   /** JST の日付 (`dayKeyOf()` で作る) */
   day: string;
-  /** 1 問ぶんの結果。単語 ID は呼び出し側で存在確認済みのもの */
-  results: ReadonlyArray<{ wordId: string; correct: boolean }>;
+  /**
+   * 1 問ぶんの結果。単語 ID は呼び出し側で存在確認済みのもの。
+   * `null` は「単語に紐づかない問題」（中級・上級の文法問題）。
+   * その場合は日次の出題数・正解数だけ数え、単語別には触らない。
+   */
+  results: ReadonlyArray<{ wordId: string | null; correct: boolean }>;
   /** 記録した日時 (ISO 8601) */
   now: string;
 };
+
+/** その日のクイズ集計 (API のレスポンスと画面が使う) */
+export type QuizDaySummary = {
+  rounds: number;
+  correct: number;
+  total: number;
+};
+
+/** 指定日の集計を取り出す (まだ遊んでいなければ全部 0) */
+export function summaryForDay(state: ProgressState, day: string): QuizDaySummary {
+  const entry = state.days[day]?.quiz;
+  if (!entry) return { rounds: 0, correct: 0, total: 0 };
+  return { rounds: entry.rounds, correct: entry.correct, total: entry.total };
+}
 
 /**
  * クイズ 1 ラウンドを足した新しい状態を返す (元の状態は変更しない)。
  *
  * 出題数が 0 のラウンドは「遊んでいない」ので数えない (空送信で水増しされない)。
+ * 同じ `roundId` を 2 回受け取ったら **同じ状態をそのまま返す** (呼び出し側は
+ * 参照が変わらないことで「書く必要が無い」と判断できる)。
  */
 export function applyQuizRound(state: ProgressState, input: QuizRoundInput): ProgressState {
   const total = input.results.length;
   if (total === 0) return state;
+
+  const roundId = typeof input.roundId === "string" ? input.roundId : "";
+  if (roundId !== "" && state.quizRoundIds.includes(roundId)) return state;
 
   const today = state.days[input.day] ?? emptyDay();
   const correct = input.results.filter((r) => r.correct).length;
 
   const words: Record<string, ProgressWordState> = { ...state.words };
   for (const result of input.results) {
+    /* 文法問題は単語を持たない。単語別の集計を汚さないよう読み飛ばす */
+    if (!result.wordId) continue;
     const previous = words[result.wordId] ?? {
       correct: 0,
       wrong: 0,
@@ -213,6 +269,10 @@ export function applyQuizRound(state: ProgressState, input: QuizRoundInput): Pro
     version: 1,
     days: pruneDays(days),
     words,
+    quizRoundIds:
+      roundId === ""
+        ? state.quizRoundIds
+        : [roundId, ...state.quizRoundIds].slice(0, QUIZ_ROUND_MEMORY),
     lastStudyAt: input.now,
     updatedAt: input.now,
   };
