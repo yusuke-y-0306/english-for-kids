@@ -10,6 +10,7 @@ import {
   emptyProgressState,
   normalizeProgressState,
   pruneDays,
+  seedWordsFromPronunciation,
   summaryForDay,
 } from "../../src/lib/progress/state.ts";
 
@@ -313,6 +314,70 @@ describe("applyPronunciationAttempt", () => {
   test("元の状態を書き換えない", () => {
     const state = emptyProgressState();
     applyPronunciationAttempt(state, { day: DAY, ok: true, now: NOW });
+    assert.deepEqual(state, emptyProgressState());
+  });
+});
+
+describe("seedWordsFromPronunciation — 移行 (#66)", () => {
+  const at = "2026-11-01T00:00:00.000Z";
+  const byWord = {
+    "animals/dog": { score: "ok", attempts: 3, updatedAt: at },
+    "food/apple": { score: "retry", attempts: 2, updatedAt: at },
+  };
+
+  test("byWord から単語別の種を蒔き、印を立てる", () => {
+    const next = seedWordsFromPronunciation(emptyProgressState(), byWord, NOW);
+
+    /* 直近が ok なら全回を正解、それ以外なら全回を不正解として蒔く (近似) */
+    assert.deepEqual(next.words["animals/dog"], { correct: 3, wrong: 0, lastAt: at });
+    assert.deepEqual(next.words["food/apple"], { correct: 0, wrong: 2, lastAt: at });
+    assert.equal(next.migratedFromPronunciation, true);
+    /* 日次は遡及できない (移行後の試行から数える) */
+    assert.deepEqual(next.days, {});
+  });
+
+  test("2 回目以降は種まきしない (同じ参照を返す)", () => {
+    const once = seedWordsFromPronunciation(emptyProgressState(), byWord, NOW);
+    const twice = seedWordsFromPronunciation(once, byWord, NOW);
+    assert.equal(twice, once);
+    assert.deepEqual(twice.words, once.words);
+  });
+
+  test("クイズで既に数えている単語は触らない (二重計上しない)", () => {
+    const withQuiz = applyQuizRound(emptyProgressState(), {
+      roundId: "r-1",
+      day: DAY,
+      now: NOW,
+      results: [{ wordId: "animals/dog", correct: true }],
+    });
+    const next = seedWordsFromPronunciation(withQuiz, byWord, NOW);
+
+    /* クイズの 1 回のまま。発音の 3 回は足さない */
+    assert.deepEqual(next.words["animals/dog"], { correct: 1, wrong: 0, lastAt: NOW });
+    /* クイズに無い単語だけが蒔かれる */
+    assert.deepEqual(next.words["food/apple"], { correct: 0, wrong: 2, lastAt: at });
+  });
+
+  test("byWord が無い / 空 / 壊れていても落ちず、印だけ立てる", () => {
+    for (const source of [undefined, null, {}, { "": { score: "ok", attempts: 3 } }, { "a/b": { score: "ok", attempts: 0 } }]) {
+      const next = seedWordsFromPronunciation(emptyProgressState(), source, NOW);
+      assert.deepEqual(next.words, {});
+      assert.equal(next.migratedFromPronunciation, true);
+    }
+  });
+
+  test("updatedAt が読めない日時なら now を使う", () => {
+    const next = seedWordsFromPronunciation(
+      emptyProgressState(),
+      { "animals/dog": { score: "ok", attempts: 1, updatedAt: 42 } },
+      NOW,
+    );
+    assert.equal(next.words["animals/dog"].lastAt, NOW);
+  });
+
+  test("元の状態を書き換えない", () => {
+    const state = emptyProgressState();
+    seedWordsFromPronunciation(state, byWord, NOW);
     assert.deepEqual(state, emptyProgressState());
   });
 });

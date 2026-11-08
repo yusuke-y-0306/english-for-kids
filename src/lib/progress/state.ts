@@ -286,6 +286,21 @@ export type PronunciationInput = {
 };
 
 /**
+ * 既存の発音ストア (#32) の単語別状態。**移行の入力にだけ**使う最小の形。
+ *
+ * `src/lib/speech/pronunciation-store.ts` の型を import しないのは、
+ * 依存の向きを speech → progress の一方向に保つため (ここは依存ゼロの世界)。
+ */
+export type PronunciationSeedSource = {
+  /** 直近の判定 (ok / close / retry)。`ok` だけが「正解」として数えられる */
+  score: string;
+  /** この単語を試した回数 */
+  attempts: number;
+  /** 最終挑戦日時 (ISO 8601) */
+  updatedAt: string;
+};
+
+/**
  * 発音 1 回ぶんを足した新しい状態を返す。
  *
  * 単語別の状態は発音ストア (`data.pronunciation`) が正なので、ここでは
@@ -313,5 +328,65 @@ export function applyPronunciationAttempt(
     days: pruneDays(days),
     lastStudyAt: input.now,
     updatedAt: input.now,
+  };
+}
+
+/**
+ * 既存の発音ストアから **単語別の種を一度だけ** 蒔く — issue #66
+ *
+ * 発音 (#32) は `data.pronunciation.byWord` に単語ごとの回数と直近スコアを持っている。
+ * 進捗 (#4) の `words[wordId]` はクイズの正誤しか知らないので、機能を入れる前から
+ * 発音をがんばっていた子の「単語別の手応え」が空になってしまう。そこで **移行時に
+ * 一度だけ** byWord から `correct / wrong` を復元する。
+ *
+ * 復元の限界 (仕様として受け入れる):
+ *  - byWord が持つのは「回数」と「直近のスコア」だけ。過去のスコアの内訳は残っていないので、
+ *    直近が `ok` なら全回を正解、それ以外なら全回を不正解として蒔く (楽観も悲観もする、
+ *    一番単純で説明しやすい近似)
+ *  - **日次 (`days`) は遡及できない**。いつ何回やったかは保存していないため、
+ *    過去の日次は 0 のままにする (移行後の試行から数え始める)
+ *
+ * 二重計上を避ける約束:
+ *  - `words` に既にその単語がある (＝クイズで数えている) なら **触らない**。
+ *    発音の回数を足すと、同じ単語を 2 つの事実で二重に数えることになる
+ *  - `migratedFromPronunciation: true` が立っていたら **何もしない** (同じ参照を返す)。
+ *    2 回目の起動や再デプロイで種が増えないための印
+ *
+ * 累計の正はあくまで `pronunciation.totalAttempts` (発音ストア側)。日次は進捗側。
+ * 集計 (#67) はこの 2 つを混ぜないこと。
+ */
+export function seedWordsFromPronunciation(
+  state: ProgressState,
+  byWord: Record<string, PronunciationSeedSource> | undefined,
+  now: string,
+): ProgressState {
+  /* 既に蒔いた印があるなら、何度呼ばれても増やさない */
+  if (state.migratedFromPronunciation === true) return state;
+
+  const words: Record<string, ProgressWordState> = { ...state.words };
+
+  if (byWord && typeof byWord === "object") {
+    for (const [wordId, value] of Object.entries(byWord)) {
+      if (wordId === "" || !value || typeof value !== "object") continue;
+      /* クイズで既に数えている単語は触らない (二重計上しない) */
+      if (words[wordId]) continue;
+      const attempts = count(value.attempts);
+      if (attempts === 0) continue;
+      const correct = value.score === "ok" ? attempts : 0;
+      words[wordId] = {
+        correct,
+        wrong: attempts - correct,
+        lastAt: typeof value.updatedAt === "string" && value.updatedAt !== "" ? value.updatedAt : now,
+      };
+    }
+  }
+
+  return {
+    ...state,
+    version: 1,
+    words,
+    /* 種まきの対象が 0 件でも印を立てる。次回以降に byWord が増えても
+       「あとから発音の履歴が生えてくる」ことはない (移行は 1 回きり) */
+    migratedFromPronunciation: true,
   };
 }
