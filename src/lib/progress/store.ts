@@ -1,10 +1,8 @@
 import { getUserContent, updateUserContent } from "@/lib/auth/content";
 import { withUserLock } from "@/lib/store/lock";
 import {
-  applyPronunciationAttempt,
   applyQuizRound,
   normalizeProgressState,
-  type PronunciationInput,
   type ProgressState,
   type QuizRoundInput,
 } from "./state";
@@ -18,6 +16,10 @@ import {
  * この層の責任は「読み書きと直列化」だけ。数字の作り方は `state.ts` (純粋関数) にある。
  * `userId` は **呼び出し側 (Route Handler) がセッションから取った値** を渡すこと。
  * リクエストボディの値をそのまま通すと他人の学習履歴を書き換えられる (#32 の IDOR 対策)。
+ *
+ * 発音 (#66) の日次だけは **このモジュールを通さない**。発音は「発音ストア +
+ * 進捗の日次」を同じファイルに書くので、`recordPronunciationAttempt()` が
+ * 同じロックの中で 1 回の書き込みにまとめている (2 回書くと部分更新の窓ができる)。
  */
 
 export type { ProgressState } from "./state";
@@ -67,15 +69,6 @@ export async function recordQuizRound(
 ): Promise<{ state: ProgressState; duplicate: boolean }> {
   const { state, changed } = await mutateProgress(userId, (current) => applyQuizRound(current, input));
   return { state, duplicate: !changed };
-}
-
-/** 発音 1 回を日次に記録する (#66 から呼ぶ) */
-export async function recordPronunciationDay(
-  userId: string,
-  input: PronunciationInput,
-): Promise<ProgressState> {
-  const { state } = await mutateProgress(userId, (current) => applyPronunciationAttempt(current, input));
-  return state;
 }
 
 /** 状態を直接置き換える (移行や保守用。通常は上の 2 つを使う) */

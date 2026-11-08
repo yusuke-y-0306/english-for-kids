@@ -1,4 +1,10 @@
 import { getUserContent, updateUserContent } from "@/lib/auth/content";
+import { dayKeyOf } from "@/lib/progress/day";
+import {
+  applyPronunciationAttempt,
+  normalizeProgressState,
+  seedWordsFromPronunciation,
+} from "@/lib/progress/state";
 import { withUserLock } from "@/lib/store/lock";
 import { isPronunciationScore, type PronunciationScore } from "./scores";
 
@@ -92,6 +98,11 @@ export async function getPronunciationState(userId: string): Promise<Pronunciati
  *
  * `userId` は **呼び出し側 (Route Handler) がセッションから取った値**を渡すこと。
  * リクエストボディの値を通してはいけない (issue #32 の本体)。
+ *
+ * 進捗 (#4) の日次も **同じロック・同じ read-modify-write の中で** 更新する (#66)。
+ * `data/pronunciation` と `data/progress` は同じファイルなので、2 回書くと
+ * 「片方だけ書けた」中途半端な状態が生まれる (取りこぼしの窓を作らない)。
+ * そのため `updateUserContent()` の呼び出しは **このメソッド全体で 1 回だけ** にする。
  */
 export async function recordPronunciationAttempt(
   userId: string,
@@ -119,8 +130,23 @@ export async function recordPronunciationAttempt(
       },
     };
 
-    // 既存のアトミック更新 (tmp + rename) をそのまま使う
-    await updateUserContent(userId, { pronunciation: next });
+    /* 進捗の日次 (#66)。ok だけが「できた」に数えられる。
+       種まきに渡すのは **この試行を足す前** の byWord。いま記録する 1 回は
+       下の applyPronunciationAttempt が日次に入れるので、単語別に二重で入れない */
+    const seeded = seedWordsFromPronunciation(
+      normalizeProgressState(content.data.progress),
+      state.byWord,
+      at,
+    );
+    const nextProgress = applyPronunciationAttempt(seeded, {
+      day: dayKeyOf(now),
+      ok: score === "ok",
+      now: at,
+    });
+
+    /* 既存のアトミック更新 (tmp + rename) をそのまま使う。
+       発音と進捗を **1 回の書き込み** でまとめる (部分更新の窓を作らない) */
+    await updateUserContent(userId, { pronunciation: next, progress: nextProgress });
     return next;
   });
 }
