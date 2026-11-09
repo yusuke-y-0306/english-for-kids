@@ -1,12 +1,6 @@
 import { jsonError, jsonOk } from "@/lib/auth/http";
-import { getUserContent } from "@/lib/auth/content";
 import { getCurrentUser } from "@/lib/auth/session";
-import { dayKeyOf } from "@/lib/progress/day";
-import { normalizeProgressState } from "@/lib/progress/state";
-import { normalizePronunciationState } from "@/lib/speech/pronunciation-store";
-import { streakOf } from "@/lib/progress/streak";
-import { summarizeCategories, summarizeDaily, summarizeWords } from "@/lib/progress/summary";
-import { allWordIds, categories } from "@/lib/words";
+import { loadProgressSnapshot } from "@/lib/progress/snapshot";
 
 /**
  * 進捗の取得 — issue #67 (親: #4 進捗管理)
@@ -18,7 +12,8 @@ import { allWordIds, categories } from "@/lib/words";
  *    (受け付けたら他人の学習履歴を読める = IDOR)。
  *  - `?days=` は 1〜90 に丸める。**不正値は 400 にせず既定 (7) に落とす**
  *    (URL をいじっただけで画面がエラーになる方が不親切)。
- *  - 数字の作り方は `summary.ts` / `streak.ts` の純粋関数だけ。ここは組み立てるだけ。
+ *  - 組み立ては `loadProgressSnapshot()` に任せる。画面 (#68) と同じ関数を通すので、
+ *    表示と JSON の数字が食い違わない。
  *  - **`cache-control: no-store`**。個人の学習履歴を CDN / ブラウザに残さない。
  */
 
@@ -32,38 +27,8 @@ export async function GET(request: Request) {
   const rawDays = new URL(request.url).searchParams.get("days");
 
   try {
-    /* 発音と進捗は同じファイル。1 回読んで両方のキーを取り出す */
-    const content = await getUserContent(user.id);
-    const state = normalizeProgressState(content.data.progress);
-    const pronunciation = normalizePronunciationState(content.data.pronunciation);
-
-    const today = dayKeyOf();
-    const streak = streakOf(state.days, today);
-    /* 集計の入力。「どこに何が正か」を 1 か所にまとめて渡す */
-    const input = {
-      days: state.days,
-      words: state.words,
-      pronunciation: pronunciation.byWord,
-    };
-
-    const response = jsonOk({
-      today,
-      days: summarizeDaily(input, { days: rawDays, today }),
-      streak: {
-        current: streak.current,
-        /* 保存値は保持期間 (400 日) より前の記録を持っていることがあるので長い方を採る */
-        longest: Math.max(state.longestStreak, streak.longest),
-        studiedToday: streak.studiedToday,
-        lastStudyDay: streak.lastStudyDay,
-      },
-      words: summarizeWords(input, allWordIds()),
-      categories: summarizeCategories(input, categories),
-      /* 累計の正は発音ストア (#66 の分担)。日次は上の days にある */
-      pronunciation: {
-        totalAttempts: pronunciation.totalAttempts,
-        lastAttemptAt: pronunciation.lastAttemptAt,
-      },
-    });
+    const snapshot = await loadProgressSnapshot(user.id, { days: rawDays });
+    const response = jsonOk({ ...snapshot });
     response.headers.set("cache-control", "no-store");
     return response;
   } catch (error) {
