@@ -128,5 +128,79 @@
 ## 未実装（別 issue）
 
 - 記録 API: クイズは #65、発音の取り込み（日次への反映と移行）は #66 で実装済み
-- 集計と取得 API: #67
-- 画面: #68（進捗ページ）/ #69（ストリーク表示）/ #70（保護者向け）
+- 集計と取得 API: #67 で実装済み（下記）
+- 画面: #68（進捗ページ）/ #69（ホームのストリークバッジ。判定ロジックは #67 で実装済み）
+  / #70（保護者向け）
+
+## 集計と取得 — `GET /api/progress`（#67）
+
+画面（#68）と保護者向け（#70）が使う **読み取り口**。数字の作り方は
+`src/lib/progress/summary.ts` と `src/lib/progress/streak.ts` の純粋関数だけで、
+Route Handler は組み立てるだけ。
+
+### リクエスト
+
+| パラメータ | 動き |
+|---|---|
+| `days` | 直近何日ぶんの系列を返すか。**1〜90 にクランプ**（既定 7）。`0` / `-5` は 1、`91` / `1000` は 90、`abc` は既定の 7 |
+
+- 不正値は **400 にしない**（URL をいじっただけで画面がエラーになる方が不親切）
+- `uid` / `userId` は **クエリでもボディでも受け付けない**。ユーザーはセッションからだけ決める
+- `cache-control: no-store`（個人の学習履歴を CDN / ブラウザに残さない）
+
+### レスポンス
+
+```jsonc
+{
+  "ok": true,
+  "today": "2026-11-09",                  // JST
+  "days": [                               // 古い順・必ず days 件（歯抜けは 0 で埋める）
+    { "day": "2026-11-03",
+      "quiz": { "rounds": 0, "correct": 0, "total": 0, "accuracy": 0 },
+      "pronunciation": { "attempts": 0, "ok": 0 },
+      "studied": false }
+  ],
+  "streak": { "current": 2, "longest": 5, "studiedToday": true, "lastStudyDay": "2026-11-09" },
+  "words": { "animals/dog": { "id": "animals/dog", "level": "mastered", "correct": 3,
+                              "wrong": 0, "pronunciation": { "attempts": 0, "ok": false },
+                              "lastAt": "..." } },
+  "categories": [ { "id": "animals", "label": "動物", "emoji": "🐾",
+                    "total": 8, "mastered": 1, "learning": 1, "unseen": 6 } ],
+  "pronunciation": { "totalAttempts": 3, "lastAttemptAt": "..." }
+}
+```
+
+- `days[].quiz.accuracy` は **0〜100 の整数 %**（出題 0 なら 0）。`correct > total` は total に丸める
+- `words` は **手を付けた単語だけ**（`words.ts` の並び順）。全 48 語を毎回返すと payload が膨らむため
+- `categories` は **未学習でも全カテゴリ返す**（画面が「まだ 0 / 8」を出せるように）
+- `pronunciation.totalAttempts` は **累計の正**（発音ストア側）。日次合計とは一致しない
+  （移行前の日次は遡及していないため。#66 参照）
+
+### 習得度のしきい値
+
+`MASTERY_THRESHOLDS`（`summary.ts`）に **1 か所だけ** 置く。
+
+| レベル | 条件 |
+|---|---|
+| `mastered`（おぼえた） | クイズで 3 回正解、またはクイズ 1 回正解 + 発音 `ok` |
+| `learning`（れんしゅうちゅう） | クイズの正誤がある、または発音を試した |
+| `unseen`（まだ） | 記録が無い |
+
+### 連続日数（ストリーク）の仕様
+
+`streakOf(days, today)`（`streak.ts`）:
+
+- 日付は **JST**。`today` は呼び出し側が `dayKeyOf()` で渡す（関数内で `new Date()` を呼ばない）
+- **今日まだでも、昨日まで続いていれば `current` は維持**。`studiedToday: false` で「きょうも やろう」を出す
+- 2 日以上空いたら `current = 0`
+- 未来の日付キーは **無視**（端末の時計が進んでいても壊れない）
+- 「学習した日」= クイズ 1 ラウンド以上 **または** 発音 1 回以上（画面を開いただけでは数えない）
+- `longest` は日次から数え直した値。API は保存値 `longestStreak` との **大きい方** を返す
+  （保存値は保持期間 400 日より前の記録を持っていることがある）
+
+### 依存の向き（なぜ引数で受け取るのか）
+
+`summary.ts` / `streak.ts` は **import を 1 つも持たない**（`state.ts` / `day.ts` と同じ流儀）。
+純粋関数を `node --test` の型ストリッピングで直接 import するため、単語一覧とカテゴリは
+Route Handler が `words.ts` から渡す。日付キーの加減算だけは `addDays()` と同じ計算を
+各ファイルに 4 行だけ持つ（`import` すると解決できないため。計算内容は `day.ts` が正）。

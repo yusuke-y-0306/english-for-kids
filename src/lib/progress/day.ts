@@ -37,3 +37,15 @@ export function daysBetween(from: string, to: string): number {
   const ms = dayKeyToUtcDate(to).getTime() - dayKeyToUtcDate(from).getTime();
   return Math.round(ms / 86_400_000);
 }
+
+/**
+ * `day` の `delta` 日後 (負なら前) のキー。連続日数を数えるときに使う。
+ *
+ * ここで `toISOString().slice(0, 10)` を使うのは **日付キーの計算** だから。
+ * 「いま何日か」をこれで取ってはいけない (UTC で切ると JST 09:00 前にずれる)。
+ * `dayKeyToUtcDate()` が返すのは UTC の 0 時なので、日単位の加減算はそのまま安全。
+ */
+export function addDays(day: string, delta: number): string {
+  const base = dayKeyToUtcDate(day).getTime();
+  return new Date(base + delta * 86_400_000).toISOString().slice(0, 10);
+}
