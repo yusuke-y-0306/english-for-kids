@@ -63,6 +63,7 @@ const features: Feature[] = [
     title: "進捗管理",
     en: "Progress",
     desc: "がんばりが 見えると、もっと うれしい。",
+    href: "/progress",
     bg: "bg-[#f1ecff]",
     ink: "text-[#5b3cb4]",
     ring: "#a17bf0",
