@@ -12,6 +12,8 @@ type Feature = {
   en: string;
   desc: string;
   href?: string;
+  /** カード下部のボタン文言 (既定は「あそぶ」)。進捗のように「遊ぶ」以外は個別に指定する */
+  cta?: string;
   bg: string;
   ink: string;
   ring: string;
@@ -64,6 +66,7 @@ const features: Feature[] = [
     en: "Progress",
     desc: "がんばりが 見えると、もっと うれしい。",
     href: "/progress",
+    cta: "みてみる",
     bg: "bg-[#f1ecff]",
     ink: "text-[#5b3cb4]",
     ring: "#a17bf0",
@@ -229,7 +232,7 @@ export default async function Home() {
                         <span
                           className="inline-flex min-h-11 items-center rounded-full bg-badge px-5 py-2.5 text-sm font-extrabold text-white shadow-[0_3px_0_rgba(61,50,41,0.28)] transition group-hover:bg-[#75492e]"
                         >
-                          あそぶ
+                          {f.cta ?? "あそぶ"}
                           <ArrowRight className="ml-1.5 h-4 w-4" />
                         </span>
                       ) : (
