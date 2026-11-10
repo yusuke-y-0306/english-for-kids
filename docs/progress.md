@@ -9,9 +9,11 @@
 
 | キー | 内容 |
 |---|---|
-| `days["YYYY-MM-DD"]` | その日の `quiz.rounds / correct / total` と `pronunciation.attempts / ok` |
+| `days["YYYY-MM-DD"]` | その日の `quiz.rounds / correct / total`、`pronunciation.attempts / ok`、`cards.views` |
 | `words[wordId]` | 単語ごとの `correct / wrong / lastAt`（クイズの正誤 + 移行時の発音シード。下記 #66） |
+| `cards[wordId]` | 単語ごとの `views / lastAt`（カードで意味を見た回数。クイズの正誤とは別勘定） |
 | `quizRoundIds` | 直近に記録したクイズの `roundId`（冪等キー。新しい順・最大 32 件） |
+| `cardEventIds` | 直近に記録したカード閲覧の `eventId`（冪等キー。新しい順・最大 64 件） |
 | `longestStreak` | 最長の連続学習日数（#69 が更新） |
 | `lastStudyAt` / `updatedAt` | ISO 8601 |
 | `migratedFromPronunciation` | 既存の発音ストアから単語別の種を蒔いた印（#66。`true` のときだけ存在） |
@@ -59,6 +61,21 @@
 `words[wordId]` は「単語に紐づく問題」だけを数える。中級・上級の文法問題は
 単語を持たないので `wordId: null` で送り、日次の `rounds / correct / total` にだけ
 反映する（単語別の得意・不得意を文法問題で汚さない）。
+
+## カードの記録 — 見たことと正解を混ぜない（#76）
+
+フラッシュカードで **意味を見た瞬間**（おもて → うら）に
+`POST /api/progress/cards` へ `{ eventId, wordId }` を送る。
+
+- `eventId`（クライアントが作る UUID）が **冪等キー**。同じ ID の再送は数えない
+- 覚えるのは **新しい順に最大 `CARD_EVENT_MEMORY`（64）件**
+- 日次の `cards.views` と、単語別の `cards[wordId].views` を 1 ずつ増やす
+- **`words[wordId]` には触らない**。カードを見ただけで「正解した」ことにすると、
+  習得度（クイズ 3 回正解で「おぼえた」）が水増しされるため
+- 集計では `cards[wordId].views > 0` を「れんしゅうちゅう」の根拠にだけ使う
+  （「おぼえた」にはしない）
+- 同じページ表示中はクライアント側でも単語ごとに 1 回だけ送る。失敗したら印を戻し、
+  次のめくりで再挑戦する（遊びは止めない）
 
 ## 同時更新
 
@@ -127,7 +144,8 @@
 
 ## 未実装（別 issue）
 
-- 記録 API: クイズは #65、発音の取り込み（日次への反映と移行）は #66 で実装済み
+- 記録 API: クイズは #65、発音の取り込み（日次への反映と移行）は #66、
+  カードの記録は #76 で実装済み
 - 集計と取得 API: #67 で実装済み（下記）
 - 画面: #68（進捗ページ）/ #69（ホームのストリークバッジ。判定ロジックは #67 で実装済み）
   / #70（保護者向け）

@@ -16,6 +16,11 @@ export type QuizLevelId = "beginner" | "intermediate" | "advanced";
 
 export type QuizQuestion = {
   id: string;
+  /**
+   * 出題した単語の ID (`animals/dog` 形式)。進捗の記録 (#76) に使う。
+   * 中級・上級の文法問題は単語に紐づかないので **持たない**。
+   */
+  wordId?: string;
   /** 大きく見せる絵文字（初級のみ） */
   display?: string;
   /** 問題文（英語。中級・上級で使う） */
@@ -136,6 +141,7 @@ function buildBeginnerQuestions(count: number): QuizQuestion[] {
 
     return {
       id: `beginner-${i}-${word.en}`,
+      wordId: `${word.categoryId}/${word.en}`,
       display: word.emoji,
       promptJa: `「${word.ja}」は えいごで なに？`,
       choices,

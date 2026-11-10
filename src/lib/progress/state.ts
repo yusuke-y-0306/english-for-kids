@@ -25,6 +25,10 @@ export type ProgressDay = {
     /** そのうち「OK」だった回数 */
     ok: number;
   };
+  cards: {
+    /** その日にカードで意味を見た回数 */
+    views: number;
+  };
 };
 
 /** 単語ごとの手応え (クイズの正誤だけを数える。発音は発音ストアが正) */
@@ -35,12 +39,28 @@ export type ProgressWordState = {
   lastAt: string;
 };
 
+/**
+ * カードで見た単語の記録。
+ *
+ * クイズの正誤 (`words`) とは **別の事実** として持つ。カードを見ただけで
+ * 「正解した」ことにすると習得度が水増しされるので、`words` には混ぜない。
+ * 進捗ページでは「れんしゅうちゅう」の根拠としてだけ使う。
+ */
+export type ProgressCardState = {
+  /** カードをめくって意味を見た回数 */
+  views: number;
+  /** 最後に見た日時 (ISO 8601) */
+  lastAt: string;
+};
+
 export type ProgressState = {
   version: 1;
   /** `YYYY-MM-DD` (JST) → その日の学習量 */
   days: Record<string, ProgressDay>;
   /** 単語 ID → 正誤の累計 */
   words: Record<string, ProgressWordState>;
+  /** 単語 ID → カードで見た回数 (クイズの正誤とは別勘定) */
+  cards: Record<string, ProgressCardState>;
   /**
    * 直近に記録したクイズの `roundId` (新しい順)。#65 の **冪等キー**。
    *
@@ -51,6 +71,13 @@ export type ProgressState = {
    * `QUIZ_ROUND_MEMORY` 件を輪のように持つ (ファイルは数百バイト増えるだけ)。
    */
   quizRoundIds: string[];
+  /**
+   * 直近に記録したカード閲覧の `eventId` (新しい順)。カード記録の **冪等キー**。
+   *
+   * カードは 1 枚めくるたびに 1 リクエスト送る。通信の再送や二重タップで
+   * 同じ閲覧が 2 回来ても、同じ `eventId` なら数えない。
+   */
+  cardEventIds: string[];
   /** 最長の連続学習日数 (#69 が更新する。ここでは保存するだけ) */
   longestStreak: number;
   /** 最後に学習した日時 (ISO 8601)。まだ無ければ null */
@@ -67,12 +94,16 @@ export const PROGRESS_RETENTION_DAYS = 400;
 /** 覚えておく `roundId` の件数 (#65)。32 ラウンド = 8 問 × 32 ≈ 256 問ぶん */
 export const QUIZ_ROUND_MEMORY = 32;
 
+/** 覚えておくカード閲覧 `eventId` の件数 (直近 64 枚) */
+export const CARD_EVENT_MEMORY = 64;
+
 const DAY_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function emptyDay(): ProgressDay {
   return {
     quiz: { rounds: 0, correct: 0, total: 0 },
     pronunciation: { attempts: 0, ok: 0 },
+    cards: { views: 0 },
   };
 }
 
@@ -81,7 +112,9 @@ export function emptyProgressState(): ProgressState {
     version: 1,
     days: {},
     words: {},
+    cards: {},
     quizRoundIds: [],
+    cardEventIds: [],
     longestStreak: 0,
     lastStudyAt: null,
     updatedAt: new Date(0).toISOString(),
@@ -128,6 +161,7 @@ export function normalizeProgressState(raw: unknown): ProgressState {
           attempts: count(entry.pronunciation?.attempts),
           ok: Math.min(count(entry.pronunciation?.ok), count(entry.pronunciation?.attempts)),
         },
+        cards: { views: count(entry.cards?.views) },
       };
     }
   }
@@ -145,6 +179,18 @@ export function normalizeProgressState(raw: unknown): ProgressState {
     }
   }
 
+  const cards: Record<string, ProgressCardState> = {};
+  if (source.cards && typeof source.cards === "object") {
+    for (const [wordId, value] of Object.entries(source.cards)) {
+      if (wordId === "" || !value || typeof value !== "object") continue;
+      const entry = value as Partial<ProgressCardState>;
+      cards[wordId] = {
+        views: count(entry.views),
+        lastAt: typeof entry.lastAt === "string" ? entry.lastAt : new Date(0).toISOString(),
+      };
+    }
+  }
+
   /* 冪等キーも「読める文字列だけ・重複なし・上限まで」に正規化する。
      手編集で数千件入っていても、ここで切るので比較コストは増えない */
   const quizRoundIds: string[] = [];
@@ -156,11 +202,22 @@ export function normalizeProgressState(raw: unknown): ProgressState {
     }
   }
 
+  const cardEventIds: string[] = [];
+  if (Array.isArray(source.cardEventIds)) {
+    for (const id of source.cardEventIds) {
+      if (typeof id !== "string" || id === "" || cardEventIds.includes(id)) continue;
+      cardEventIds.push(id);
+      if (cardEventIds.length >= CARD_EVENT_MEMORY) break;
+    }
+  }
+
   return {
     version: 1,
     days,
     words,
+    cards,
     quizRoundIds,
+    cardEventIds,
     longestStreak: count(source.longestStreak),
     lastStudyAt: isoOrNull(source.lastStudyAt),
     updatedAt:
@@ -261,6 +318,7 @@ export function applyQuizRound(state: ProgressState, input: QuizRoundInput): Pro
         total: today.quiz.total + total,
       },
       pronunciation: { ...today.pronunciation },
+      cards: { ...today.cards },
     },
   };
 
@@ -319,6 +377,7 @@ export function applyPronunciationAttempt(
         attempts: today.pronunciation.attempts + 1,
         ok: today.pronunciation.ok + (input.ok ? 1 : 0),
       },
+      cards: { ...today.cards },
     },
   };
 
@@ -326,6 +385,63 @@ export function applyPronunciationAttempt(
     ...state,
     version: 1,
     days: pruneDays(days),
+    lastStudyAt: input.now,
+    updatedAt: input.now,
+  };
+}
+
+export type CardViewInput = {
+  /**
+   * クライアントが 1 枚めくるたびに作る UUID。**冪等キー**。
+   * 空文字なら冪等性は効かない (テストや保守用の逃げ道)。
+   */
+  eventId: string;
+  /** JST の日付 (`dayKeyOf()` で作る) */
+  day: string;
+  /** めくったカードの単語 ID (呼び出し側で存在確認済み) */
+  wordId: string;
+  /** 記録した日時 (ISO 8601) */
+  now: string;
+};
+
+/**
+ * カードを 1 枚めくったことを記録する。
+ *
+ * - 日次の `cards.views` を 1 増やす (「きょう何枚見たか」)
+ * - 単語別の `cards[wordId].views` を 1 増やす (「この語を何回見たか」)
+ * - 同じ `eventId` の再送は **数えない** (参照も変えない)
+ *
+ * クイズの `words` には触らない。見ただけでは「正解した」ことにならないため。
+ */
+export function applyCardView(state: ProgressState, input: CardViewInput): ProgressState {
+  const eventId = typeof input.eventId === "string" ? input.eventId : "";
+  if (eventId !== "" && state.cardEventIds.includes(eventId)) return state;
+
+  const today = state.days[input.day] ?? emptyDay();
+  const previous = state.cards[input.wordId];
+
+  return {
+    ...state,
+    version: 1,
+    days: pruneDays({
+      ...state.days,
+      [input.day]: {
+        quiz: { ...today.quiz },
+        pronunciation: { ...today.pronunciation },
+        cards: { views: today.cards.views + 1 },
+      },
+    }),
+    cards: {
+      ...state.cards,
+      [input.wordId]: {
+        views: (previous?.views ?? 0) + 1,
+        lastAt: input.now,
+      },
+    },
+    cardEventIds:
+      eventId === ""
+        ? state.cardEventIds
+        : [eventId, ...state.cardEventIds].slice(0, CARD_EVENT_MEMORY),
     lastStudyAt: input.now,
     updatedAt: input.now,
   };

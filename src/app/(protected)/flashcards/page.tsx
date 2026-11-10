@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
+import { newClientId } from "@/lib/client-id";
 import { categories } from "@/lib/words";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -24,8 +25,33 @@ export default function FlashcardsPage() {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
+  /* 進捗の記録 (#76)。同じページ表示中に同じ単語を何度も数えない */
+  const recordedRef = useRef<Set<string>>(new Set());
+
+  function recordView(id: string) {
+    if (recordedRef.current.has(id)) return;
+    recordedRef.current.add(id);
+
+    /* 失敗したら印を戻す (次のめくりで再挑戦できる)。遊びは止めない */
+    void fetch("/api/progress/cards", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({ eventId: newClientId(), wordId: id }),
+    }).catch(() => {
+      recordedRef.current.delete(id);
+    });
+  }
+
   const word = cat.words[order[index]];
   const total = cat.words.length;
+
+  function flip() {
+    const next = !flipped;
+    setFlipped(next);
+    /* 意味を見た瞬間を「1 枚」と数える (おもてを見ただけでは数えない) */
+    if (next) recordView(`${cat.id}/${word.en}`);
+  }
 
   function selectCategory(id: string) {
     const nextCat = categories.find((c) => c.id === id) ?? categories[0];
@@ -89,7 +115,7 @@ export default function FlashcardsPage() {
       <div className="mt-7 [perspective:1200px]">
         <button
           type="button"
-          onClick={() => setFlipped((f) => !f)}
+          onClick={flip}
           aria-label="カードをめくる"
           className="relative block h-72 w-full [transform-style:preserve-3d] transition-transform duration-500 ease-out sm:h-80"
           style={{ transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
@@ -130,7 +156,7 @@ export default function FlashcardsPage() {
           ◀
         </button>
         <button
-          onClick={() => setFlipped((f) => !f)}
+          onClick={flip}
           className="min-h-12 rounded-full bg-[#f4801f] px-7 py-3 text-sm font-extrabold text-white shadow-[0_4px_0_#c25f0d] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
         >
           めくる

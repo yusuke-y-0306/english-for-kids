@@ -12,14 +12,15 @@ import { isStudiedDay, streakOf } from "../../src/lib/progress/streak.ts";
  *  2. 2 日以上空いたら current は 0
  *  3. 月跨ぎ・年跨ぎ・閏年で日付が壊れない
  *  4. 未来の日付キーは無視する (端末の時計が進んでいても壊れない)
- *  5. 発音だけの日も「学習した日」に数える
+ *  5. 発音だけ・カードだけの日も「学習した日」に数える
  */
 
-/** 学習した日を作る (rounds か attempts のどちらかが 1 以上) */
-function studied(rounds = 1, attempts = 0) {
+/** 学習した日を作る (rounds / attempts / カード のどれかが 1 以上) */
+function studied(rounds = 1, attempts = 0, cardViews = 0) {
   return {
     quiz: { rounds, correct: rounds, total: rounds * 8 },
     pronunciation: { attempts, ok: 0 },
+    cards: { views: cardViews },
   };
 }
 
@@ -37,9 +38,10 @@ describe("addDays", () => {
 });
 
 describe("isStudiedDay", () => {
-  test("クイズか発音のどちらかがあれば学習した日", () => {
+  test("クイズ・カード・発音のどれかがあれば学習した日", () => {
     assert.equal(isStudiedDay(studied(1)), true);
     assert.equal(isStudiedDay(studied(0, 1)), true);
+    assert.equal(isStudiedDay(studied(0, 0, 1)), true, "カードだけの日");
     assert.equal(isStudiedDay(REST), false);
     assert.equal(isStudiedDay(null), false);
     assert.equal(isStudiedDay(undefined), false);

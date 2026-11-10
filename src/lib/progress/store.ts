@@ -1,8 +1,10 @@
 import { getUserContent, updateUserContent } from "@/lib/auth/content";
 import { withUserLock } from "@/lib/store/lock";
 import {
+  applyCardView,
   applyQuizRound,
   normalizeProgressState,
+  type CardViewInput,
   type ProgressState,
   type QuizRoundInput,
 } from "./state";
@@ -68,6 +70,20 @@ export async function recordQuizRound(
   input: QuizRoundInput,
 ): Promise<{ state: ProgressState; duplicate: boolean }> {
   const { state, changed } = await mutateProgress(userId, (current) => applyQuizRound(current, input));
+  return { state, duplicate: !changed };
+}
+
+/**
+ * カードを 1 枚めくったことを記録する (#76 から呼ぶ)。
+ *
+ * `duplicate: true` は「同じ `eventId` を既に処理していた」= 何も足していない。
+ * 通信の再送や二重タップで数字が水増しされない。
+ */
+export async function recordCardView(
+  userId: string,
+  input: CardViewInput,
+): Promise<{ state: ProgressState; duplicate: boolean }> {
+  const { state, changed } = await mutateProgress(userId, (current) => applyCardView(current, input));
   return { state, duplicate: !changed };
 }
 

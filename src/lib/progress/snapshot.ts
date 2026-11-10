@@ -65,6 +65,7 @@ export async function loadProgressSnapshot(
   const input = {
     days: state.days,
     words: state.words,
+    cards: state.cards,
     pronunciation: pronunciation.byWord,
   };
 

@@ -24,6 +24,7 @@
 export type StreakDayLike = {
   quiz?: { rounds?: number } | undefined;
   pronunciation?: { attempts?: number } | undefined;
+  cards?: { views?: number } | undefined;
 };
 
 export type StreakDays = Record<string, StreakDayLike | null | undefined>;
@@ -57,14 +58,19 @@ function shiftDay(day: string, delta: number): string {
 /**
  * その日に「学習した」と数えるか。
  *
- * クイズを 1 ラウンドでも遊んだ、または発音を 1 回でも試したら学習した日。
- * 画面を開いただけ (`visits`) では数えない。
+ * クイズを 1 ラウンドでも遊んだ、カードを 1 枚でもめくった、または発音を
+ * 1 回でも試したら学習した日。画面を開いただけ (`visits`) では数えない。
  */
 export function isStudiedDay(entry: StreakDayLike | null | undefined): boolean {
   if (!entry || typeof entry !== "object") return false;
   const rounds = Number(entry.quiz?.rounds ?? 0);
   const attempts = Number(entry.pronunciation?.attempts ?? 0);
-  return (Number.isFinite(rounds) && rounds > 0) || (Number.isFinite(attempts) && attempts > 0);
+  const cardViews = Number(entry.cards?.views ?? 0);
+  return (
+    (Number.isFinite(rounds) && rounds > 0) ||
+    (Number.isFinite(attempts) && attempts > 0) ||
+    (Number.isFinite(cardViews) && cardViews > 0)
+  );
 }
 
 /** 学習した日を古い順に返す (未来日と壊れたキーは落とす) */
