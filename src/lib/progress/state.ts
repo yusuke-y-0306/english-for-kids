@@ -266,6 +266,56 @@ export function pruneDays(
   return next;
 }
 
+const DAY_MS = 86_400_000;
+
+/**
+ * その日に「学習した」と数えるか。
+ *
+ * `streak.ts` の `isStudiedDay()` と同じ判定 (クイズ 1 問・カード 1 枚・発音 1 回。
+ * 画面を開いただけでは数えない)。ここは **保存用の最長記録** を数えるためだけに
+ * 持っている。このファイルは import を持たないので、判定だけ 5 行を写している
+ * (`shiftDay()` と同じ流儀。判定の正は `streak.ts`)。
+ */
+function isStudiedDay(entry: ProgressDay | undefined): boolean {
+  if (!entry) return false;
+  return (
+    entry.quiz.rounds > 0 ||
+    entry.quiz.total > 0 ||
+    entry.pronunciation.attempts > 0 ||
+    entry.cards.views > 0
+  );
+}
+
+/**
+ * 日次から最長の連続学習日数を数え直す (#69)。
+ *
+ * `longestStreak` は保存するのが正 (日次は 400 日で切るので、再計算だけだと
+ * 保持期間より前の最長記録が失われる)。書き込みのたびに
+ * `Math.max(保存値, この値)` で更新する。
+ *
+ * 表示用の `streakOf()` は「今日」を引数で受け取るが、こちらは保存用なので
+ * 日次に残っている範囲の最長をそのまま数える。
+ */
+export function longestStreakOf(days: Record<string, ProgressDay>): number {
+  const studied = Object.keys(days)
+    .filter((day) => DAY_KEY_PATTERN.test(day) && isStudiedDay(days[day]))
+    .sort();
+
+  let longest = 0;
+  let run = 0;
+  let previous: string | null = null;
+  for (const day of studied) {
+    const expected =
+      previous === null
+        ? null
+        : new Date(Date.parse(`${previous}T00:00:00Z`) + DAY_MS).toISOString().slice(0, 10);
+    run = expected === day ? run + 1 : 1;
+    if (run > longest) longest = run;
+    previous = day;
+  }
+  return longest;
+}
+
 export type QuizRoundInput = {
   /**
    * クライアントが作るラウンドの UUID (1 ラウンド = 8 問)。
@@ -387,11 +437,12 @@ export function applyQuizRound(state: ProgressState, input: QuizRoundInput): Pro
       cards: { ...today.cards },
     },
   };
+  const pruned = pruneDays(days);
 
   return {
     ...state,
     version: 1,
-    days: pruneDays(days),
+    days: pruned,
     words,
     quizRoundIds: countRound
       ? [roundId, ...state.quizRoundIds].slice(0, QUIZ_ROUND_MEMORY)
@@ -402,6 +453,8 @@ export function applyQuizRound(state: ProgressState, input: QuizRoundInput): Pro
         : [...appliedAnswers.reverse(), ...state.quizAnswerIds]
             .filter((id, index, all) => id !== "" && all.indexOf(id) === index)
             .slice(0, QUIZ_ANSWER_MEMORY),
+    /* #69: 保存時の最長記録。日次は 400 日で切るので、再計算だけでは失われる */
+    longestStreak: Math.max(state.longestStreak, longestStreakOf(pruned)),
     lastStudyAt: input.now,
     updatedAt: input.now,
   };
@@ -451,11 +504,13 @@ export function applyPronunciationAttempt(
       cards: { ...today.cards },
     },
   };
+  const pruned = pruneDays(days);
 
   return {
     ...state,
     version: 1,
-    days: pruneDays(days),
+    days: pruned,
+    longestStreak: Math.max(state.longestStreak, longestStreakOf(pruned)),
     lastStudyAt: input.now,
     updatedAt: input.now,
   };
@@ -490,18 +545,19 @@ export function applyCardView(state: ProgressState, input: CardViewInput): Progr
 
   const today = state.days[input.day] ?? emptyDay();
   const previous = state.cards[input.wordId];
+  const pruned = pruneDays({
+    ...state.days,
+    [input.day]: {
+      quiz: { ...today.quiz },
+      pronunciation: { ...today.pronunciation },
+      cards: { views: today.cards.views + 1 },
+    },
+  });
 
   return {
     ...state,
     version: 1,
-    days: pruneDays({
-      ...state.days,
-      [input.day]: {
-        quiz: { ...today.quiz },
-        pronunciation: { ...today.pronunciation },
-        cards: { views: today.cards.views + 1 },
-      },
-    }),
+    days: pruned,
     cards: {
       ...state.cards,
       [input.wordId]: {
@@ -513,6 +569,7 @@ export function applyCardView(state: ProgressState, input: CardViewInput): Progr
       eventId === ""
         ? state.cardEventIds
         : [eventId, ...state.cardEventIds].slice(0, CARD_EVENT_MEMORY),
+    longestStreak: Math.max(state.longestStreak, longestStreakOf(pruned)),
     lastStudyAt: input.now,
     updatedAt: input.now,
   };

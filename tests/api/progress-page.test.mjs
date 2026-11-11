@@ -23,6 +23,8 @@ import test, { after, before, describe } from "node:test";
 const SESSION_SECRET = randomBytes(32).toString("hex");
 const USER_A = "u_alpha000000000000";
 const USER_EMPTY = "u_empty000000000000";
+/** 昨日だけ学習した子 (今日はまだ → ホームは「きょうも やろう」) */
+const USER_IDLE = "u_idle0000000000000";
 
 const PAGE = "/progress";
 
@@ -96,9 +98,9 @@ before(async () => {
     JSON.stringify({
       version: 1,
       updatedAt: new Date().toISOString(),
-      users: [USER_A, USER_EMPTY].map((id) => ({
+      users: [USER_A, USER_EMPTY, USER_IDLE].map((id) => ({
         id,
-        displayName: id === USER_A ? "Alpha" : "Empty",
+        displayName: id === USER_A ? "Alpha" : id === USER_IDLE ? "Idle" : "Empty",
         avatar: "fox",
         color: "#7dd3fc",
         credentials: [],
@@ -147,6 +149,32 @@ before(async () => {
           byWord: {
             "food/apple": { score: "ok", attempts: 2, updatedAt: "2026-11-09T00:00:00.000Z" },
           },
+        },
+      },
+    }),
+  );
+
+  /* 昨日だけ学習した子: 連続は 1 日、今日はまだ */
+  await writeFile(
+    path.join(contentDir, `${USER_IDLE}.json`),
+    JSON.stringify({
+      userId: USER_IDLE,
+      visits: 2,
+      data: {
+        progress: {
+          version: 1,
+          days: {
+            [yesterday]: {
+              quiz: { rounds: 1, correct: 4, total: 8 },
+              pronunciation: { attempts: 0, ok: 0 },
+              cards: { views: 1 },
+            },
+          },
+          words: {},
+          quizRoundIds: [],
+          longestStreak: 1,
+          lastStudyAt: "2026-11-09T00:00:00.000Z",
+          updatedAt: "2026-11-09T00:00:00.000Z",
         },
       },
     }),
@@ -284,6 +312,14 @@ describe("学習ゼロの子 (空状態)", () => {
 });
 
 describe("ホームからの導線", () => {
+  async function homeHtml(cookie) {
+    const res = await fetch(`${baseUrl}/`, {
+      headers: { accept: "text/html", cookie: `efk_session=${cookie}` },
+    });
+    assert.equal(res.status, 200);
+    return stripRscMarkers(await res.text());
+  }
+
   test("ホームの進捗カードに href=\"/progress\" がある", async () => {
     const html = await pageHtml(sessionCookie(USER_A));
     const home = await (
@@ -294,5 +330,23 @@ describe("ホームからの導線", () => {
     assert.equal(html.length > 0, true);
     assert.match(home, /href="\/progress"/);
     assert.match(home, /進捗管理/);
+  });
+
+  test("今日やった子には 🔥 n 日れんぞくのバッジが出る", async () => {
+    const home = await homeHtml(sessionCookie(USER_A));
+    assert.match(home, /href="\/progress"/);
+    assert.match(home, /🔥/);
+    assert.match(home, /2 日 れんぞく/);
+  });
+
+  test("今日まだでも続いている子には「きょうも やろう」", async () => {
+    const home = await homeHtml(sessionCookie(USER_IDLE));
+    assert.match(home, /きょうも やろう/);
+    assert.doesNotMatch(home, /日 れんぞく/);
+  });
+
+  test("はじめての子には「きょうから はじめよう」", async () => {
+    const home = await homeHtml(sessionCookie(USER_EMPTY));
+    assert.match(home, /きょうから はじめよう/);
   });
 });
