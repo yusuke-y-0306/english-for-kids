@@ -40,6 +40,11 @@ describe("addDays", () => {
 describe("isStudiedDay", () => {
   test("クイズ・カード・発音のどれかがあれば学習した日", () => {
     assert.equal(isStudiedDay(studied(1)), true);
+    assert.equal(
+      isStudiedDay({ quiz: { rounds: 0, total: 1 } }),
+      true,
+      "8 問終える前でも 1 問解けば学習した日 (#76)",
+    );
     assert.equal(isStudiedDay(studied(0, 1)), true);
     assert.equal(isStudiedDay(studied(0, 0, 1)), true, "カードだけの日");
     assert.equal(isStudiedDay(REST), false);

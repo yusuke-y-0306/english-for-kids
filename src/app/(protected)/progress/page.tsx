@@ -195,7 +195,8 @@ function TodayCard({
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
-        <Stat label="クイズ" value={`${quiz.rounds}`} unit="ラウンド" color="bg-[#eef7e2]" />
+        {/* 1 問ごとに記録するので、カードの「まい」と並べられるのは出題数 (#76) */}
+        <Stat label="クイズ" value={`${quiz.total}`} unit="もん" color="bg-[#eef7e2]" />
         <Stat label="せいかい" value={`${quiz.accuracy}`} unit="%" color="bg-[#e6f6ff]" />
         <Stat label="カード" value={`${cards.views}`} unit="まい" color="bg-[#fff3d6]" />
         <Stat label="はつおん" value={`${pronunciation.attempts}`} unit="かい" color="bg-[#ffeaf1]" />

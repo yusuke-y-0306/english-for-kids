@@ -18,11 +18,23 @@ const FLASHCARDS_PAGE = "src/app/(protected)/flashcards/page.tsx";
 const CARD_API = "src/app/api/progress/cards/route.ts";
 
 describe("クイズ画面の記録配線", () => {
-  test("ラウンド終了時に /api/progress/quiz へ送る", async () => {
+  test("1 問答えた時点で /api/progress/quiz へ送る (カード 1 枚と同等の努力で記録)", async () => {
     const source = await readFile(QUIZ_PAGE, "utf8");
     assert.match(source, /\/api\/progress\/quiz/);
     assert.match(source, /roundId/);
+    assert.match(source, /answerId: newClientId\(\)/, "1 問ぶんの冪等キーを載せる");
     assert.match(source, /wordId: question\.wordId \?\? null/, "初級の単語 ID を結果に載せる");
+    assert.match(source, /results: round\.results/, "その時点までの回答をまとめて送る");
+
+    /* 送信が「ラウンド終了時 (next)」ではなく「回答時 (answer)」にあること */
+    const answerAt = source.indexOf("function answer(");
+    const nextAt = source.indexOf("function next(");
+    const sendAt = source.indexOf("/api/progress/quiz");
+    assert.ok(answerAt >= 0 && nextAt > answerAt, "answer / next の順序を前提にする");
+    assert.ok(
+      sendAt > answerAt && sendAt < nextAt,
+      "送信は answer() の中に置く (8 問終えるまで待たない)",
+    );
   });
 });
 

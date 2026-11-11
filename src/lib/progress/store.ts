@@ -41,8 +41,8 @@ export async function getProgressState(userId: string): Promise<ProgressState> {
  * 発音ストアと同じロックを共有しているので、2 つの機能が同じ子のファイルを
  * 同時に更新しても取りこぼさない。
  *
- * `mutate` が **同じ参照を返したら書かない**。たとえば同じ `roundId` の再送
- * (#65) は「数えない」ので、更新日時だけが動く空振り書き込みを避ける。
+ * `mutate` が **同じ参照を返したら書かない**。たとえば同じ `answerId` の再送
+ * (#76) は「数えない」ので、更新日時だけが動く空振り書き込みを避ける。
  */
 async function mutateProgress(
   userId: string,
@@ -60,9 +60,9 @@ async function mutateProgress(
 }
 
 /**
- * クイズ 1 ラウンドを記録する (#65 から呼ぶ)。
+ * クイズの回答を記録する (#76 から呼ぶ。1 問ごとに届く)。
  *
- * `duplicate: true` は「同じ `roundId` を既に処理していた」= 何も足していない。
+ * `duplicate: true` は「同じ回答を既に処理していた」= 何も足していない。
  * クライアントは成功として扱ってよい (リロードで 2 回送られても水増しされない)。
  */
 export async function recordQuizRound(

@@ -121,7 +121,8 @@ function sliceOf(input: ProgressInput, day: string): DailySlice {
     },
     pronunciation: { attempts, ok },
     cards: { views: cardViews },
-    studied: rounds > 0 || attempts > 0 || cardViews > 0,
+    /* クイズは 1 問でも解けば学習した日 (ラウンド完走を待たない。#76) */
+    studied: total > 0 || rounds > 0 || attempts > 0 || cardViews > 0,
   };
 }
 

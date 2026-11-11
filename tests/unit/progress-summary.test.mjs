@@ -114,6 +114,15 @@ describe("summarizeDaily", () => {
     assert.equal(series[0].studied, true);
   });
 
+  test("クイズは 8 問終える前でも「学習した日」になる (#76)", () => {
+    const series = summarizeDaily(
+      inputOf({ days: { [TODAY]: { quiz: { rounds: 0, correct: 0, total: 1 } } } }),
+      { days: 1, today: TODAY },
+    );
+    assert.deepEqual(series[0].quiz, { rounds: 0, correct: 0, total: 1, accuracy: 0 });
+    assert.equal(series[0].studied, true);
+  });
+
   test("正答率は 0〜100 の整数 %", () => {
     const series = summarizeDaily(inputOf({ days: { [TODAY]: quizDay(1, 2, 3) } }), {
       days: 1,

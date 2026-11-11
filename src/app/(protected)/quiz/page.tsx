@@ -72,7 +72,7 @@ function subscribeStore(onChange: () => void) {
 
 type Screen = "title" | "playing" | "result";
 
-type RoundResult = { wordId: string | null; correct: boolean };
+type RoundResult = { answerId: string; wordId: string | null; correct: boolean };
 
 /* ------------------------------------------------------------------ *
  * おと（Web Audio。音声ファイルなしで軽く鳴らす）
@@ -156,7 +156,7 @@ export default function QuizPage() {
 
   const audioRef = useRef<AudioContext | null>(null);
 
-  /* 1 ラウンドぶんの結果。`roundId` がサーバ側の冪等キーになる */
+  /* 1 ラウンドぶんの結果。`roundId` と各 `answerId` がサーバ側の冪等キーになる */
   const roundRef = useRef<{ id: string; results: RoundResult[] }>({ id: "", results: [] });
 
   /* --- 紙ふぶきは 1.6 秒で片づける --- */
@@ -239,8 +239,30 @@ export default function QuizPage() {
 
     setSelected(choice);
     roundRef.current.results.push({
+      answerId: newClientId(),
       wordId: question.wordId ?? null,
       correct: choice === question.answer,
+    });
+
+    /*
+     * 進捗の記録 (#76)。カードは 1 枚めくれば記録されるので、クイズも
+     * **1 問答えるたび** に記録する (8 問終えるまで待たない)。
+     * 送るのは「その時点までの回答」なので、途中の送信が失敗しても
+     * 次の回答の送信に前の回答が載り、自然に追いつく。
+     * ラウンド数は 8 問そろった送信でサーバが 1 回だけ数える。
+     */
+    const round = roundRef.current;
+    void fetch("/api/progress/quiz", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        roundId: round.id,
+        level: level.id,
+        results: round.results,
+      }),
+    }).catch(() => {
+      /* 通信できなくても プレイは続けられる */
     });
 
     if (choice === question.answer) {
@@ -264,23 +286,6 @@ export default function QuizPage() {
     if (selected === null) return;
 
     if (index + 1 >= total) {
-      /* 進捗の記録 (#76)。遊びを止めないよう、失敗しても画面は進める */
-      const round = roundRef.current;
-      if (round.results.length > 0) {
-        void fetch("/api/progress/quiz", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          keepalive: true,
-          body: JSON.stringify({
-            roundId: round.id,
-            level: level.id,
-            results: round.results,
-          }),
-        }).catch(() => {
-          /* 通信できなくても プレイは続けられる */
-        });
-      }
-
       const isRecord = score > (best[level.id] ?? 0) && score > 0;
       if (isRecord) {
         writeStore({ best: { ...best, [level.id]: score }, muted });

@@ -62,15 +62,23 @@ export type ProgressState = {
   /** 単語 ID → カードで見た回数 (クイズの正誤とは別勘定) */
   cards: Record<string, ProgressCardState>;
   /**
-   * 直近に記録したクイズの `roundId` (新しい順)。#65 の **冪等キー**。
+   * 直近に **完走した** クイズの `roundId` (新しい順)。
    *
-   * クイズは「リロード」「二重タップ」「オフライン復帰後の再送」で同じ結果が
-   * 2 回届きうる。届いた順に数えると、がんばった子ほど数字が水増しされる。
-   * そこで最後に処理した ID を覚えておき、同じ ID は **数えない**。
-   * 1 件だけ覚えると「2 ラウンド前の再送」を弾けないので、直近
-   * `QUIZ_ROUND_MEMORY` 件を輪のように持つ (ファイルは数百バイト増えるだけ)。
+   * ラウンド数 (`days[...].quiz.rounds`) を二重に数えないための鍵。
+   * 1 ラウンド = 8 問を終えた送信だけがここに入る。直近
+   * `QUIZ_ROUND_MEMORY` 件を輪のように持つ。
    */
   quizRoundIds: string[];
+  /**
+   * 直近に記録した **1 問ぶんの回答** の `answerId` (新しい順)。
+   *
+   * クイズは 1 問答えるたびに、その時点までの回答をまとめて送る (#76)。
+   * 送信が失敗しても次の回答の送信に前の回答が載るので、自然に追いつく。
+   * そのため同じ回答が 2 回届きうる。届いた順に数えると、がんばった子ほど
+   * 数字が水増しされるので、処理済みの `answerId` は **数えない**。
+   * 直近 `QUIZ_ANSWER_MEMORY` 件 (≈ 32 ラウンド × 8 問) を覚える。
+   */
+  quizAnswerIds: string[];
   /**
    * 直近に記録したカード閲覧の `eventId` (新しい順)。カード記録の **冪等キー**。
    *
@@ -91,8 +99,11 @@ export type ProgressState = {
 /** 日次データの保持期間。これを超えた古い日は落とす (ファイルが無限に育たない) */
 export const PROGRESS_RETENTION_DAYS = 400;
 
-/** 覚えておく `roundId` の件数 (#65)。32 ラウンド = 8 問 × 32 ≈ 256 問ぶん */
+/** 覚えておく「完走したラウンド」の `roundId` の件数 (#65) */
 export const QUIZ_ROUND_MEMORY = 32;
+
+/** 覚えておく「1 問ぶんの回答」の `answerId` の件数 (32 ラウンド × 8 問) */
+export const QUIZ_ANSWER_MEMORY = 256;
 
 /** 覚えておくカード閲覧 `eventId` の件数 (直近 64 枚) */
 export const CARD_EVENT_MEMORY = 64;
@@ -114,6 +125,7 @@ export function emptyProgressState(): ProgressState {
     words: {},
     cards: {},
     quizRoundIds: [],
+    quizAnswerIds: [],
     cardEventIds: [],
     longestStreak: 0,
     lastStudyAt: null,
@@ -202,6 +214,15 @@ export function normalizeProgressState(raw: unknown): ProgressState {
     }
   }
 
+  const quizAnswerIds: string[] = [];
+  if (Array.isArray(source.quizAnswerIds)) {
+    for (const id of source.quizAnswerIds) {
+      if (typeof id !== "string" || id === "" || quizAnswerIds.includes(id)) continue;
+      quizAnswerIds.push(id);
+      if (quizAnswerIds.length >= QUIZ_ANSWER_MEMORY) break;
+    }
+  }
+
   const cardEventIds: string[] = [];
   if (Array.isArray(source.cardEventIds)) {
     for (const id of source.cardEventIds) {
@@ -217,6 +238,7 @@ export function normalizeProgressState(raw: unknown): ProgressState {
     words,
     cards,
     quizRoundIds,
+    quizAnswerIds,
     cardEventIds,
     longestStreak: count(source.longestStreak),
     lastStudyAt: isoOrNull(source.lastStudyAt),
@@ -246,7 +268,8 @@ export function pruneDays(
 
 export type QuizRoundInput = {
   /**
-   * クライアントが作る UUID。**冪等キー** (#65)。
+   * クライアントが作るラウンドの UUID (1 ラウンド = 8 問)。
+   * 完走したラウンドを二重に数えないための鍵。
    * 空文字 / 未指定なら冪等性は効かない (テストや保守用の逃げ道)。
    */
   roundId: string;
@@ -256,8 +279,23 @@ export type QuizRoundInput = {
    * 1 問ぶんの結果。単語 ID は呼び出し側で存在確認済みのもの。
    * `null` は「単語に紐づかない問題」（中級・上級の文法問題）。
    * その場合は日次の出題数・正解数だけ数え、単語別には触らない。
+   *
+   * `answerId` は 1 問ぶんの **冪等キー**。省略した場合は
+   * `${roundId}:${index}` で代用する (クライアントは UUID を載せる)。
    */
-  results: ReadonlyArray<{ wordId: string | null; correct: boolean }>;
+  results: ReadonlyArray<{
+    wordId: string | null;
+    correct: boolean;
+    answerId?: string;
+  }>;
+  /**
+   * この送信で **8 問を終えた** か (ラウンド数の加算はこれが true のときだけ)。
+   *
+   * クイズは 1 問答えるたびに、その時点までの回答をまとめて送る (#76)。
+   * 途中でやめたラウンドも「回答した事実」は残すが、ラウンド数は増やさない。
+   * 呼び出し側 (Route Handler) が `QUIZ_LENGTH` と突き合わせて決める。
+   */
+  roundComplete?: boolean;
   /** 記録した日時 (ISO 8601) */
   now: string;
 };
@@ -277,24 +315,52 @@ export function summaryForDay(state: ProgressState, day: string): QuizDaySummary
 }
 
 /**
- * クイズ 1 ラウンドを足した新しい状態を返す (元の状態は変更しない)。
+ * クイズの回答を足した新しい状態を返す (元の状態は変更しない)。
  *
- * 出題数が 0 のラウンドは「遊んでいない」ので数えない (空送信で水増しされない)。
- * 同じ `roundId` を 2 回受け取ったら **同じ状態をそのまま返す** (呼び出し側は
- * 参照が変わらないことで「書く必要が無い」と判断できる)。
+ * 1 問答えるたびに「その時点までの回答」が届く (#76)。まだ数えていない
+ * `answerId` の回答だけを足すので、同じ送信が 2 回届いても水増しされない。
+ * ラウンド数 (`rounds`) は `roundComplete: true` の送信で 1 回だけ増える。
+ *
+ * 出題数が 0 の送信は「遊んでいない」ので数えない (空送信で水増しされない)。
+ * 数えるものが無ければ **同じ状態をそのまま返す** (呼び出し側は参照が
+ * 変わらないことで「書く必要が無い」と判断できる)。
  */
 export function applyQuizRound(state: ProgressState, input: QuizRoundInput): ProgressState {
-  const total = input.results.length;
-  if (total === 0) return state;
+  if (input.results.length === 0) return state;
 
   const roundId = typeof input.roundId === "string" ? input.roundId : "";
-  if (roundId !== "" && state.quizRoundIds.includes(roundId)) return state;
+  const seenAnswers = new Set(state.quizAnswerIds);
+  const appliedAnswers: string[] = [];
+  const fresh: Array<{ wordId: string | null; correct: boolean }> = [];
+
+  input.results.forEach((result, index) => {
+    /* 冪等キー。クライアントは UUID を載せる。無ければラウンド内の位置で代用する
+       (同じ送信をそのまま再送する限り、位置は変わらない) */
+    const answerId =
+      typeof result.answerId === "string" && result.answerId !== ""
+        ? result.answerId
+        : roundId === ""
+          ? ""
+          : `${roundId}:${index}`;
+
+    if (answerId !== "" && seenAnswers.has(answerId)) return;
+    if (answerId !== "") seenAnswers.add(answerId);
+    appliedAnswers.push(answerId);
+    fresh.push({ wordId: result.wordId, correct: result.correct });
+  });
+
+  const countRound =
+    input.roundComplete === true &&
+    roundId !== "" &&
+    !state.quizRoundIds.includes(roundId);
+
+  if (fresh.length === 0 && !countRound) return state;
 
   const today = state.days[input.day] ?? emptyDay();
-  const correct = input.results.filter((r) => r.correct).length;
+  const correct = fresh.filter((r) => r.correct).length;
 
   const words: Record<string, ProgressWordState> = { ...state.words };
-  for (const result of input.results) {
+  for (const result of fresh) {
     /* 文法問題は単語を持たない。単語別の集計を汚さないよう読み飛ばす */
     if (!result.wordId) continue;
     const previous = words[result.wordId] ?? {
@@ -313,9 +379,9 @@ export function applyQuizRound(state: ProgressState, input: QuizRoundInput): Pro
     ...state.days,
     [input.day]: {
       quiz: {
-        rounds: today.quiz.rounds + 1,
+        rounds: today.quiz.rounds + (countRound ? 1 : 0),
         correct: today.quiz.correct + correct,
-        total: today.quiz.total + total,
+        total: today.quiz.total + fresh.length,
       },
       pronunciation: { ...today.pronunciation },
       cards: { ...today.cards },
@@ -327,10 +393,15 @@ export function applyQuizRound(state: ProgressState, input: QuizRoundInput): Pro
     version: 1,
     days: pruneDays(days),
     words,
-    quizRoundIds:
-      roundId === ""
-        ? state.quizRoundIds
-        : [roundId, ...state.quizRoundIds].slice(0, QUIZ_ROUND_MEMORY),
+    quizRoundIds: countRound
+      ? [roundId, ...state.quizRoundIds].slice(0, QUIZ_ROUND_MEMORY)
+      : state.quizRoundIds,
+    quizAnswerIds:
+      appliedAnswers.length === 0
+        ? state.quizAnswerIds
+        : [...appliedAnswers.reverse(), ...state.quizAnswerIds]
+            .filter((id, index, all) => id !== "" && all.indexOf(id) === index)
+            .slice(0, QUIZ_ANSWER_MEMORY),
     lastStudyAt: input.now,
     updatedAt: input.now,
   };
