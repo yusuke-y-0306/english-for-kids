@@ -15,9 +15,17 @@
 実機で開く:
 
 ```
-https://<本番URL>/lab/asr-bench/
+https://<本番URL>/lab/asr-bench/index.html
 ```
 
+- **`index.html` まで入れる。** Next は `public/` のディレクトリインデックスを解決しないので、
+  `/lab/asr-bench/` は 404 になる (`trailingSlash: false` の 308 で `/lab/asr-bench` に戻され、
+  戻った先も 404)。URL を rewrite で救う方針は取らない (issue #40 / PR #44)。
+- **端末内認識の列を埋められるのはデスクトップの Chrome / Edge。**
+  `processLocally` + `available()` に対応しているのは Windows / Mac / Linux 版で、
+  言語パック (en-US, 約 60MB) は `SpeechRecognition.install()` で入れる。
+  iPhone の Safari は `processLocally` を持たないため、端末内認識は**必ず空**になる
+  (`{"present":true,"hasProcessLocally":false}`)。この場合の比較相手は Moonshine だけ。
 - 単語が 1 語ずつ出るので、「この単語を とる」を押して 4 秒しゃべる。12 語で 1 セット。
 - 「端末内認識も いっしょに ためす」にチェックが入っていると、同じ発話を端末内認識にも通す
   (同時に走らせるので、1 回しゃべるだけで両方の結果が取れる)。チェックは
@@ -41,6 +49,10 @@ node scripts/asr-bench/moonshine.mjs ~/Downloads/asr-bench-*.json -o bench.moons
   (アプリ本番と同じ「自前のモデルだけ」という方針に揃える)。別の場所は `--model-dir`。
 - 推論は Node 上の WASM。ブラウザを立ち上げないので、CI でも回せる。
   量子化は q8 / モデルは `TinyStreaming` が既定 (`--arch BaseStreaming` も可)。
+- **`Transcriber` を使い回すと前の発話が次に漏れる。** 実測 (同じ father の音声):
+  同じインスタンスで 5 回 → `Father,` → `Mm Father,` → `Mm Father,` …、毎回作り直す → 5 回とも `Father,`。
+  汚染は先頭に `Mm` / `Okay` / `Yeah` が付く形で出る。計測でもアプリでも **1 発話 1 インスタンス**が前提。
+  現行の `moonshine.mjs` は 1 インスタンスで 12 語を回しているので、その結果は汚染込みと読む。
 
 ## 3. 表にする
 
