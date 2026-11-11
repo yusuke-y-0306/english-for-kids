@@ -25,7 +25,7 @@ import { findWordById } from "@/lib/words";
 
 export const metadata: Metadata = {
   title: "がんばりの きろく | こども英語ひろば",
-  description: "クイズと発音の がんばりを、グラフで ふりかえろう。",
+  description: "クイズとカードと発音の がんばりを、グラフで ふりかえろう。",
 };
 
 /** グラフに出す日数 (issue の指定は直近 7 日) */
@@ -60,7 +60,7 @@ export default async function ProgressPage() {
             がんばりの きろく
           </h1>
           <p className="mt-3 text-[0.9rem] leading-relaxed font-bold text-[#5b4a3c] sm:text-base">
-            クイズと はつおんの がんばりが、ここに たまっていくよ。
+            クイズと カードと はつおんの がんばりが、ここに たまっていくよ。
             <br className="sm:hidden" />
             <span className="text-[#8f7a5e]">（おうちの かたへ: 学習量の めやすです）</span>
           </p>
@@ -185,6 +185,7 @@ function TodayCard({
 }) {
   const quiz = today?.quiz ?? { rounds: 0, correct: 0, total: 0, accuracy: 0 };
   const pronunciation = today?.pronunciation ?? { attempts: 0, ok: 0 };
+  const cards = today?.cards ?? { views: 0 };
 
   return (
     <section className="rounded-[28px] border-4 border-white bg-white/80 px-5 py-6 shadow-[0_8px_22px_rgba(122,104,87,0.12)] sm:px-7">
@@ -193,15 +194,18 @@ function TodayCard({
         <span className="text-xs font-extrabold text-[#8f7a5e]">{formatDayLabel(today?.day ?? "")}</span>
       </div>
 
-      <dl className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
-        <Stat label="クイズ" value={`${quiz.rounds}`} unit="ラウンド" color="bg-[#eef7e2]" />
+      <dl className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+        {/* 1 問ごとに記録するので、カードの「まい」と並べられるのは出題数 (#76) */}
+        <Stat label="クイズ" value={`${quiz.total}`} unit="もん" color="bg-[#eef7e2]" />
         <Stat label="せいかい" value={`${quiz.accuracy}`} unit="%" color="bg-[#e6f6ff]" />
+        <Stat label="カード" value={`${cards.views}`} unit="まい" color="bg-[#fff3d6]" />
         <Stat label="はつおん" value={`${pronunciation.attempts}`} unit="かい" color="bg-[#ffeaf1]" />
       </dl>
 
       <p className="mt-3 text-[0.8rem] font-bold text-[#8f7a5e]">
-        きょうは クイズ {quiz.correct} / {quiz.total} もん せいかい、はつおんは {pronunciation.ok} かい「できた」。
-        いままでに はつおん {totalAttempts} かい れんしゅう したよ。
+        きょうは クイズ {quiz.correct} / {quiz.total} もん せいかい、カード {cards.views} まい、
+        はつおんは {pronunciation.ok} かい「できた」。いままでに はつおん {totalAttempts} かい
+        れんしゅう したよ。
       </p>
     </section>
   );
@@ -251,7 +255,7 @@ function ChartCard({ days }: { days: DailySlice[] }) {
         <span className="text-xs font-extrabold text-[#8f7a5e]">{studied} 日 べんきょうした</span>
       </div>
       <p className="mt-1 text-[0.75rem] font-bold text-[#8f7a5e]">
-        たての ながさ = こたえた かず ＋ はつおんの かいすう
+        たての ながさ = クイズの こたえた かず ＋ カードの まいすう ＋ はつおんの かいすう
       </p>
 
       <div className="mt-3">
@@ -276,9 +280,9 @@ function ChartCard({ days }: { days: DailySlice[] }) {
   );
 }
 
-/** 学習量 (クイズの出題数 + 発音の回数) */
+/** 学習量 (クイズの出題数 + カードの枚数 + 発音の回数) */
 function amountOf(day: DailySlice): number {
-  return day.quiz.total + day.pronunciation.attempts;
+  return day.quiz.total + day.cards.views + day.pronunciation.attempts;
 }
 
 function WeeklyChart({ days }: { days: DailySlice[] }) {
@@ -382,6 +386,7 @@ function CategoryCard({ snapshot }: { snapshot: ProgressSnapshot }) {
       <h2 className="text-lg font-extrabold text-ink">カテゴリ別 できた かず</h2>
       <p className="mt-1 text-[0.75rem] font-bold text-[#8f7a5e]">
         クイズで 3 かい せいかい、または 1 かい せいかい＋はつおん ok で「おぼえた」。
+        カードで 見た ことばは「れんしゅうちゅう」になるよ。
       </p>
 
       <ul className="mt-4 space-y-3.5">

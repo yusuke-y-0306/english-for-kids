@@ -128,6 +128,7 @@ before(async () => {
             [today]: {
               quiz: { rounds: 1, correct: 2, total: 3 },
               pronunciation: { attempts: 3, ok: 2 },
+              cards: { views: 2 },
             },
           },
           words: {
@@ -220,6 +221,8 @@ describe("学習のある子", () => {
     /* きょうの数字: クイズ 1 ラウンド・正答率 67%・発音 3 回 */
     assert.match(html, /67/);
     assert.match(html, /きょうは クイズ 2 \/ 3 もん せいかい/);
+    /* カードで見た枚数も「きょうの できた」に出る (#76) */
+    assert.match(html, /カード 2 まい/);
   });
 
   test("グラフは自前の SVG で、外部ライブラリを読み込まない", async () => {

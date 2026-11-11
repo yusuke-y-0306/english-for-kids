@@ -37,7 +37,18 @@ const pronunciationDay = (attempts, ok) => ({
   pronunciation: { attempts, ok },
 });
 
-const inputOf = ({ days = {}, words = {}, pronunciation = {} } = {}) => ({ days, words, pronunciation });
+const cardDay = (views) => ({
+  quiz: { rounds: 0, correct: 0, total: 0 },
+  pronunciation: { attempts: 0, ok: 0 },
+  cards: { views },
+});
+
+const inputOf = ({ days = {}, words = {}, cards = {}, pronunciation = {} } = {}) => ({
+  days,
+  words,
+  cards,
+  pronunciation,
+});
 
 describe("clampDayCount", () => {
   test("未指定・空・不正値は既定 (7)", () => {
@@ -67,6 +78,7 @@ describe("summarizeDaily", () => {
     for (const slice of series) {
       assert.deepEqual(slice.quiz, { rounds: 0, correct: 0, total: 0, accuracy: 0 });
       assert.deepEqual(slice.pronunciation, { attempts: 0, ok: 0 });
+      assert.deepEqual(slice.cards, { views: 0 });
       assert.equal(slice.studied, false);
     }
   });
@@ -91,6 +103,24 @@ describe("summarizeDaily", () => {
     assert.deepEqual(series[0].day, "2026-11-07");
     assert.deepEqual(series[0].pronunciation, { attempts: 2, ok: 1 });
     assert.deepEqual(series[1].quiz, { rounds: 0, correct: 0, total: 0, accuracy: 0 });
+  });
+
+  test("カードだけの日も「学習した日」になる", () => {
+    const series = summarizeDaily(inputOf({ days: { [TODAY]: cardDay(3) } }), {
+      days: 1,
+      today: TODAY,
+    });
+    assert.deepEqual(series[0].cards, { views: 3 });
+    assert.equal(series[0].studied, true);
+  });
+
+  test("クイズは 8 問終える前でも「学習した日」になる (#76)", () => {
+    const series = summarizeDaily(
+      inputOf({ days: { [TODAY]: { quiz: { rounds: 0, correct: 0, total: 1 } } } }),
+      { days: 1, today: TODAY },
+    );
+    assert.deepEqual(series[0].quiz, { rounds: 0, correct: 0, total: 1, accuracy: 0 });
+    assert.equal(series[0].studied, true);
   });
 
   test("正答率は 0〜100 の整数 %", () => {
@@ -177,6 +207,23 @@ describe("masteryOf / summarizeWords", () => {
     assert.deepEqual(mastery.pronunciation, { attempts: 2, ok: true });
   });
 
+  test("カードで見ただけなら「練習中」(おぼえた にはしない)", () => {
+    const input = inputOf({ cards: { "animals/fish": { views: 2, lastAt: "2026-11-08T00:00:00.000Z" } } });
+    const mastery = masteryOf("animals/fish", input);
+    assert.equal(mastery.level, "learning");
+    assert.equal(mastery.cards, 2);
+    assert.equal(mastery.correct, 0);
+  });
+
+  test("lastAt はカードも含めて一番新しいもの", () => {
+    const input = inputOf({
+      words: { "animals/bear": { correct: 1, wrong: 0, lastAt: "2026-11-01T00:00:00.000Z" } },
+      cards: { "animals/bear": { views: 1, lastAt: "2026-11-07T00:00:00.000Z" } },
+      pronunciation: { "animals/bear": { score: "ok", attempts: 1, updatedAt: "2026-11-05T00:00:00.000Z" } },
+    });
+    assert.equal(masteryOf("animals/bear", input).lastAt, "2026-11-07T00:00:00.000Z");
+  });
+
   test("不正解だけ・発音だけなら「練習中」", () => {
     assert.equal(masteryOf("animals/cat", inputOf({ words: { "animals/cat": { correct: 0, wrong: 2 } } })).level, "learning");
     assert.equal(
@@ -208,12 +255,14 @@ describe("masteryOf / summarizeWords", () => {
         "animals/dog": { correct: 1 },
       },
       pronunciation: { "animals/cat": { score: "ok", attempts: 1 } },
+      cards: { "animals/bird": { views: 1 } },
     });
     const words = summarizeWords(input, allWordIds());
-    assert.deepEqual(Object.keys(words), ["animals/dog", "animals/cat", "food/apple"]);
+    assert.deepEqual(Object.keys(words), ["animals/dog", "animals/cat", "animals/bird", "food/apple"]);
     assert.equal(words["food/apple"].level, "mastered");
     assert.equal(words["animals/dog"].level, "learning");
     assert.equal(words["animals/cat"].level, "learning");
+    assert.equal(words["animals/bird"].level, "learning");
   });
 
   test("0 件なら空のオブジェクト", () => {
@@ -238,11 +287,12 @@ describe("summarizeCategories", () => {
     const input = inputOf({
       words: { "animals/dog": { correct: 3 }, "animals/cat": { correct: 0, wrong: 1 } },
       pronunciation: { "animals/bird": { score: "ok", attempts: 1 } },
+      cards: { "animals/fish": { views: 1 } },
     });
     const animals = summarizeCategories(input, categories).find((c) => c.id === "animals");
     assert.equal(animals.mastered, 1, "dog");
-    assert.equal(animals.learning, 2, "cat と bird");
-    assert.equal(animals.unseen, animals.total - 3);
+    assert.equal(animals.learning, 3, "cat と bird と fish");
+    assert.equal(animals.unseen, animals.total - 4);
   });
 
   test("カテゴリの外の ID は数えない", () => {

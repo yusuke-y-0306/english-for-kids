@@ -63,7 +63,10 @@ function todayKey() {
   }).format(new Date());
 }
 
-/** ラウンド 1 つぶんのボディ。roundId は毎回新しい UUID */
+/**
+ * クイズの送信ボディ。roundId は毎回新しい UUID。
+ * 1 問ごとに「その時点までの回答」を送る形 (#76) なので、results は 1〜8 件。
+ */
 function roundBody({ roundId = crypto.randomUUID(), level = "beginner", results } = {}) {
   return {
     roundId,
@@ -218,13 +221,14 @@ describe("ログイン済みなら自分の進捗だけに書く", () => {
     assert.equal(body.ok, true);
     assert.equal(body.duplicate, false);
     assert.equal(body.day, todayKey());
-    assert.equal(body.rounds, 1);
+    /* 8 問そろっていないのでラウンドはまだ数えない。回答は記録される */
+    assert.equal(body.rounds, 0);
     assert.equal(body.correct, 2);
     assert.equal(body.total, 3);
 
     const progress = await readProgress(USER_A);
     assert.ok(progress, "A のファイルが作られる");
-    assert.deepEqual(progress.days[todayKey()].quiz, { rounds: 1, correct: 2, total: 3 });
+    assert.deepEqual(progress.days[todayKey()].quiz, { rounds: 0, correct: 2, total: 3 });
     /* 単語あり 2 件だけが単語別に入る (wordId: null は数えない) */
     assert.equal(progress.words[WORD_1].correct, 1);
     assert.equal(progress.words[WORD_2].wrong, 1);
@@ -263,7 +267,8 @@ describe("ログイン済みなら自分の進捗だけに書く", () => {
     assert.equal(res.status, 200);
 
     const body = await res.json();
-    assert.equal(body.rounds, before.rounds + 1);
+    /* 文法問題だけの途中送信でも、ラウンドは数えず回答だけ数える */
+    assert.equal(body.rounds, before.rounds);
     assert.equal(body.correct, before.correct + 2);
     assert.equal(body.total, before.total + 2);
     /* 文法問題は単語別の集計を汚さない */
@@ -292,21 +297,64 @@ describe("ログイン済みなら自分の進捗だけに書く", () => {
       { rounds: quiz.rounds, correct: quiz.correct, total: quiz.total },
     );
     assert.deepEqual((await readProgress(USER_A)).days[todayKey()].quiz, quiz);
-    /* 冪等キーは 1 件だけ覚える */
-    assert.deepEqual(saved.quizRoundIds.filter((id) => id === roundId), [roundId]);
+    /* 回答の冪等キーは 3 問ぶん。ラウンドは 8 問そろっていないので入らない */
+    assert.deepEqual(
+      saved.quizAnswerIds.filter((id) => id.startsWith(`${roundId}:`)),
+      [`${roundId}:2`, `${roundId}:1`, `${roundId}:0`],
+    );
+    assert.equal(saved.quizRoundIds.includes(roundId), false);
   });
 
   test("連打 (並列) でも取りこぼさず、二重送信は 1 回だけ数える", async () => {
     const cookie = sessionCookie(USER_A);
-    const before = (await readProgress(USER_A)).days[todayKey()].quiz.rounds;
+    const before = (await readProgress(USER_A)).days[todayKey()].quiz.total;
 
     const ids = Array.from({ length: 4 }, () => crypto.randomUUID());
     /* 同じ ID を 2 回ずつ、8 リクエストを同時に投げる */
     const bodies = [...ids, ...ids].map((roundId) => roundBody({ roundId }));
     await Promise.all(bodies.map((body) => post(body, { cookie })));
 
-    const after = (await readProgress(USER_A)).days[todayKey()].quiz.rounds;
-    assert.equal(after, before + ids.length);
+    const after = (await readProgress(USER_A)).days[todayKey()].quiz.total;
+    assert.equal(after, before + ids.length * 3);
+  });
+
+  test("1 問ごとに送っても二重に数えず、8 問でラウンドが 1 回増える", async () => {
+    const cookie = sessionCookie(USER_A);
+    const roundId = crypto.randomUUID();
+    const answers = Array.from({ length: 8 }, (_, i) => ({
+      answerId: crypto.randomUUID(),
+      wordId: i === 0 ? WORD_1 : null,
+      correct: i % 2 === 0,
+    }));
+
+    const before = (await readProgress(USER_A)).days[todayKey()].quiz;
+
+    /* 1 問ずつ、その時点までの回答をまとめて送る (実画面と同じ) */
+    for (let i = 0; i < answers.length; i += 1) {
+      const res = await post(
+        { roundId, level: "beginner", results: answers.slice(0, i + 1) },
+        { cookie },
+      );
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.total, before.total + i + 1);
+      /* 8 問そろうまではラウンドを数えない */
+      assert.equal(body.rounds, i + 1 === answers.length ? before.rounds + 1 : before.rounds);
+    }
+
+    /* 最後の送信の再送 (二重タップ) は増えない */
+    const last = await post({ roundId, level: "beginner", results: answers }, { cookie });
+    const lastBody = await last.json();
+    assert.equal(lastBody.duplicate, true);
+    assert.equal(lastBody.total, before.total + answers.length);
+    assert.equal(lastBody.rounds, before.rounds + 1);
+
+    const saved = (await readProgress(USER_A)).days[todayKey()].quiz;
+    assert.deepEqual(saved, {
+      rounds: before.rounds + 1,
+      correct: before.correct + answers.filter((a) => a.correct).length,
+      total: before.total + answers.length,
+    });
   });
 });
 
@@ -327,6 +375,10 @@ describe("ホワイトリスト検証 (クイズ結果)", () => {
       () => ({ ...base(), results: Array.from({ length: 9 }, () => ({ wordId: null, correct: true })) }),
     ],
     ["correct が真偽値でない", () => ({ ...base(), results: [{ wordId: WORD_1, correct: "yes" }] })],
+    [
+      "answerId が UUID でない",
+      () => ({ ...base(), results: [{ answerId: "not-a-uuid", wordId: WORD_1, correct: true }] }),
+    ],
     ["wordId が存在しない", () => ({ ...base(), results: [{ wordId: "animals/dragon", correct: true }] })],
     ["wordId がパス風", () => ({ ...base(), results: [{ wordId: "../../users", correct: true }] })],
     ["wordId が数値", () => ({ ...base(), results: [{ wordId: 42, correct: true }] })],

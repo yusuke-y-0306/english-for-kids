@@ -3,8 +3,10 @@ import test, { describe } from "node:test";
 
 import { dayKeyOf, daysBetween } from "../../src/lib/progress/day.ts";
 import {
+  CARD_EVENT_MEMORY,
   PROGRESS_RETENTION_DAYS,
   QUIZ_ROUND_MEMORY,
+  applyCardView,
   applyPronunciationAttempt,
   applyQuizRound,
   emptyProgressState,
@@ -80,14 +82,22 @@ describe("normalizeProgressState", () => {
     const raw = {
       version: 1,
       days: {
-        [DAY]: { quiz: { rounds: 1, correct: 6, total: 8 }, pronunciation: { attempts: 2, ok: 1 } },
+        [DAY]: {
+          quiz: { rounds: 1, correct: 6, total: 8 },
+          pronunciation: { attempts: 2, ok: 1 },
+          cards: { views: 0 },
+        },
       },
       words: { "cat-a": { correct: 1, wrong: 1, lastAt: NOW } },
+      cards: {},
+      quizRoundIds: [],
+      quizAnswerIds: [],
+      cardEventIds: [],
       longestStreak: 3,
       lastStudyAt: NOW,
       updatedAt: NOW,
     };
-    assert.deepEqual(normalizeProgressState(raw), { ...raw, version: 1, quizRoundIds: [] });
+    assert.deepEqual(normalizeProgressState(raw), { ...raw, version: 1 });
   });
 
   test("移行フラグは true のときだけ残す", () => {
@@ -143,7 +153,7 @@ describe("pruneDays", () => {
 });
 
 describe("applyQuizRound", () => {
-  test("日次と単語別が増える", () => {
+  test("回答すると日次と単語別が増える (途中でも記録される)", () => {
     const state = emptyProgressState();
     const next = applyQuizRound(state, {
       day: DAY,
@@ -155,13 +165,14 @@ describe("applyQuizRound", () => {
       ],
     });
 
-    assert.deepEqual(next.days[DAY].quiz, { rounds: 1, correct: 2, total: 3 });
+    /* 8 問そろっていないのでラウンド数は増えない。回答は 1 問ずつ数える */
+    assert.deepEqual(next.days[DAY].quiz, { rounds: 0, correct: 2, total: 3 });
     assert.deepEqual(next.words["cat-a"], { correct: 1, wrong: 1, lastAt: NOW });
     assert.deepEqual(next.words["dog-b"], { correct: 1, wrong: 0, lastAt: NOW });
     assert.equal(next.lastStudyAt, NOW);
   });
 
-  test("同じ日に 2 ラウンド目は加算される", () => {
+  test("同じ日に続けて回答すると加算される", () => {
     const once = applyQuizRound(emptyProgressState(), {
       day: DAY,
       now: NOW,
@@ -172,7 +183,7 @@ describe("applyQuizRound", () => {
       now: NOW,
       results: [{ wordId: "cat-a", correct: true }],
     });
-    assert.deepEqual(twice.days[DAY].quiz, { rounds: 2, correct: 2, total: 2 });
+    assert.deepEqual(twice.days[DAY].quiz, { rounds: 0, correct: 2, total: 2 });
   });
 
   test("元の状態を書き換えない", () => {
@@ -204,6 +215,7 @@ describe("applyQuizRound", () => {
 describe("applyQuizRound — 冪等キー (#65)", () => {
   const round = (roundId) => ({
     roundId,
+    roundComplete: true,
     day: DAY,
     now: NOW,
     results: [{ wordId: "cat-a", correct: true }],
@@ -236,8 +248,10 @@ describe("applyQuizRound — 冪等キー (#65)", () => {
   test("roundId が空なら冪等性は効かない (保守・テスト用の逃げ道)", () => {
     let state = applyQuizRound(emptyProgressState(), round(""));
     state = applyQuizRound(state, round(""));
-    assert.deepEqual(state.days[DAY].quiz.rounds, 2);
+    /* ラウンド数は roundId が無いと数えられない。回答は毎回加算される */
+    assert.deepEqual(state.days[DAY].quiz, { rounds: 0, correct: 2, total: 2 });
     assert.deepEqual(state.quizRoundIds, []);
+    assert.deepEqual(state.quizAnswerIds, []);
   });
 
   test(`覚えるのは新しい方から ${QUIZ_ROUND_MEMORY} 件まで`, () => {
@@ -261,8 +275,79 @@ describe("applyQuizRound — 冪等キー (#65)", () => {
         { wordId: null, correct: false },
       ],
     });
-    assert.deepEqual(next.days[DAY].quiz, { rounds: 1, correct: 1, total: 2 });
+    assert.deepEqual(next.days[DAY].quiz, { rounds: 0, correct: 1, total: 2 });
     assert.deepEqual(next.words, {});
+  });
+
+  test("1 問ずつ送っても、同じ回答を 2 回数えない", () => {
+    const answer = (answerId, wordId, correct) => ({ answerId, wordId, correct });
+    let state = emptyProgressState();
+
+    /* 1 問目 */
+    state = applyQuizRound(state, {
+      roundId: "r-1",
+      day: DAY,
+      now: NOW,
+      results: [answer("a-1", "cat-a", true)],
+    });
+    assert.deepEqual(state.days[DAY].quiz, { rounds: 0, correct: 1, total: 1 });
+
+    /* 2 問目。1 問目も一緒に送る (取りこぼしの追いつき) */
+    state = applyQuizRound(state, {
+      roundId: "r-1",
+      day: DAY,
+      now: NOW,
+      results: [answer("a-1", "cat-a", true), answer("a-2", "dog-b", false)],
+    });
+    assert.deepEqual(state.days[DAY].quiz, { rounds: 0, correct: 1, total: 2 });
+
+    /* 同じ送信の再送 (二重タップ・リロード) は増えない */
+    const resent = applyQuizRound(state, {
+      roundId: "r-1",
+      day: DAY,
+      now: NOW,
+      results: [answer("a-1", "cat-a", true), answer("a-2", "dog-b", false)],
+    });
+    assert.equal(resent, state);
+  });
+
+  test("8 問そろった送信でラウンド数が 1 回だけ増える", () => {
+    const answers = Array.from({ length: 8 }, (_, i) => ({
+      answerId: `a-${i}`,
+      wordId: null,
+      correct: i % 2 === 0,
+    }));
+
+    let state = emptyProgressState();
+    /* 途中経過 (4 問) ではラウンドを数えない */
+    state = applyQuizRound(state, {
+      roundId: "r-full",
+      day: DAY,
+      now: NOW,
+      results: answers.slice(0, 4),
+    });
+    assert.deepEqual(state.days[DAY].quiz, { rounds: 0, correct: 2, total: 4 });
+
+    /* 8 問そろったら 1 ラウンド */
+    state = applyQuizRound(state, {
+      roundId: "r-full",
+      roundComplete: true,
+      day: DAY,
+      now: NOW,
+      results: answers,
+    });
+    assert.deepEqual(state.days[DAY].quiz, { rounds: 1, correct: 4, total: 8 });
+    assert.deepEqual(state.quizRoundIds, ["r-full"]);
+
+    /* 同じラウンドの再送でラウンド数も回答も増えない */
+    const again = applyQuizRound(state, {
+      roundId: "r-full",
+      roundComplete: true,
+      day: DAY,
+      now: NOW,
+      results: answers,
+    });
+    assert.equal(again, state);
   });
 
   test("壊れた quizRoundIds は文字列だけ・重複なし・上限までに正規化される", () => {
@@ -294,7 +379,7 @@ describe("summaryForDay", () => {
       ],
     });
     state = applyPronunciationAttempt(state, { day: DAY, ok: true, now: NOW });
-    assert.deepEqual(summaryForDay(state, DAY), { rounds: 1, correct: 1, total: 2 });
+    assert.deepEqual(summaryForDay(state, DAY), { rounds: 0, correct: 1, total: 2 });
     assert.deepEqual(summaryForDay(state, "2026-11-06"), { rounds: 0, correct: 0, total: 0 });
   });
 });
@@ -379,5 +464,91 @@ describe("seedWordsFromPronunciation — 移行 (#66)", () => {
     const state = emptyProgressState();
     seedWordsFromPronunciation(state, byWord, NOW);
     assert.deepEqual(state, emptyProgressState());
+  });
+});
+
+describe("applyCardView — カードの記録 (#76)", () => {
+  const view = (eventId, wordId = "animals/dog") => ({ eventId, day: DAY, now: NOW, wordId });
+
+  test("日次と単語別のカード回数が増える", () => {
+    const next = applyCardView(emptyProgressState(), view("e-1"));
+
+    assert.deepEqual(next.days[DAY].cards, { views: 1 });
+    assert.deepEqual(next.cards["animals/dog"], { views: 1, lastAt: NOW });
+    assert.equal(next.lastStudyAt, NOW);
+    /* 見ただけではクイズの正誤は動かない */
+    assert.deepEqual(next.words, {});
+  });
+
+  test("違う eventId なら同じ単語も数える", () => {
+    const once = applyCardView(emptyProgressState(), view("e-1"));
+    const twice = applyCardView(once, view("e-2"));
+
+    assert.deepEqual(twice.days[DAY].cards, { views: 2 });
+    assert.deepEqual(twice.cards["animals/dog"], { views: 2, lastAt: NOW });
+  });
+
+  test("同じ eventId の再送は数えない (同じ状態をそのまま返す)", () => {
+    const once = applyCardView(emptyProgressState(), view("e-1"));
+    const twice = applyCardView(once, view("e-1"));
+
+    assert.equal(twice, once);
+    assert.deepEqual(twice.days[DAY].cards, { views: 1 });
+    assert.deepEqual(twice.cards["animals/dog"], { views: 1, lastAt: NOW });
+  });
+
+  test("クイズ・発音の日次を壊さない", () => {
+    const quizzed = applyQuizRound(emptyProgressState(), {
+      roundId: "r-1",
+      day: DAY,
+      now: NOW,
+      results: [{ wordId: "animals/dog", correct: true }],
+    });
+    const spoken = applyPronunciationAttempt(quizzed, { day: DAY, ok: true, now: NOW });
+    const next = applyCardView(spoken, view("e-1"));
+
+    /* 1 問だけの送信なのでラウンドはまだ 0。回答は残っている */
+    assert.deepEqual(next.days[DAY].quiz, { rounds: 0, correct: 1, total: 1 });
+    assert.deepEqual(next.days[DAY].pronunciation, { attempts: 1, ok: 1 });
+    assert.deepEqual(next.days[DAY].cards, { views: 1 });
+  });
+
+  test("eventId は CARD_EVENT_MEMORY 件だけ覚える (古いものは忘れる)", () => {
+    let state = emptyProgressState();
+    for (let i = 0; i < CARD_EVENT_MEMORY + 3; i += 1) {
+      state = applyCardView(state, view(`e-${i}`));
+    }
+    assert.equal(state.cardEventIds.length, CARD_EVENT_MEMORY);
+    assert.equal(state.cardEventIds[0], `e-${CARD_EVENT_MEMORY + 2}`);
+    /* 忘れた古い ID は再送しても数えてしまう (保持件数の仕様) */
+    const again = applyCardView(state, view("e-0"));
+    assert.deepEqual(again.days[DAY].cards, { views: CARD_EVENT_MEMORY + 4 });
+  });
+
+  test("元の状態を書き換えない", () => {
+    const state = emptyProgressState();
+    applyCardView(state, view("e-1"));
+    assert.deepEqual(state, emptyProgressState());
+  });
+});
+
+describe("normalizeProgressState — カード (#76)", () => {
+  test("カードの日次と単語別を読み直せる", () => {
+    const state = normalizeProgressState({
+      days: { [DAY]: { cards: { views: "2" } } },
+      cards: { "animals/dog": { views: 3, lastAt: NOW } },
+      cardEventIds: ["e-1", "e-1", 42, ""],
+    });
+
+    assert.deepEqual(state.days[DAY].cards, { views: 2 });
+    assert.deepEqual(state.cards["animals/dog"], { views: 3, lastAt: NOW });
+    assert.deepEqual(state.cardEventIds, ["e-1"]);
+  });
+
+  test("古い保存形式 (cards が無い) でも 0 で埋まる", () => {
+    const state = normalizeProgressState({ days: { [DAY]: { quiz: { rounds: 1, correct: 1, total: 1 } } } });
+    assert.deepEqual(state.days[DAY].cards, { views: 0 });
+    assert.deepEqual(state.cards, {});
+    assert.deepEqual(state.cardEventIds, []);
   });
 });

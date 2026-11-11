@@ -53,12 +53,16 @@ function shiftDay(day: string, delta: number): string {
 export type DayLike = {
   quiz?: { rounds?: number; correct?: number; total?: number } | undefined;
   pronunciation?: { attempts?: number; ok?: number } | undefined;
+  cards?: { views?: number } | undefined;
 };
 
 export type DayMap = Record<string, DayLike | null | undefined>;
 
 /** 単語別の正誤 (progress 側が正) */
 export type WordLike = { correct?: number; wrong?: number; lastAt?: string } | undefined;
+
+/** カードで見た単語の記録 (progress 側が正) */
+export type CardWordLike = { views?: number; lastAt?: string } | undefined;
 
 /** 発音の単語別状態のうち、判定に必要な部分 (pronunciation 側が正) */
 export type PronunciationWordLike = {
@@ -72,6 +76,8 @@ export type PronunciationWordLike = {
 export type ProgressInput = {
   days: DayMap;
   words: Record<string, WordLike>;
+  /** `data.progress.cards` (カードで見た回数) */
+  cards?: Record<string, CardWordLike>;
   /** `data.pronunciation.byWord` */
   pronunciation?: Record<string, PronunciationWordLike>;
 };
@@ -92,6 +98,7 @@ export type DailySlice = {
     accuracy: number;
   };
   pronunciation: { attempts: number; ok: number };
+  cards: { views: number };
   /** その日に何かしら学習したか (グラフの棒を出すかの判定) */
   studied: boolean;
 };
@@ -103,6 +110,7 @@ function sliceOf(input: ProgressInput, day: string): DailySlice {
   const total = num(entry?.quiz?.total);
   const attempts = num(entry?.pronunciation?.attempts);
   const ok = Math.min(num(entry?.pronunciation?.ok), attempts);
+  const cardViews = num(entry?.cards?.views);
   return {
     day,
     quiz: {
@@ -112,7 +120,9 @@ function sliceOf(input: ProgressInput, day: string): DailySlice {
       accuracy: total > 0 ? Math.round((correct / total) * 100) : 0,
     },
     pronunciation: { attempts, ok },
-    studied: rounds > 0 || attempts > 0,
+    cards: { views: cardViews },
+    /* クイズは 1 問でも解けば学習した日 (ラウンド完走を待たない。#76) */
+    studied: total > 0 || rounds > 0 || attempts > 0 || cardViews > 0,
   };
 }
 
@@ -166,6 +176,8 @@ export type WordMastery = {
   /** クイズの正誤 (progress 側が正) */
   correct: number;
   wrong: number;
+  /** カードで意味を見た回数 (progress 側が正) */
+  cards: number;
   /** 発音 (pronunciation 側が正) */
   pronunciation: { attempts: number; ok: boolean };
   /** 最後に触った日時 (ISO 8601)。まだ無ければ null */
@@ -184,23 +196,26 @@ export function masteryOf(
   input: ProgressInput,
 ): WordMastery {
   const quiz = input.words[wordId];
+  const card = input.cards?.[wordId];
   const spoken = input.pronunciation?.[wordId];
   const correct = num(quiz?.correct);
   const wrong = num(quiz?.wrong);
+  const cardViews = num(card?.views);
   const attempts = num(spoken?.attempts);
   const spokenOk = attempts > 0 && spoken?.score === "ok";
 
+  /* カードは「見た」だけなので、おぼえた には数えない (れんしゅうちゅう まで) */
   const level: MasteryLevel =
     correct >= MASTERY_THRESHOLDS.correctForMastered ||
     (correct >= MASTERY_THRESHOLDS.correctWithPronunciationOk && spokenOk)
       ? "mastered"
-      : correct > 0 || wrong > 0 || attempts > 0
+      : correct > 0 || wrong > 0 || cardViews > 0 || attempts > 0
         ? "learning"
         : "unseen";
 
-  /* lastAt はクイズと発音の新しい方。ISO 8601 は辞書順 = 時系列なので文字列比較でよい */
+  /* lastAt はクイズ・カード・発音の新しい方。ISO 8601 は辞書順 = 時系列なので文字列比較でよい */
   const lastAt =
-    [quiz?.lastAt, spoken?.updatedAt]
+    [quiz?.lastAt, card?.lastAt, spoken?.updatedAt]
       .filter((value): value is string => typeof value === "string" && value !== "")
       .sort()
       .pop() ?? null;
@@ -210,6 +225,7 @@ export function masteryOf(
     level,
     correct,
     wrong,
+    cards: cardViews,
     pronunciation: { attempts, ok: spokenOk },
     lastAt,
   };
