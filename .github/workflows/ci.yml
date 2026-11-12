@@ -33,6 +33,10 @@ jobs:
         run: npm run models:check
       - name: Build
         run: npm run build
+      # 端末内認識エンジン (issue #79) が public/ に配られたか。
+      # 13MB はリポジトリに入れないので、ビルド時のコピーが無いと実行時 404 になる。
+      - name: Check ASR engine assets
+        run: node scripts/asr-engine.mjs --check
       # セキュリティヘッダと CSP (issue #33)。必ず production build (next start) に対して確認する。
       - name: Security headers smoke test
         run: |
