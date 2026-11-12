@@ -47,6 +47,3 @@ next-env.d.ts
 # 音声モデル (issue #30): 取得物と公開用の一時ツリーはコミットしない
 /models-cache/
 /.tmp-gh-pages/
-
-# 端末内認識エンジン (issue #79): npm 依存からビルド時にコピーする
-/public/asr/moonshine/

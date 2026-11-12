@@ -64,23 +64,6 @@ export type PathDecision = {
 };
 
 /**
- * `wasm` 経路の準備状態 (#79)。
- *  - `unsupported`    … この端末/ページでは端末内推論が動かない
- *  - `needs-download` … 動くが、モデル (51MB) をまだ取得していない
- *  - `ready`          … すぐ使える
- */
-export type WasmReadiness = "unsupported" | "needs-download" | "ready";
-
-export type RecognitionSetup = PathDecision & {
-  /**
-   * 「じゅんび」ボタンを出すか。
-   * wasm は動くがモデル未取得で、`device` も使えないときだけ true。
-   * (Chrome で端末内認識が使える子に 51MB を勧めない)
-   */
-  canPrepareWasm: boolean;
-};
-
-/**
  * `device` 経路が使えない理由。使えるなら `null`。
  * 「なぜ使えないか」を子ども向けの短い文で返す (画面にそのまま出す)。
  */
@@ -150,31 +133,4 @@ export const FATAL_DEVICE_ERRORS = [
 
 export function isFatalDeviceError(code: string | undefined): boolean {
   return !!code && (FATAL_DEVICE_ERRORS as readonly string[]).includes(code);
-}
-
-/**
- * 経路と「モデルのじゅんびが必要か」をまとめて決める (#79)。
- *
- * Safari は `device` が必ず使えないため、wasm の準備状態がそのまま体験を決める。
- * モデル未取得のときに自己申告の理由を「じゅんびすれば使える」に差し替えて、
- * 画面が次の一手を示せるようにする。
- */
-export function decideRecognitionSetup(input: {
-  device: DeviceRecognitionReport;
-  wasm: WasmReadiness;
-  prefer?: PathPreference;
-}): RecognitionSetup {
-  const decision = decideRecognitionPath({
-    wasmReady: input.wasm === "ready",
-    device: input.device,
-    prefer: input.prefer,
-  });
-  const canPrepareWasm = input.wasm === "needs-download" && decision.path === "self-report";
-  return {
-    ...decision,
-    canPrepareWasm,
-    reason: canPrepareWasm
-      ? "モデルを ようい すると、こえを おくらずに よみとり できます"
-      : decision.reason,
-  };
 }

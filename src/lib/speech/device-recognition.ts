@@ -10,15 +10,12 @@
  */
 
 import {
-  decideRecognitionSetup,
   decideRecognitionPath,
   isFatalDeviceError,
   type DeviceAvailability,
   type DeviceRecognitionReport,
   type PathDecision,
   type PathPreference,
-  type RecognitionSetup,
-  type WasmReadiness,
 } from "./recognition-policy";
 
 export const DEVICE_RECOGNITION_LANG = "en-US";
@@ -132,18 +129,6 @@ export async function resolveRecognitionDecision(
 ): Promise<RecognitionDecision> {
   const report = await detectDeviceRecognition();
   return { ...decideRecognitionPath({ wasmReady, device: report, prefer }), report };
-}
-
-/**
- * モデルの準備状態まで含めて経路を決める (#79)。
- * `device` も `wasm` も使えないとき、画面は「じゅんび」ボタンを出せる。
- */
-export async function resolveRecognitionSetup(
-  wasm: WasmReadiness,
-  prefer: PathPreference = "device",
-): Promise<RecognitionSetup & { report: DeviceRecognitionReport }> {
-  const report = await detectDeviceRecognition();
-  return { ...decideRecognitionSetup({ device: report, wasm, prefer }), report };
 }
 
 /**

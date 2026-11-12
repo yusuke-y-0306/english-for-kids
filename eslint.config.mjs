@@ -15,9 +15,6 @@ const eslintConfig = defineConfig([
     // 計測用のブラウザスクリプト (issue #40)。Node ではなくブラウザでしか動かないので、
     // Next 向けのルールセットで検査しても意味がない (AudioWorklet などは globals が無い)。
     "public/lab/**",
-    // 端末内認識エンジン (issue #79)。npm 依存からの生成物をビルド時にコピーするだけで、
-    // リポジトリのコードではない (/public/asr/moonshine/ は .gitignore)。
-    "public/asr/moonshine/**",
   ]),
 ]);
 
