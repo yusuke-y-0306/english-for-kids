@@ -10,6 +10,7 @@ import {
   applyPronunciationAttempt,
   applyQuizRound,
   emptyProgressState,
+  longestStreakOf,
   normalizeProgressState,
   pruneDays,
   seedWordsFromPronunciation,
@@ -550,5 +551,62 @@ describe("normalizeProgressState — カード (#76)", () => {
     assert.deepEqual(state.days[DAY].cards, { views: 0 });
     assert.deepEqual(state.cards, {});
     assert.deepEqual(state.cardEventIds, []);
+  });
+});
+
+describe("longestStreak — 保存する最長記録 (#69)", () => {
+  /** カード 1 枚ぶんの入力 (日付だけ差し替える) */
+  function cardOn(day, eventId) {
+    return { eventId, day, wordId: "animals/dog", now: NOW };
+  }
+
+  test("日次から最長の連続日数を数える", () => {
+    const days = {
+      "2026-11-01": { quiz: { rounds: 1, correct: 1, total: 1 }, pronunciation: { attempts: 0, ok: 0 }, cards: { views: 0 } },
+      "2026-11-02": { quiz: { rounds: 0, correct: 0, total: 0 }, pronunciation: { attempts: 1, ok: 1 }, cards: { views: 0 } },
+      "2026-11-03": { quiz: { rounds: 0, correct: 0, total: 0 }, pronunciation: { attempts: 0, ok: 0 }, cards: { views: 2 } },
+      /* 1 日空く */
+      "2026-11-05": { quiz: { rounds: 1, correct: 1, total: 1 }, pronunciation: { attempts: 0, ok: 0 }, cards: { views: 0 } },
+    };
+    assert.equal(longestStreakOf(days), 3);
+  });
+
+  test("画面を開いただけの日 (すべて 0) は数えない", () => {
+    const days = {
+      "2026-11-01": { quiz: { rounds: 0, correct: 0, total: 0 }, pronunciation: { attempts: 0, ok: 0 }, cards: { views: 0 } },
+      "2026-11-02": { quiz: { rounds: 1, correct: 1, total: 1 }, pronunciation: { attempts: 0, ok: 0 }, cards: { views: 0 } },
+    };
+    assert.equal(longestStreakOf(days), 1);
+  });
+
+  test("書き込みのたびに更新され、途切れても縮まない", () => {
+    let state = emptyProgressState();
+    state = applyCardView(state, cardOn("2026-11-01", "e-1"));
+    state = applyCardView(state, cardOn("2026-11-02", "e-2"));
+    state = applyCardView(state, cardOn("2026-11-03", "e-3"));
+    assert.equal(state.longestStreak, 3);
+
+    /* 1 日空いた日を足しても、最長は 3 のまま */
+    state = applyCardView(state, cardOn("2026-11-05", "e-4"));
+    assert.equal(state.longestStreak, 3);
+  });
+
+  test("発音・クイズの書き込みでも更新される", () => {
+    let state = applyPronunciationAttempt(emptyProgressState(), { day: "2026-11-01", ok: true, now: NOW });
+    state = applyQuizRound(state, {
+      roundId: "r-1",
+      day: "2026-11-02",
+      now: NOW,
+      results: [{ wordId: "animals/dog", correct: true, answerId: "a-1" }],
+    });
+    assert.equal(state.longestStreak, 2);
+  });
+
+  test("日次が保持期間より前に落ちても、保存済みの最長は残る", () => {
+    const state = applyCardView(
+      { ...emptyProgressState(), longestStreak: 12 },
+      cardOn("2026-11-05", "e-1"),
+    );
+    assert.equal(state.longestStreak, 12);
   });
 });

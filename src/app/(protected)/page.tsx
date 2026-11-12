@@ -5,6 +5,9 @@ import FeatureIcon, { type FeatureIconName } from "@/components/FeatureIcon";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getUserContent } from "@/lib/auth/content";
 import { pickDailyWord, todayInTokyo } from "@/lib/daily";
+import { todayKey } from "@/lib/progress/day";
+import { normalizeProgressState } from "@/lib/progress/state";
+import { streakOf } from "@/lib/progress/streak";
 
 type Feature = {
   icon: FeatureIconName;
@@ -81,6 +84,13 @@ export default async function Home() {
   }
   const content = await getUserContent(user.id);
   const daily = pickDailyWord(user.id, todayInTokyo());
+  /* ホームの小さなバッジ (#69)。今日まだでも続いていれば「きょうも やろう」 */
+  const streak = streakOf(normalizeProgressState(content.data.progress).days, todayKey());
+  const streakBadge = streak.studiedToday
+    ? { icon: "🔥", text: `${streak.current} 日 れんぞく` }
+    : streak.current > 0
+      ? { icon: "🔥", text: "きょうも やろう" }
+      : { icon: "🌱", text: "きょうから はじめよう" };
 
   return (
     <>
@@ -107,19 +117,31 @@ export default async function Home() {
             </span>
           </span>
 
-          <div className="flex items-center gap-3 rounded-2xl bg-[#fff8e1] px-3 py-2 sm:ml-auto">
-            <span aria-hidden className="text-2xl">
-              {daily.word.emoji}
-            </span>
-            <span className="leading-tight">
-              <span className="block text-[0.62rem] font-extrabold tracking-widest text-[#8f7a5e]">
-                きょうの カード（{daily.categoryEmoji} {daily.categoryLabel}）
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+            <Link
+              href="/progress"
+              className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#f0d59a] bg-[#fff3d6] px-3 py-2 text-xs font-extrabold text-[#a85f08] transition hover:-translate-y-0.5 hover:border-[#e0b21c]"
+            >
+              <span aria-hidden className="text-base">
+                {streakBadge.icon}
               </span>
-              <span className="block text-sm font-extrabold text-ink">
-                {daily.word.en}
-                <span className="ml-1.5 text-xs font-bold text-[#5b4a3c]">{daily.word.ja}</span>
+              {streakBadge.text}
+            </Link>
+
+            <div className="flex items-center gap-3 rounded-2xl bg-[#fff8e1] px-3 py-2">
+              <span aria-hidden className="text-2xl">
+                {daily.word.emoji}
               </span>
-            </span>
+              <span className="leading-tight">
+                <span className="block text-[0.62rem] font-extrabold tracking-widest text-[#8f7a5e]">
+                  きょうの カード（{daily.categoryEmoji} {daily.categoryLabel}）
+                </span>
+                <span className="block text-sm font-extrabold text-ink">
+                  {daily.word.en}
+                  <span className="ml-1.5 text-xs font-bold text-[#5b4a3c]">{daily.word.ja}</span>
+                </span>
+              </span>
+            </div>
           </div>
         </div>
       </section>
