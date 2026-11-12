@@ -68,6 +68,11 @@ export const PUBLIC_PREFIX: readonly PublicRoute[] = [
     path: "/lab/",
     reason: "ASR の計測ハーネス (静的ファイル)。個人情報を扱わない開発用ツール",
   },
+  {
+    path: "/asr/",
+    reason:
+      "端末内認識エンジンと AudioWorklet (静的ファイル)。個人情報を扱わないコード (issue #79)",
+  },
 ] as const;
 
 /** 個人の情報を返しうる API かどうか (拒否時の返し方を変える) */
