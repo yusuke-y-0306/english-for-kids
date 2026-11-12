@@ -73,8 +73,8 @@ node scripts/models.mjs check --remote
 
 | 成果物 | サイズ | 配信元 |
 |---|---|---|
-| `moonshine.wasm`（推論エンジン本体。VAD も内蔵） | 13,155,937 bytes | **アプリと同じオリジン**（`npm ci` → Next の静的アセット `/_next/static/media/moonshine.<hash>.wasm`） |
-| `moonshine.mjs`（Emscripten のグルー） | 156,457 bytes | 同上（バンドルに含まれる） |
+| `moonshine.wasm`（推論エンジン本体。VAD も内蔵） | 13,155,937 bytes | **アプリと同じオリジン**（`npm run asr:engine` が npm 依存から `public/asr/moonshine/` へコピー） |
+| `moonshine.mjs`（Emscripten のグルー） | 156,457 bytes | 同上（バンドルせず素の ESM として読む） |
 | モデル 7 ファイル（`encoder.ort` ほか） | 51,441,771 bytes | **別オリジン**（GitHub Pages） |
 
 エンジン（wasm）は**コード**なので、アプリと同じ信頼境界に置くのが正しい。分けると次の問題が出る:
@@ -85,12 +85,51 @@ node scripts/models.mjs check --remote
 
 一方モデルはデータなので、汚染されてもセッションに波及しないよう別オリジンに隔離する（本ドキュメントの主題）。
 
-### 実装時に確認すること（#2 / #33）
+### エンジンの配信手順（#79 で確定）
 
-- Network に `/_next/static/media/moonshine.<hash>.wasm` が出る（404 が無い）
+エンジンは npm 依存 (`@moonshine-ai/moonshine-wasm`) から **ビルド時にコピー**する。
+13MB をリポジトリに入れないため、`/public/asr/moonshine/` は `.gitignore`。
+
+```sh
+npm run asr:engine            # node scripts/asr-engine.mjs
+# predev / prebuild から自動実行される。CI では build の前に走る
+node scripts/asr-engine.mjs --check   # コピー済みかの確認だけ
+```
+
+**バンドラに通さない**のが要点。`index.js` を `/asr/moonshine/` から**素の ESM として
+動的 import** する（`webpackIgnore` / `turbopackIgnore`）。Emscripten の
+`import('./moonshine.mjs')` と pthread の `new Worker(new URL('moonshine.mjs', import.meta.url))`
+は、バンドルすると chunk を指してしまい実行時に 404 になる。同一ディレクトリに置いた
+素のファイルなら、相対解決も worker もそのまま正しい。
+
+確認すること:
+
+- Network に `/asr/moonshine/index.js` / `moonshine.mjs` / `moonshine.wasm` が出る（404 が無い）
 - CSP は `script-src 'self' 'wasm-unsafe-eval'`、worker は同一オリジンなので `worker-src 'self'` で足りる
-  （`blob:` が要るのはクロスオリジン配信にした場合だけ）
-- `locateFile` を渡す実装にしない（渡すなら `public/` に置いて明示パスにする）
+  （`blob:` が要るのはクロスオリジン配信や Blob worklet を使う場合だけ。本アプリは使わない）
+- マイクの worklet は `public/asr/capture-worklet.js`（同一オリジン）。
+  ライブラリ既定の Blob worklet は CSP を緩めるので使わない
+- `locateFile` を渡さない（`moonshine.mjs` の隣に `moonshine.wasm` を置く）
+
+### Safari で発音練習を成立させる（#79）
+
+Safari の `webkitSpeechRecognition` は `processLocally` を持たず **必ずクラウド**なので使わない
+（#31）。代わりにアプリ内の Moonshine で推論する。
+
+- 経路判定: `decideRecognitionSetup()`（`recognition-policy.ts`）。`device` が使えず
+  モデル未取得なら `self-report` + **「じゅんび」ボタン**（51MB を勝手に落とさない）
+- 音声: 自前 AudioWorklet でモノラル化 → **16kHz に明示リサンプル**。
+  Safari は `AudioContext({ sampleRate })` を尊重せず 44.1/48kHz で開くため必須
+- 推論: `Transcriber.load({ files })` に **#29 の検証済みキャッシュのバイト列**を渡す。
+  `language`（カタログ）は渡さない = CDN 取得の経路を作らない
+- 失敗時: `empty` / `timeout` は同じ経路でやり直し、`mic` は許可の案内、
+  エンジン失敗は自己申告へフォールバック（練習を止めない）
+
+実機確認の観点（自動テストでは代替できない部分）:
+
+- iPhone Safari で「じゅんび」→ 進捗が出て完了し、🎤 で 1 語認識できる
+- 機内モードでも、一度じゅんび済みなら認識できる（Cache Storage）
+- Network に音声らしき送信が無い（CSP の `connect-src` は `'self'` + モデル配信元のみ）
 
 ## ライセンス / 帰属
 

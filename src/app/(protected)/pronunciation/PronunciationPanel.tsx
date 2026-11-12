@@ -9,19 +9,28 @@ import {
   DeviceRecognitionError,
   createDeviceRecognizer,
   listenOnce,
-  resolveRecognitionDecision,
+  resolveRecognitionSetup,
 } from "@/lib/speech/device-recognition";
 import type { RecognitionPath } from "@/lib/speech/recognition-policy";
 import type { PronunciationScore } from "@/lib/speech/scores";
 import { scorePronunciation } from "@/lib/speech/scoring";
+import {
+  WasmRecognitionError,
+  detectWasmReadiness,
+  listenOnceWithWasm,
+  prepareWasm,
+  type WasmReadiness,
+} from "@/lib/speech/wasm-recognition";
 import { categories, wordId } from "@/lib/words";
 
 /**
  * 発音練習の画面 — issue #2
  *
  * 設計の要点:
- *  - 認識の経路は `resolveRecognitionDecision()` に**決めさせる**。画面が独断で
+ *  - 認識の経路は `resolveRecognitionSetup()` に**決めさせる**。画面が独断で
  *    `SpeechRecognition` を触らない (クラウド経路に落ちる事故を防ぐ / issue #31)。
+ *  - Safari は device が使えないため、アプリ内モデル (wasm) とその「じゅんび」を
+ *    同じ判定に含める (issue #79)。
  *  - 判定は端末内で完結する純粋関数 (`scorePronunciation`)。
  *  - 保存するのは**単語 ID と 3 段階スコアだけ**。音声も認識テキストも送らない (issue #32)。
  *  - 記録に失敗しても練習は止めない (子どもの学習を通信の都合で妨げない)。
@@ -49,7 +58,7 @@ const PRACTICE_WORDS: PracticeWord[] = categories.flatMap((category) =>
 
 type Phase = "ready" | "listening" | "scored";
 
-type Decision = { path: RecognitionPath; reason: string };
+type Decision = { path: RecognitionPath; reason: string; canPrepareWasm: boolean };
 
 type Result = {
   score: PronunciationScore;
@@ -68,25 +77,58 @@ export default function PronunciationPanel() {
   const [phase, setPhase] = useState<Phase>("ready");
   const [result, setResult] = useState<Result | null>(null);
   const [decision, setDecision] = useState<Decision | null>(null);
+  const [readiness, setReadiness] = useState<WasmReadiness | null>(null);
+  const [preparing, setPreparing] = useState<{ fraction: number | null } | null>(null);
+  const [prepareError, setPrepareError] = useState<string | null>(null);
+  /** 認識できなかった等の短い案内 (採点結果とは別に出す) */
+  const [notice, setNotice] = useState<string | null>(null);
 
   const word = PRACTICE_WORDS[wordIndex];
 
   // 経路の判定はブラウザ API を触るので、描画中ではなくマウント後に 1 回だけ行う。
+  // Safari は device が必ず使えないので、wasm の準備状態 (#79) が体験を決める。
   useEffect(() => {
     let alive = true;
-    // TODO(#40): WASM 推論エンジンを組み込んだら、ここを
-    // `await isModelReady() && engine.available()` に置き換える。
-    // それまでは「端末内認識 → 自己申告」の 2 経路で動かす。
-    // 優先順位は policy 側 (device → wasm → self-report) が持つので、
-    // ここは「wasm がまだ無い」ことを伝えるだけでよい。
-    void resolveRecognitionDecision(false).then((resolved) => {
+    void (async () => {
+      const wasmReadiness = await detectWasmReadiness();
       if (!alive) return;
-      setDecision({ path: resolved.path, reason: resolved.reason });
-    });
+      setReadiness(wasmReadiness);
+      const resolved = await resolveRecognitionSetup(wasmReadiness);
+      if (!alive) return;
+      setDecision({
+        path: resolved.path,
+        reason: resolved.reason,
+        canPrepareWasm: resolved.canPrepareWasm,
+      });
+    })();
     return () => {
       alive = false;
     };
   }, []);
+
+  /** 初回のじゅんび (51MB)。押されたときだけ落とす。 */
+  const prepare = useCallback(async () => {
+    if (preparing) return;
+    setPrepareError(null);
+    setNotice(null);
+    setPreparing({ fraction: null });
+    try {
+      await prepareWasm({
+        onProgress: (progress) => setPreparing({ fraction: progress.fraction }),
+      });
+      const resolved = await resolveRecognitionSetup("ready");
+      setReadiness("ready");
+      setDecision({
+        path: resolved.path,
+        reason: resolved.reason,
+        canPrepareWasm: resolved.canPrepareWasm,
+      });
+      setPreparing(null);
+    } catch {
+      setPreparing(null);
+      setPrepareError("じゅんびが できませんでした。でんぱの いい ところで もういちど ためしてね");
+    }
+  }, [preparing]);
 
   /** 記録は投げっぱなし。失敗しても練習は止めない。 */
   const save = useCallback(async (id: string, score: PronunciationScore) => {
@@ -111,14 +153,17 @@ export default function PronunciationPanel() {
     [save, word.id],
   );
 
-  /** 端末内認識で 1 回だけ聞き取る */
+  /** 端末内で 1 回だけ聞き取る (device / wasm のどちらでも) */
   const listen = useCallback(async () => {
     if (!decision || phase === "listening") return;
     setPhase("listening");
     setResult(null);
+    setNotice(null);
     try {
-      const recognizer = createDeviceRecognizer(decision);
-      const { transcript } = await listenOnce(recognizer);
+      const transcript =
+        decision.path === "wasm"
+          ? await listenOnceWithWasm()
+          : (await listenOnce(createDeviceRecognizer(decision))).transcript;
       // 同音語・言い換えは単語データ側の許容を渡して吸収する (issue #40)
       const scored = scorePronunciation(transcript, word.en, {
         homophones: word.homophones,
@@ -126,6 +171,28 @@ export default function PronunciationPanel() {
       });
       finish(scored.score, scored.hint, transcript);
     } catch (error) {
+      if (error instanceof WasmRecognitionError) {
+        setPhase("ready");
+        if (error.kind === "empty" || error.kind === "timeout") {
+          /* 聞こえなかっただけ。経路は変えず、もう一度いってもらう */
+          setNotice("きこえなかったよ。ゆっくり いってみよう");
+          return;
+        }
+        if (error.kind === "mic") {
+          setNotice("マイクが つかえませんでした。マイクの きょかを かくにん してね");
+          return;
+        }
+        /* エンジン/モデルの失敗は、その場で自己申告に切り替える (練習を止めない)。
+           キャッシュが消えていた場合に備えて、準備状態を読み直してから案内する */
+        const wasmReadiness = await detectWasmReadiness().catch((): WasmReadiness => "unsupported");
+        setReadiness(wasmReadiness);
+        setDecision({
+          path: "self-report",
+          reason: "アプリ内の よみとりが できませんでした",
+          canPrepareWasm: wasmReadiness === "needs-download",
+        });
+        return;
+      }
       // 端末内と証明できない/エラーが出た経路は**リトライしない**。
       // そのまま自己申告に切り替える (issue #31 の方針)。
       if (error instanceof DeviceRecognitionError) {
@@ -135,11 +202,12 @@ export default function PronunciationPanel() {
             error.failure.kind === "not-local"
               ? error.failure.reason
               : "端末内の よみとりが できませんでした",
+          canPrepareWasm: readiness === "needs-download",
         });
       }
       setPhase("ready");
     }
-  }, [decision, finish, phase, word.en, word.homophones, word.variants]);
+  }, [decision, finish, phase, readiness, word.en, word.homophones, word.variants]);
 
   /** 自己申告 (最後の砦) */
   const selfReport = useCallback(
@@ -152,11 +220,13 @@ export default function PronunciationPanel() {
 
   const retry = useCallback(() => {
     setResult(null);
+    setNotice(null);
     setPhase("ready");
   }, []);
 
   const nextWord = useCallback(() => {
     setResult(null);
+    setNotice(null);
     setPhase("ready");
     setWordIndex((current) => {
       if (PRACTICE_WORDS.length <= 1) return current;
@@ -196,7 +266,7 @@ export default function PronunciationPanel() {
 
         {decision === null && <p className="text-sm text-ink-soft">よみこみ中…</p>}
 
-        {decision?.path === "device" && (
+        {(decision?.path === "device" || decision?.path === "wasm") && (
           <button
             type="button"
             onClick={() => void listen()}
@@ -207,12 +277,44 @@ export default function PronunciationPanel() {
           </button>
         )}
 
+        {/* Safari など device が使えない端末: モデル未取得なら「じゅんび」を出す。
+            勝手に 51MB を落とさない (押されたときだけ)。 */}
+        {decision?.canPrepareWasm && readiness === "needs-download" && (
+          <div className="w-full max-w-sm rounded-xl border-2 border-amber-200 bg-amber-50 p-3 text-left">
+            <p className="text-xs leading-relaxed font-bold text-amber-900">
+              この端末では クラウドの よみとりを つかいません。アプリに モデルを ようい すると、
+              こえを おくらずに よみとり できます。
+            </p>
+            <button
+              type="button"
+              onClick={() => void prepare()}
+              disabled={preparing !== null}
+              className="mt-2 w-full rounded-full bg-[#f4801f] px-5 py-2.5 text-sm font-extrabold text-white shadow-[0_3px_0_#c25f0d] transition active:translate-y-0.5 active:shadow-none disabled:opacity-60"
+            >
+              {preparing === null
+                ? "🔊 こえの じゅんび（51MB）"
+                : preparing.fraction === null
+                  ? "じゅんび中…"
+                  : preparing.fraction >= 1
+                    ? "モデルを よみこみ中…"
+                    : `じゅんび中… ${Math.round(preparing.fraction * 100)}%`}
+            </button>
+            {prepareError && <p className="mt-2 text-xs font-bold text-red-700">{prepareError}</p>}
+          </div>
+        )}
+
         {/* 自己申告は「まだ判定していないとき」だけ出す。結果が出たあとに
             「もういちど」が 2 つ並ぶのを避ける。 */}
         {decision?.path === "self-report" && !result && (
           <div className="w-full max-w-sm">
             <SelfReportPrompt word={word.en} onAnswer={selfReport} />
           </div>
+        )}
+
+        {notice && !result && (
+          <p aria-live="polite" className="text-sm font-bold text-[#b03a63]">
+            {notice}
+          </p>
         )}
 
         {result && style && (
