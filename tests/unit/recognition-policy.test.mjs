@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { decideRecognitionPath } from "../../src/lib/speech/recognition-policy.ts";
+import {
+  decideRecognitionPath,
+  decideRecognitionSetup,
+} from "../../src/lib/speech/recognition-policy.ts";
 
 /**
  * 経路決定の仕様を固定する — issue #31 / #40
@@ -117,4 +120,39 @@ test("どの組み合わせでも reason は空でない (画面にそのまま�
       }
     }
   }
+});
+
+/**
+ * Safari (#79): device は必ず使えないので、wasm の「じゅんび」状態が体験を決める。
+ * 画面は `canPrepareWasm` を見て「モデルを ようい（51MB）」ボタンを出す。
+ */
+test("Safari + モデル未取得 → 自己申告のまま「じゅんび」を案内する", () => {
+  const setup = decideRecognitionSetup({ device: SAFARI, wasm: "needs-download" });
+  assert.equal(setup.path, "self-report");
+  assert.equal(setup.canPrepareWasm, true);
+  assert.match(setup.reason, /モデルを ようい/);
+});
+
+test("Safari + モデル準備済み → wasm で認識する", () => {
+  const setup = decideRecognitionSetup({ device: SAFARI, wasm: "ready" });
+  assert.equal(setup.path, "wasm");
+  assert.equal(setup.canPrepareWasm, false);
+});
+
+test("Safari + 端末内推論が使えない → じゅんびボタンも出さない", () => {
+  const setup = decideRecognitionSetup({ device: SAFARI, wasm: "unsupported" });
+  assert.equal(setup.path, "self-report");
+  assert.equal(setup.canPrepareWasm, false);
+});
+
+test("Chrome で device が使えるなら、モデル未取得でも 51MB を勧めない", () => {
+  const setup = decideRecognitionSetup({ device: DEVICE_OK, wasm: "needs-download" });
+  assert.equal(setup.path, "device");
+  assert.equal(setup.canPrepareWasm, false);
+});
+
+test("device が downloadable で wasm 未取得なら、じゅんびを案内する", () => {
+  const setup = decideRecognitionSetup({ device: DEVICE_DOWNLOADABLE, wasm: "needs-download" });
+  assert.equal(setup.path, "self-report");
+  assert.equal(setup.canPrepareWasm, true);
 });
