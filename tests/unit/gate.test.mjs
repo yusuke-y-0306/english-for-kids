@@ -62,6 +62,8 @@ describe("公開経路は最小限", () => {
       "/api/auth/devices",
       "/_next/static/chunk/abc.js",
       "/favicon.ico",
+      "/asr/moonshine/index.js",
+      "/asr/capture-worklet.js",
     ];
     for (const p of publicPaths) {
       assert.equal(evaluateRoute(p), "public", `${p} は公開のはず`);
@@ -81,7 +83,7 @@ describe("公開経路は最小限", () => {
     // 「増やすときは理由を書いてレビューする」ためのスナップショット。
     // 意図して増やすならこの数字とテストを更新する。
     assert.equal(PUBLIC_EXACT.length, 4);
-    assert.equal(PUBLIC_PREFIX.length, 5);
+    assert.equal(PUBLIC_PREFIX.length, 6);
     for (const route of publicRouteList()) {
       assert.ok(route.reason.length > 5, `${route.path} に理由が書かれていない`);
     }

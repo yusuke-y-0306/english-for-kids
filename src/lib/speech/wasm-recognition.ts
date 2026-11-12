@@ -91,6 +91,34 @@ function loadEngine(): Promise<EngineModule> {
 
 let transcriberPromise: Promise<Transcriber> | null = null;
 
+let modelFilesPromise: Promise<Map<string, Uint8Array>> | null = null;
+
+/** 検証済みキャッシュの読み出し (1 セッション 1 回)。失敗したらやり直せる */
+function loadModelFiles(): Promise<Map<string, Uint8Array>> {
+  modelFilesPromise ??= loadVerifiedFiles().catch((error: unknown) => {
+    modelFilesPromise = null;
+    throw error;
+  });
+  return modelFilesPromise;
+}
+
+/** タイムアウト付きの await。Safari で「無言で止まる」のを避ける */
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 /**
  * 検証済みキャッシュのバイト列から Transcriber を作る (1 セッション 1 個)。
  *
@@ -98,13 +126,32 @@ let transcriberPromise: Promise<Transcriber> | null = null;
  * 必ず `files` を渡してメモリ上のバイト列だけで構築する。
  */
 function loadTranscriber(): Promise<Transcriber> {
-  transcriberPromise ??= Promise.all([loadEngine(), loadVerifiedFiles()])
-    .then(([engine, files]) =>
+  /* じゅんび済みならそのまま使う (毎回 51MB を読み直さない) */
+  if (transcriberPromise) return transcriberPromise;
+  return Promise.all([loadEngine(), loadModelFiles()]).then(([engine, files]) =>
+    transcriberFrom(engine, files),
+  );
+}
+
+/** エンジンとモデルのバイト列から Transcriber を作る (二重生成しない) */
+function transcriberFrom(
+  engine: EngineModule,
+  files: Map<string, Uint8Array>,
+): Promise<Transcriber> {
+  if (transcriberPromise) return transcriberPromise;
+  transcriberPromise ??= Promise.resolve()
+    .then(() =>
       engine.Transcriber.load({
         files,
         modelArch: engine.ModelArch.TinyStreaming,
       }),
     )
+    .then((transcriber) => {
+      /* モデルは wasm 側にコピー済み。JS 側の 51MB はすぐ手放す (iOS のメモリ対策) */
+      files.clear();
+      modelFilesPromise = null;
+      return transcriber;
+    })
     .catch((error: unknown) => {
       transcriberPromise = null;
       throw error;
@@ -122,8 +169,12 @@ export type PrepareProgress = {
   total: number;
 };
 
+/** じゅんびの段階。画面はこれで「なにを まっているか」を出す */
+export type PrepareStage = "download" | "verify" | "engine" | "model";
+
 export type PrepareOptions = {
   onProgress?: (progress: PrepareProgress) => void;
+  onStage?: (stage: PrepareStage) => void;
 };
 
 /**
@@ -133,6 +184,16 @@ export type PrepareOptions = {
  * 途中で失敗してもキャッシュは壊れたままにならない (#29 の sentinel 方式)。
  */
 export async function prepareWasm(options: PrepareOptions = {}): Promise<void> {
+  const started = performance.now();
+  const stage = (name: PrepareStage) => {
+    console.info(`[asr] ${name} (${Math.round(performance.now() - started)}ms)`);
+    options.onStage?.(name);
+  };
+
+  /* 51MB の取得と 13MB のエンジン読み込みは独立。先に engine を走らせて重ねる */
+  const enginePromise = loadEngine();
+
+  stage("download");
   await ensureModels({
     onProgress: (progress) => {
       options.onProgress?.({
@@ -143,8 +204,23 @@ export async function prepareWasm(options: PrepareOptions = {}): Promise<void> {
       });
     },
   });
-  /* ダウンロード後にエンジンへ読ませる (数秒かかる)。ここまで終わって「使える」 */
-  await loadTranscriber();
+
+  stage("verify");
+  const filesPromise = loadModelFiles();
+
+  stage("engine");
+  const engine = await withTimeout(enginePromise, 120_000, "エンジンの よみこみが おわりません");
+  const files = await withTimeout(filesPromise, 60_000, "モデルの かくにんが おわりません");
+
+  stage("model");
+  /* ここが端末によっては数十秒かかる (Safari は特に)。終わって初めて「使える」 */
+  await withTimeout(
+    transcriberFrom(engine, files),
+    300_000,
+    "モデルの よみこみが おわりません",
+  );
+
+  console.info(`[asr] ready (${Math.round(performance.now() - started)}ms)`);
 }
 
 export type WasmRecognitionErrorKind =
