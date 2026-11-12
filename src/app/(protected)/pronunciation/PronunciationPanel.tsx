@@ -19,6 +19,7 @@ import {
   detectWasmReadiness,
   listenOnceWithWasm,
   prepareWasm,
+  type PrepareStage,
   type WasmReadiness,
 } from "@/lib/speech/wasm-recognition";
 import { categories, wordId } from "@/lib/words";
@@ -72,18 +73,55 @@ const SCORE_STYLE: Record<PronunciationScore, { emoji: string; ring: string; tex
   retry: { emoji: "🔁", ring: "border-sky-300 bg-sky-50", text: "text-sky-800" },
 };
 
+/** じゅんび中のボタン文言。段階と経過秒を出して「止まっていない」ことを伝える */
+function prepareLabel(
+  preparing: { fraction: number | null; stage: PrepareStage },
+  elapsedSec: number,
+): string {
+  switch (preparing.stage) {
+    case "download":
+      return preparing.fraction === null
+        ? `じゅんび中… ${elapsedSec}びょう`
+        : `じゅんび中… ${Math.round(preparing.fraction * 100)}%`;
+    case "verify":
+      return `モデルを かくにん中… ${elapsedSec}びょう`;
+    case "engine":
+      return `エンジンを よみこみ中… ${elapsedSec}びょう`;
+    case "model":
+      return `モデルを よみこみ中… ${elapsedSec}びょう`;
+  }
+}
+
 export default function PronunciationPanel() {
   const [wordIndex, setWordIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("ready");
   const [result, setResult] = useState<Result | null>(null);
   const [decision, setDecision] = useState<Decision | null>(null);
   const [readiness, setReadiness] = useState<WasmReadiness | null>(null);
-  const [preparing, setPreparing] = useState<{ fraction: number | null } | null>(null);
+  const [preparing, setPreparing] = useState<{
+    fraction: number | null;
+    stage: PrepareStage;
+    since: number;
+  } | null>(null);
+  /** 経過秒の再計算用 (タイマーで進めるだけ) */
+  const [now, setNow] = useState(0);
   const [prepareError, setPrepareError] = useState<string | null>(null);
   /** 認識できなかった等の短い案内 (採点結果とは別に出す) */
   const [notice, setNotice] = useState<string | null>(null);
 
   const word = PRACTICE_WORDS[wordIndex];
+
+  /* じゅんび中は経過秒を出す。「止まっている」のか「時間がかかっている」のか
+     見分けられるようにする (Safari はモデルの読み込みに数十秒かかる) */
+  const prepareSince = preparing?.since ?? null;
+  useEffect(() => {
+    if (prepareSince === null) return;
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1_000);
+    return () => clearInterval(timer);
+  }, [prepareSince]);
+  const prepareElapsed = prepareSince === null ? 0 : Math.max(0, Math.round((now - prepareSince) / 1000));
 
   // 経路の判定はブラウザ API を触るので、描画中ではなくマウント後に 1 回だけ行う。
   // Safari は device が必ず使えないので、wasm の準備状態 (#79) が体験を決める。
@@ -111,10 +149,15 @@ export default function PronunciationPanel() {
     if (preparing) return;
     setPrepareError(null);
     setNotice(null);
-    setPreparing({ fraction: null });
+    setPreparing({ fraction: null, stage: "download", since: Date.now() });
     try {
       await prepareWasm({
-        onProgress: (progress) => setPreparing({ fraction: progress.fraction }),
+        onProgress: (progress) =>
+          setPreparing((current) =>
+            current === null ? current : { ...current, fraction: progress.fraction },
+          ),
+        onStage: (stage) =>
+          setPreparing((current) => (current === null ? current : { ...current, stage })),
       });
       const resolved = await resolveRecognitionSetup("ready");
       setReadiness("ready");
@@ -124,9 +167,13 @@ export default function PronunciationPanel() {
         canPrepareWasm: resolved.canPrepareWasm,
       });
       setPreparing(null);
-    } catch {
+    } catch (error) {
       setPreparing(null);
-      setPrepareError("じゅんびが できませんでした。でんぱの いい ところで もういちど ためしてね");
+      console.error("[asr] prepare failed", error);
+      const detail = error instanceof Error && error.message ? `（${error.message}）` : "";
+      setPrepareError(
+        `じゅんびが できませんでした${detail}。でんぱの いい ところで もういちど ためしてね`,
+      );
     }
   }, [preparing]);
 
@@ -293,12 +340,13 @@ export default function PronunciationPanel() {
             >
               {preparing === null
                 ? "🔊 こえの じゅんび（51MB）"
-                : preparing.fraction === null
-                  ? "じゅんび中…"
-                  : preparing.fraction >= 1
-                    ? "モデルを よみこみ中…"
-                    : `じゅんび中… ${Math.round(preparing.fraction * 100)}%`}
+                : prepareLabel(preparing, prepareElapsed)}
             </button>
+            {preparing !== null && (
+              <p className="mt-2 text-xs leading-relaxed font-bold text-amber-900">
+                さいしょの 1 回だけ、1〜2 ぷん かかることが あります。
+              </p>
+            )}
             {prepareError && <p className="mt-2 text-xs font-bold text-red-700">{prepareError}</p>}
           </div>
         )}
