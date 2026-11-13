@@ -151,93 +151,99 @@ function buildBeginnerQuestions(count: number): QuizQuestion[] {
   });
 }
 
+/**
+ * 問題プールの 1 問。正解は index ではなく **正解の文字列** で保持する
+ * （出題時に選択肢を並べ替えるので、書き順に正解が寄るのを防ぐ）。
+ */
+type QuizPoolEntry = Omit<QuizQuestion, "id" | "answer"> & { answer: string };
+
 /* ------------------------------------------------------------------ *
  * 中級 — 文に合うことば
  * ------------------------------------------------------------------ */
 
-const intermediatePool: Omit<QuizQuestion, "id">[] = [
+const intermediatePool: QuizPoolEntry[] = [
   {
     promptEn: "I ___ a dog.",
     promptJa: "わたしは いぬを かっているよ。",
     choices: ["have", "has", "am", "is"],
-    answer: 0,
+    answer: "have",
     explanation: "「わたし」は I。I の ときは have を つかうよ。",
   },
   {
     promptEn: "She ___ a teacher.",
     promptJa: "かのじょは せんせいです。",
     choices: ["is", "are", "am", "be"],
-    answer: 0,
+    answer: "is",
     explanation: "she（かのじょ）は ひとり。だから is だよ。",
   },
   {
     promptEn: "___ you like apples?",
     promptJa: "りんごは すき？",
     choices: ["Do", "Does", "Are", "Is"],
-    answer: 0,
+    answer: "Do",
     explanation: "you の しつもんは Do で はじめるよ。",
   },
   {
     promptEn: "This is ___ orange.",
     promptJa: "これは オレンジです。",
     choices: ["an", "a", "some", "two"],
-    answer: 0,
+    answer: "an",
     explanation: "a・i・u・e・o の おとは an を つかうよ。orange は o から はじまるね。",
   },
   {
     promptEn: "There ___ two cats.",
     promptJa: "ねこが 2ひき いるよ。",
     choices: ["are", "is", "am", "be"],
-    answer: 0,
+    answer: "are",
     explanation: "two cats は ふくすう。だから are だよ。",
   },
   {
     promptEn: "I can ___ fast.",
     promptJa: "わたしは はやく はしれるよ。",
     choices: ["run", "runs", "running", "ran"],
-    answer: 0,
+    answer: "run",
     explanation: "can の あとは どうしの もとの かたち（run）だよ。",
   },
   {
     promptEn: "He ___ to school every day.",
     promptJa: "かれは まいにち がっこうへ いくよ。",
     choices: ["goes", "go", "going", "went"],
-    answer: 0,
+    answer: "goes",
     explanation: "he の ときは どうしに s（es）が つくよ。go → goes。",
   },
   {
     promptEn: "___ is your name?",
     promptJa: "おなまえは なんですか？",
     choices: ["What", "Who", "Where", "How"],
-    answer: 0,
+    answer: "What",
     explanation: "「なに」を きくときは What だよ。",
   },
   {
     promptEn: "I have two ___.",
     promptJa: "はこを 2つ もっているよ。",
     choices: ["boxes", "boxs", "boxies", "box"],
-    answer: 0,
+    answer: "boxes",
     explanation: "box は x で おわるから、es を つけて boxes になるよ。",
   },
   {
     promptEn: "Look! It ___ raining.",
     promptJa: "みて！あめが ふっているよ。",
     choices: ["is", "are", "am", "be"],
-    answer: 0,
+    answer: "is",
     explanation: "it は ひとつ。だから is だよ。",
   },
   {
     promptEn: "I like cats, ___ I don't like dogs.",
     promptJa: "ねこは すきだけど、いぬは すきじゃないよ。",
     choices: ["but", "and", "so", "because"],
-    answer: 0,
+    answer: "but",
     explanation: "「〜だけど」と つなぐときは but だよ。",
   },
   {
     promptEn: "How many ___ do you have?",
     promptJa: "ペンを なんぼん もっている？",
     choices: ["pens", "pen", "penses", "penes"],
-    answer: 0,
+    answer: "pens",
     explanation: "How many の あとは ふくすうの かたち。pen → pens。",
   },
 ];
@@ -246,7 +252,7 @@ const intermediatePool: Omit<QuizQuestion, "id">[] = [
  * 上級 — 文法・文の選択
  * ------------------------------------------------------------------ */
 
-const advancedPool: Omit<QuizQuestion, "id">[] = [
+const advancedPool: QuizPoolEntry[] = [
   {
     promptJa: "ただしい ぶんは どれ？",
     choices: [
@@ -255,7 +261,7 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
       "She not likes carrots.",
       "She doesn't likes carrots.",
     ],
-    answer: 0,
+    answer: "She doesn't like carrots.",
     explanation:
       "she の 否定は doesn't。うしろの どうしは もとの かたち（like）だよ。",
   },
@@ -263,14 +269,14 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
     promptEn: "I have lived here ___ 2019.",
     promptJa: "2019年から ずっと ここに すんでいるよ。",
     choices: ["since", "for", "from", "at"],
-    answer: 0,
+    answer: "since",
     explanation: "since は「〜から（時点）」、for は「〜のあいだ（期間）」だよ。",
   },
   {
     promptEn: "If it ___ tomorrow, we'll stay home.",
     promptJa: "あした あめが ふったら、いえに いるよ。",
     choices: ["rains", "rain", "rained", "raining"],
-    answer: 0,
+    answer: "rains",
     explanation:
       "If の ぶん（じょうけん）では、みらいの ことでも げんざいけいを つかうよ。",
   },
@@ -283,7 +289,7 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
       "most interesting",
       "interestinger",
     ],
-    answer: 0,
+    answer: "more interesting",
     explanation:
       "ながい ことばは -er を つけず、more を つけて くらべるよ。",
   },
@@ -291,14 +297,14 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
     promptEn: "He asked me ___ I was hungry.",
     promptJa: "かれは わたしに「おなか すいてる？」と きいたよ。",
     choices: ["if", "that", "what", "because"],
-    answer: 0,
+    answer: "if",
     explanation: "「〜かどうか」は if（または whether）で つなぐよ。",
   },
   {
     promptEn: "There are ___ apples than bananas.",
     promptJa: "バナナより りんごの ほうが すくないよ。",
     choices: ["fewer", "less", "few", "little"],
-    answer: 0,
+    answer: "fewer",
     explanation:
       "りんごの ように かぞえられる ものは fewer、かぞえられない ものは less だよ。",
   },
@@ -306,7 +312,7 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
     promptEn: "I'm looking forward to ___ you.",
     promptJa: "あなたに あえるのを たのしみに しているよ。",
     choices: ["seeing", "see", "saw", "seen"],
-    answer: 0,
+    answer: "seeing",
     explanation:
       "look forward to の to は ぜんちし。うしろは 〜ing の かたちになるよ。",
   },
@@ -314,7 +320,7 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
     promptEn: "The cake ___ by my mother yesterday.",
     promptJa: "その ケーキは きのう おかあさんに つくられたよ。",
     choices: ["was made", "made", "is made", "makes"],
-    answer: 0,
+    answer: "was made",
     explanation:
       "「〜された」は うけみ。yesterday があるので かこけい was made だよ。",
   },
@@ -322,7 +328,7 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
     promptEn: "She is the ___ girl in our class.",
     promptJa: "かのじょは クラスで いちばん せが たかいよ。",
     choices: ["tallest", "tall", "taller", "most tall"],
-    answer: 0,
+    answer: "tallest",
     explanation:
       "「いちばん〜」は さいじょうきゅう。tall は -est を つけて tallest。",
   },
@@ -330,7 +336,7 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
     promptEn: "___ hard, and you will succeed.",
     promptJa: "がんばれば、きっと うまくいくよ。",
     choices: ["Work", "Working", "To work", "Worked"],
-    answer: 0,
+    answer: "Work",
     explanation:
       "「〜しなさい、そうすれば…」は めいれいぶん + and で つなぐよ。",
   },
@@ -338,7 +344,7 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
     promptEn: "This is the restaurant ___ we ate last night.",
     promptJa: "ここが ゆうべ たべた レストランだよ。",
     choices: ["where", "which", "when", "who"],
-    answer: 0,
+    answer: "where",
     explanation:
       "ばしょを せつめいする ときは where。うしろは かんせいした ぶんになるよ。",
   },
@@ -346,7 +352,7 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
     promptEn: "Neither Tom ___ his friends were there.",
     promptJa: "トムも かれの ともだちも そこには いなかったよ。",
     choices: ["nor", "or", "and", "but"],
-    answer: 0,
+    answer: "nor",
     explanation: "neither A nor B で「AもBも 〜ない」という かたちだよ。",
   },
 ];
@@ -356,7 +362,7 @@ const advancedPool: Omit<QuizQuestion, "id">[] = [
  * ------------------------------------------------------------------ */
 
 function fromPool(
-  pool: Omit<QuizQuestion, "id">[],
+  pool: QuizPoolEntry[],
   idPrefix: string,
   count: number,
 ): QuizQuestion[] {
@@ -364,13 +370,12 @@ function fromPool(
     .slice(0, count)
     .map((q, i) => {
       // 正解の位置がいつも同じにならないよう、選択肢も並べ替える
-      const correct = q.choices[q.answer];
       const choices = shuffle(q.choices);
       return {
         ...q,
         id: `${idPrefix}-${i}`,
         choices,
-        answer: choices.indexOf(correct),
+        answer: choices.indexOf(q.answer),
       };
     });
 }
