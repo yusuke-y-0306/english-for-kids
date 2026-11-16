@@ -24,6 +24,12 @@
 
 チケット管理は GitHub Issues で運用: https://github.com/yusuke-y-0306/english-for-kids/issues
 
+## コントリビューション
+
+このリポジトリは個人プロジェクトのため、**外部からの Pull Request は受け付けていません**。
+fork から届いた PR は自動でコメントを付けてクローズします（[CONTRIBUTING.md](CONTRIBUTING.md)）。
+不具合報告・提案は Issue で歓迎します。
+
 ## 公開サイト 🌐
 
 Cloudflare Quick Tunnel を使っているため、URL は cloudflared の再起動時に変わることがあります。

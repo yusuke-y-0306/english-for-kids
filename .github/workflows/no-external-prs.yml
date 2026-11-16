@@ -1,0 +1,70 @@
+name: Close external PRs
+
+# このリポジトリは個人プロジェクトとして公開しているが、外部からの PR は受け付けない。
+# 公開 issue をスキャンして修正 PR を量産する自動アカウントが実際に来たため
+# (#95)、fork からの PR はお礼のコメントを付けて自動で閉じる。
+#
+# pull_request_target は base ブランチ側のワークフロー定義で動くので、PR 元の
+# コードを checkout しない・実行しない（secrets も使わない）。閉じるだけなので
+# これで十分。
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  close:
+    name: close external PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+
+            // リポジトリの共同作業者 (owner / org member / collaborator) は対象外
+            const trusted = ["OWNER", "MEMBER", "COLLABORATOR"];
+            if (trusted.includes(pr.author_association)) {
+              core.info(`skip: ${pr.user.login} is ${pr.author_association}`);
+              return;
+            }
+
+            // 同一リポジトリ内のブランチからの PR も対象外
+            const fromFork = pr.head.repo?.full_name !== `${owner}/${repo}`;
+            if (!fromFork) {
+              core.info(`skip: ${pr.head.ref} is a branch in this repository`);
+              return;
+            }
+
+            const body = [
+              "Thanks for taking the time to look at this. 🙏",
+              "",
+              "This repository is a personal project that happens to be public. " +
+                "**External pull requests are not accepted**, so this one is being " +
+                "closed automatically.",
+              "",
+              "日本語: このリポジトリは個人プロジェクトのため、外部からの Pull Request は" +
+                "受け付けていません。自動でクローズしています。",
+              "",
+              "Bug reports and suggestions as **issues** are welcome.",
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr.number,
+              body,
+            });
+            await github.rest.pulls.update({
+              owner,
+              repo,
+              pull_number: pr.number,
+              state: "closed",
+            });
+            core.info(`closed external PR #${pr.number} from ${pr.user.login}`);
