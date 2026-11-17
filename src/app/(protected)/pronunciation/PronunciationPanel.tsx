@@ -50,7 +50,7 @@ type PracticeWord = {
 
 const PRACTICE_WORDS: PracticeWord[] = categories.flatMap((category) =>
   category.words.map((word) => ({
-    id: wordId(category.id, word),
+    id: wordId(word),
     en: word.en,
     ja: word.ja,
     emoji: word.emoji,

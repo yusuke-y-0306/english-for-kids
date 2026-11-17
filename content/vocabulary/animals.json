@@ -1,0 +1,80 @@
+{
+  "id": "animals",
+  "label": "動物",
+  "emoji": "🐾",
+  "color": "from-amber-300 to-orange-400",
+  "words": [
+    {
+      "id": "animals/dog",
+      "en": "dog",
+      "ja": "いぬ",
+      "emoji": "🐶",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "animals/cat",
+      "en": "cat",
+      "ja": "ねこ",
+      "emoji": "🐱",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "animals/bird",
+      "en": "bird",
+      "ja": "とり",
+      "emoji": "🐦",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "animals/fish",
+      "en": "fish",
+      "ja": "さかな",
+      "emoji": "🐟",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "animals/lion",
+      "en": "lion",
+      "ja": "ライオン",
+      "emoji": "🦁",
+      "pos": "noun",
+      "level": "a1",
+      "audio": null
+    },
+    {
+      "id": "animals/elephant",
+      "en": "elephant",
+      "ja": "ぞう",
+      "emoji": "🐘",
+      "pos": "noun",
+      "level": "a1",
+      "audio": null
+    },
+    {
+      "id": "animals/rabbit",
+      "en": "rabbit",
+      "ja": "うさぎ",
+      "emoji": "🐰",
+      "pos": "noun",
+      "level": "a1",
+      "audio": null
+    },
+    {
+      "id": "animals/bear",
+      "en": "bear",
+      "ja": "くま",
+      "emoji": "🐻",
+      "pos": "noun",
+      "level": "a1",
+      "audio": null
+    }
+  ]
+}

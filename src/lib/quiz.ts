@@ -141,7 +141,8 @@ function buildBeginnerQuestions(count: number): QuizQuestion[] {
 
     return {
       id: `beginner-${i}-${word.en}`,
-      wordId: `${word.categoryId}/${word.en}`,
+      // 進捗キーはコンテンツ側の不変 ID (#83)。`en` から組み立てない。
+      wordId: word.id,
       display: word.emoji,
       promptJa: `「${word.ja}」は えいごで なに？`,
       choices,

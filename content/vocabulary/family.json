@@ -1,0 +1,98 @@
+{
+  "id": "family",
+  "label": "かぞく",
+  "emoji": "👨‍👩‍👧",
+  "color": "from-indigo-300 to-violet-400",
+  "words": [
+    {
+      "id": "family/mother",
+      "en": "mother",
+      "ja": "おかあさん",
+      "emoji": "👩",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null,
+      "variants": [
+        "mom",
+        "mum",
+        "mommy"
+      ]
+    },
+    {
+      "id": "family/father",
+      "en": "father",
+      "ja": "おとうさん",
+      "emoji": "👨",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null,
+      "variants": [
+        "dad",
+        "papa",
+        "daddy"
+      ]
+    },
+    {
+      "id": "family/sister",
+      "en": "sister",
+      "ja": "おねえさん",
+      "emoji": "👧",
+      "pos": "noun",
+      "level": "a1",
+      "audio": null
+    },
+    {
+      "id": "family/brother",
+      "en": "brother",
+      "ja": "おにいさん",
+      "emoji": "👦",
+      "pos": "noun",
+      "level": "a1",
+      "audio": null
+    },
+    {
+      "id": "family/grandmother",
+      "en": "grandmother",
+      "ja": "おばあちゃん",
+      "emoji": "👵",
+      "pos": "noun",
+      "level": "a1",
+      "audio": null,
+      "variants": [
+        "grandma",
+        "grandmom"
+      ]
+    },
+    {
+      "id": "family/grandfather",
+      "en": "grandfather",
+      "ja": "おじいちゃん",
+      "emoji": "👴",
+      "pos": "noun",
+      "level": "a1",
+      "audio": null,
+      "variants": [
+        "grandpa",
+        "granddad"
+      ]
+    },
+    {
+      "id": "family/baby",
+      "en": "baby",
+      "ja": "あかちゃん",
+      "emoji": "👶",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "family/family",
+      "en": "family",
+      "ja": "かぞく",
+      "emoji": "👨‍👩‍👧‍👦",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    }
+  ]
+}

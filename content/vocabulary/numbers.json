@@ -1,0 +1,94 @@
+{
+  "id": "numbers",
+  "label": "すうじ",
+  "emoji": "🔢",
+  "color": "from-sky-300 to-blue-400",
+  "words": [
+    {
+      "id": "numbers/one",
+      "en": "one",
+      "ja": "1",
+      "emoji": "1️⃣",
+      "pos": "numeral",
+      "level": "pre-a1",
+      "audio": null,
+      "homophones": [
+        "won"
+      ]
+    },
+    {
+      "id": "numbers/two",
+      "en": "two",
+      "ja": "2",
+      "emoji": "2️⃣",
+      "pos": "numeral",
+      "level": "pre-a1",
+      "audio": null,
+      "homophones": [
+        "too",
+        "to"
+      ]
+    },
+    {
+      "id": "numbers/three",
+      "en": "three",
+      "ja": "3",
+      "emoji": "3️⃣",
+      "pos": "numeral",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "numbers/four",
+      "en": "four",
+      "ja": "4",
+      "emoji": "4️⃣",
+      "pos": "numeral",
+      "level": "pre-a1",
+      "audio": null,
+      "homophones": [
+        "for",
+        "fore"
+      ]
+    },
+    {
+      "id": "numbers/five",
+      "en": "five",
+      "ja": "5",
+      "emoji": "5️⃣",
+      "pos": "numeral",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "numbers/six",
+      "en": "six",
+      "ja": "6",
+      "emoji": "6️⃣",
+      "pos": "numeral",
+      "level": "a1",
+      "audio": null
+    },
+    {
+      "id": "numbers/seven",
+      "en": "seven",
+      "ja": "7",
+      "emoji": "7️⃣",
+      "pos": "numeral",
+      "level": "a1",
+      "audio": null
+    },
+    {
+      "id": "numbers/eight",
+      "en": "eight",
+      "ja": "8",
+      "emoji": "8️⃣",
+      "pos": "numeral",
+      "level": "a1",
+      "audio": null,
+      "homophones": [
+        "ate"
+      ]
+    }
+  ]
+}
