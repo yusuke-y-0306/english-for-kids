@@ -87,6 +87,8 @@ chmod 600 ~/.ssh/authorized_keys
 1. デプロイ後、VPS の `journalctl --user -u cloudflared-quick` から**現在の公開URLを取得**
 2. `deployments` API で **environment `production` の `environment_url`** に設定
    → リポジトリの **Deployments / Environments** に最新URLが出る
+   （ただし **Deployments ページは GitHub ログインが必要**。未ログインでは 404 なので、
+   外部向けの導線には使わない。公開向けは `Site URL` / `Deploy` ワークフローの run Summary）
 3. Actions の **Job Summary** にも `🚀 Live site: <URL>` を出力
 
 `permissions` は `contents: read` + `deployments: write` のみ。`GITHUB_TOKEN` でも

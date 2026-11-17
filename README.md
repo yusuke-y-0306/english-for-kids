@@ -33,10 +33,15 @@ fork から届いた PR は自動でコメントを付けてクローズしま�
 ## 公開サイト 🌐
 
 Cloudflare Quick Tunnel を使っているため、URL は cloudflared の再起動時に変わることがあります。
-**最新URLは常にこちら**（ページの中身が自動更新されます）:
+**最新URLはこちら**（どちらも GitHub にログインしていなくても見られます）:
 
-- Deployments (environment: `production`) — https://github.com/yusuke-y-0306/english-for-kids/deployments
-- 各デプロイの Actions **Job Summary** にも `🚀 Live site:` として表示
+- **`Site URL` ワークフローの最新 run** — https://github.com/yusuke-y-0306/english-for-kids/actions/workflows/site-url.yml
+  6 時間ごとに URL を確認・自己修復するので、ふだんはこれが一番新しい。run の Summary に `🌐 Live site: <URL>`
+- **`Deploy` ワークフローの最新 run の Summary** — https://github.com/yusuke-y-0306/english-for-kids/actions/workflows/deploy.yml
+  `🚀 Live site: <URL>`
+
+> 補足: リポジトリの **Deployments / Environments ページは GitHub ログインが必要**で、
+> 未ログインの訪問者には **404** になります。デプロイ記録はそこで管理していますが、公開向けの導線には使っていません。
 
 ## セットアップ
 
