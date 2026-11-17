@@ -35,6 +35,10 @@ jobs:
       # ここで落とす。ビルドでも同じ検証が走るが、失敗位置を先に出す。
       - name: Check vocabulary content
         run: npm run vocabulary:check
+      # 単語音声 (issue #84) の欠落・サイズ予算・index.json の一致。
+      # 音声は生成済みをコミットしているので、CI はネットワークに出ない。
+      - name: Check word audio assets
+        run: npm run audio:check
       - name: Build
         run: npm run build
       # 端末内認識エンジン (issue #79) が public/ に配られたか。

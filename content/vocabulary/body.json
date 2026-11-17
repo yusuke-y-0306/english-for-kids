@@ -11,7 +11,7 @@
       "emoji": "🗣️",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/body/head.mp3"
     },
     {
       "id": "body/eye",
@@ -20,7 +20,7 @@
       "emoji": "👁️",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null,
+      "audio": "/audio/words/body/eye.mp3",
       "homophones": [
         "i"
       ]
@@ -32,7 +32,7 @@
       "emoji": "👂",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/body/ear.mp3"
     },
     {
       "id": "body/nose",
@@ -41,7 +41,7 @@
       "emoji": "👃",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null,
+      "audio": "/audio/words/body/nose.mp3",
       "homophones": [
         "knows"
       ]
@@ -53,7 +53,7 @@
       "emoji": "👄",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/body/mouth.mp3"
     },
     {
       "id": "body/hand",
@@ -62,7 +62,7 @@
       "emoji": "✋",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/body/hand.mp3"
     },
     {
       "id": "body/foot",
@@ -71,7 +71,7 @@
       "emoji": "🦶",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/body/foot.mp3"
     },
     {
       "id": "body/hair",
@@ -80,7 +80,7 @@
       "emoji": "💇",
       "pos": "noun",
       "level": "a1",
-      "audio": null,
+      "audio": "/audio/words/body/hair.mp3",
       "homophones": [
         "hare"
       ]

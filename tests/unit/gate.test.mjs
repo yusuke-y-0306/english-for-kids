@@ -79,11 +79,19 @@ describe("公開経路は最小限", () => {
     assert.equal(isPublicPath("/api/auth/loginXYZ"), false);
   });
 
+  test("単語音声と Service Worker は公開 (個人情報を含まない)", () => {
+    assert.equal(isPublicPath("/audio/words/animals/dog.mp3"), true);
+    assert.equal(isPublicPath("/audio/words/index.json"), true);
+    assert.equal(isPublicPath("/sw.js"), true);
+    assert.equal(isPublicPath("/audio-evil/x"), false, "接頭辞はセグメント境界で切る");
+  });
+
   test("公開経路の数が増えていたら気づけるようにしておく", () => {
     // 「増やすときは理由を書いてレビューする」ためのスナップショット。
     // 意図して増やすならこの数字とテストを更新する。
-    assert.equal(PUBLIC_EXACT.length, 4);
-    assert.equal(PUBLIC_PREFIX.length, 6);
+    // #84 で /sw.js (完全一致) と /audio/ (接頭辞) を足した
+    assert.equal(PUBLIC_EXACT.length, 5);
+    assert.equal(PUBLIC_PREFIX.length, 7);
     for (const route of publicRouteList()) {
       assert.ok(route.reason.length > 5, `${route.path} に理由が書かれていない`);
     }

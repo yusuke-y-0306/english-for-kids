@@ -11,7 +11,7 @@
       "emoji": "🐶",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/animals/dog.mp3"
     },
     {
       "id": "animals/cat",
@@ -20,7 +20,7 @@
       "emoji": "🐱",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/animals/cat.mp3"
     },
     {
       "id": "animals/bird",
@@ -29,7 +29,7 @@
       "emoji": "🐦",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/animals/bird.mp3"
     },
     {
       "id": "animals/fish",
@@ -38,7 +38,7 @@
       "emoji": "🐟",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/animals/fish.mp3"
     },
     {
       "id": "animals/lion",
@@ -47,7 +47,7 @@
       "emoji": "🦁",
       "pos": "noun",
       "level": "a1",
-      "audio": null
+      "audio": "/audio/words/animals/lion.mp3"
     },
     {
       "id": "animals/elephant",
@@ -56,7 +56,7 @@
       "emoji": "🐘",
       "pos": "noun",
       "level": "a1",
-      "audio": null
+      "audio": "/audio/words/animals/elephant.mp3"
     },
     {
       "id": "animals/rabbit",
@@ -65,7 +65,7 @@
       "emoji": "🐰",
       "pos": "noun",
       "level": "a1",
-      "audio": null
+      "audio": "/audio/words/animals/rabbit.mp3"
     },
     {
       "id": "animals/bear",
@@ -74,7 +74,7 @@
       "emoji": "🐻",
       "pos": "noun",
       "level": "a1",
-      "audio": null
+      "audio": "/audio/words/animals/bear.mp3"
     }
   ]
 }

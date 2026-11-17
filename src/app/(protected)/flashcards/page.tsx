@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { MuteToggle } from "@/components/audio/MuteToggle";
+import { SpeakButton } from "@/components/audio/SpeakButton";
 import { newClientId } from "@/lib/client-id";
 import { categories } from "@/lib/words";
 
@@ -85,9 +87,12 @@ export default function FlashcardsPage() {
         <h1 className="text-base font-extrabold text-ink sm:text-lg">
           フラッシュカード
         </h1>
-        <span className="rounded-full bg-[#fff6e3] px-3 py-1.5 text-xs font-extrabold text-[#a85f08]">
-          {index + 1} / {total}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="rounded-full bg-[#fff6e3] px-3 py-1.5 text-xs font-extrabold text-[#a85f08]">
+            {index + 1} / {total}
+          </span>
+          <MuteToggle />
+        </div>
       </header>
 
       {/* カテゴリえらび */}
@@ -146,8 +151,13 @@ export default function FlashcardsPage() {
         </button>
       </div>
 
+      {/* よみあげ (#84)。カードの外に置く (カード自体が button のため) */}
+      <div className="mt-4 flex justify-center">
+        <SpeakButton word={word} label="えいごで きく" />
+      </div>
+
       {/* そうさ */}
-      <div className="mt-8 flex items-center justify-center gap-3">
+      <div className="mt-6 flex items-center justify-center gap-3">
         <button
           onClick={() => go(-1)}
           className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-white text-lg font-extrabold text-[#5b4a3c] shadow-[0_4px_0_rgba(122,104,87,0.18)] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"

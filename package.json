@@ -20,6 +20,8 @@
     "models:serve": "node scripts/models.mjs serve",
     "models:check": "node scripts/models.mjs check",
     "vocabulary:check": "node scripts/vocabulary-check.mjs",
+    "audio:generate": "node scripts/generate-audio.mjs",
+    "audio:check": "node scripts/audio-check.mjs",
     "bench:asr:words": "node scripts/asr-bench/words.mjs",
     "bench:asr:moonshine": "node scripts/asr-bench/moonshine.mjs",
     "bench:asr:report": "node scripts/asr-bench/report.mjs",

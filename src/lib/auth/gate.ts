@@ -44,6 +44,11 @@ export const PUBLIC_EXACT: readonly PublicRoute[] = [
     reason:
       "おうちの 合言葉を確かめてから、その子の端末一覧 (UA ハッシュ) だけを返す (issue #52)",
   },
+  {
+    path: "/sw.js",
+    reason:
+      "単語音声のオフラインキャッシュ用 Service Worker。個人情報を扱わず、/audio/ 以外は横取りしない (issue #84)",
+  },
 ] as const;
 
 /** 前方一致で公開する経路 */
@@ -72,6 +77,11 @@ export const PUBLIC_PREFIX: readonly PublicRoute[] = [
     path: "/asr/",
     reason:
       "端末内認識エンジンと AudioWorklet (静的ファイル)。個人情報を扱わないコード (issue #79)",
+  },
+  {
+    path: "/audio/",
+    reason:
+      "事前生成した単語の読み上げ音声 (静的ファイル)。誰のものでもない共通コンテンツ (issue #84)",
   },
 ] as const;
 
