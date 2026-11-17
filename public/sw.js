@@ -15,21 +15,61 @@ const CACHE_NAME = "efk-word-audio-v1";
 const AUDIO_PREFIX = "/audio/";
 const INDEX_URL = "/audio/words/index.json";
 
+/**
+ * 先読みの同時実行数。
+ *
+ * 48 語ならまとめて投げても問題ないが、語彙が増えたときに 1000 本の
+ * リクエストを一度に投げると回線とサーバの両方に優しくない。6 本ずつ流す。
+ */
+const PRECACHE_CONCURRENCY = 6;
+
+/**
+ * 「データ節約」や 2G 回線ではまとめ取りをしない。
+ * その場合も再生時の取得 (下の fetch) は動くので、オンラインなら鳴る。
+ */
+function shouldSkipPrecache() {
+  const connection = self.navigator && self.navigator.connection;
+  if (!connection) return false;
+  if (connection.saveData === true) return true;
+  return connection.effectiveType === "slow-2g" || connection.effectiveType === "2g";
+}
+
+async function precache(cache, urls) {
+  const queue = [...urls];
+  const workers = Array.from(
+    { length: Math.min(PRECACHE_CONCURRENCY, queue.length) },
+    async () => {
+      for (;;) {
+        const url = queue.shift();
+        if (!url) return;
+        try {
+          await cache.add(url);
+        } catch {
+          /* 1 つ失敗しても残りは続ける */
+        }
+      }
+    },
+  );
+  await Promise.all(workers);
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
-      try {
-        const cache = await caches.open(CACHE_NAME);
-        const response = await fetch(INDEX_URL, { cache: "no-cache" });
-        if (response.ok) {
-          const urls = await response.json();
-          if (Array.isArray(urls)) {
-            // 1 つ失敗しても他は残す (install を落とすと SW 自体が入らない)
-            await Promise.allSettled(urls.map((url) => cache.add(url)));
+      if (!shouldSkipPrecache()) {
+        try {
+          const cache = await caches.open(CACHE_NAME);
+          const response = await fetch(INDEX_URL, { cache: "no-cache" });
+          if (response.ok) {
+            const urls = await response.json();
+            if (Array.isArray(urls)) {
+              // 失敗しても install は落とさない (SW 自体が入らなくなるため)
+              await precache(cache, urls);
+            }
           }
+        } catch {
+          /* オフラインで install された場合は、再生のたびに貯める */
         }
-      } catch {
-        /* オフラインで install された場合は、再生のたびに貯める */
       }
       await self.skipWaiting();
     })(),
