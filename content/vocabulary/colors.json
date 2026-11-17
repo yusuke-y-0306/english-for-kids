@@ -1,0 +1,86 @@
+{
+  "id": "colors",
+  "label": "いろ",
+  "emoji": "🎨",
+  "color": "from-fuchsia-300 to-purple-400",
+  "words": [
+    {
+      "id": "colors/red",
+      "en": "red",
+      "ja": "あか",
+      "emoji": "🔴",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": null,
+      "homophones": [
+        "read"
+      ]
+    },
+    {
+      "id": "colors/blue",
+      "en": "blue",
+      "ja": "あお",
+      "emoji": "🔵",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": null,
+      "homophones": [
+        "blew"
+      ]
+    },
+    {
+      "id": "colors/yellow",
+      "en": "yellow",
+      "ja": "きいろ",
+      "emoji": "🟡",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "colors/green",
+      "en": "green",
+      "ja": "みどり",
+      "emoji": "🟢",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "colors/black",
+      "en": "black",
+      "ja": "くろ",
+      "emoji": "⚫",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "colors/white",
+      "en": "white",
+      "ja": "しろ",
+      "emoji": "⚪",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "colors/pink",
+      "en": "pink",
+      "ja": "ピンク",
+      "emoji": "🌸",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "colors/orange",
+      "en": "orange",
+      "ja": "オレンジ",
+      "emoji": "🟠",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": null
+    }
+  ]
+}

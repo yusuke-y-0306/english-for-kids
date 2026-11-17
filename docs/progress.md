@@ -42,7 +42,7 @@
 ## 保持期間
 
 - 日次: **直近 400 日**（`PROGRESS_RETENTION_DAYS`）。超えた古い日は保存時に落とす
-- 単語: `words.ts` の語数で自然に上限が決まる
+- 単語: 語彙コンテンツ (`content/vocabulary/*.json`) の語数で自然に上限が決まる
 - グラフ（7 日）や月次レビューには十分で、ファイルサイズも数十 KB に収まる
 
 ## クイズは 1 問ごとに記録する（#65 / #76）
@@ -195,7 +195,7 @@ Route Handler は組み立てるだけ。
 ```
 
 - `days[].quiz.accuracy` は **0〜100 の整数 %**（出題 0 なら 0）。`correct > total` は total に丸める
-- `words` は **手を付けた単語だけ**（`words.ts` の並び順）。全 48 語を毎回返すと payload が膨らむため
+- `words` は **手を付けた単語だけ**（語彙 JSON の並び順）。全 48 語を毎回返すと payload が膨らむため
 - `categories` は **未学習でも全カテゴリ返す**（画面が「まだ 0 / 8」を出せるように）
 - `pronunciation.totalAttempts` は **累計の正**（発音ストア側）。日次合計とは一致しない
   （移行前の日次は遡及していないため。#66 参照）
@@ -241,7 +241,7 @@ Route Handler は組み立てるだけ。
 
 `summary.ts` / `streak.ts` は **import を 1 つも持たない**（`state.ts` / `day.ts` と同じ流儀）。
 純粋関数を `node --test` の型ストリッピングで直接 import するため、単語一覧とカテゴリは
-Route Handler が `words.ts` から渡す。日付キーの加減算だけは `addDays()` と同じ計算を
+Route Handler が `words.ts`（語彙 JSON）から渡す。日付キーの加減算だけは `addDays()` と同じ計算を
 各ファイルに 4 行だけ持つ（`import` すると解決できないため。計算内容は `day.ts` が正）。
 
 ## 画面 — `/progress`（#68）

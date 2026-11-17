@@ -31,6 +31,10 @@ jobs:
       # 音声モデルの manifest が壊れていないか (issue #30)。ネットワークには出ない。
       - name: Check model manifest
         run: npm run models:check
+      # 語彙 JSON のスキーマ (issue #83)。ID 重複・必須項目欠落・未知カテゴリは
+      # ここで落とす。ビルドでも同じ検証が走るが、失敗位置を先に出す。
+      - name: Check vocabulary content
+        run: npm run vocabulary:check
       - name: Build
         run: npm run build
       # 端末内認識エンジン (issue #79) が public/ に配られたか。

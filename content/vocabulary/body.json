@@ -1,0 +1,89 @@
+{
+  "id": "body",
+  "label": "からだ",
+  "emoji": "🖐️",
+  "color": "from-emerald-300 to-teal-400",
+  "words": [
+    {
+      "id": "body/head",
+      "en": "head",
+      "ja": "あたま",
+      "emoji": "🗣️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "body/eye",
+      "en": "eye",
+      "ja": "め",
+      "emoji": "👁️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null,
+      "homophones": [
+        "i"
+      ]
+    },
+    {
+      "id": "body/ear",
+      "en": "ear",
+      "ja": "みみ",
+      "emoji": "👂",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "body/nose",
+      "en": "nose",
+      "ja": "はな",
+      "emoji": "👃",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null,
+      "homophones": [
+        "knows"
+      ]
+    },
+    {
+      "id": "body/mouth",
+      "en": "mouth",
+      "ja": "くち",
+      "emoji": "👄",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "body/hand",
+      "en": "hand",
+      "ja": "て",
+      "emoji": "✋",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "body/foot",
+      "en": "foot",
+      "ja": "あし",
+      "emoji": "🦶",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "body/hair",
+      "en": "hair",
+      "ja": "かみ",
+      "emoji": "💇",
+      "pos": "noun",
+      "level": "a1",
+      "audio": null,
+      "homophones": [
+        "hare"
+      ]
+    }
+  ]
+}

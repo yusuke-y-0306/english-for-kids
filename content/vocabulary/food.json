@@ -1,0 +1,83 @@
+{
+  "id": "food",
+  "label": "たべもの",
+  "emoji": "🍎",
+  "color": "from-rose-300 to-red-400",
+  "words": [
+    {
+      "id": "food/apple",
+      "en": "apple",
+      "ja": "りんご",
+      "emoji": "🍎",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "food/banana",
+      "en": "banana",
+      "ja": "バナナ",
+      "emoji": "🍌",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "food/bread",
+      "en": "bread",
+      "ja": "パン",
+      "emoji": "🍞",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null,
+      "homophones": [
+        "bred"
+      ]
+    },
+    {
+      "id": "food/milk",
+      "en": "milk",
+      "ja": "ぎゅうにゅう",
+      "emoji": "🥛",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "food/rice",
+      "en": "rice",
+      "ja": "ごはん",
+      "emoji": "🍚",
+      "pos": "noun",
+      "level": "a1",
+      "audio": null
+    },
+    {
+      "id": "food/egg",
+      "en": "egg",
+      "ja": "たまご",
+      "emoji": "🥚",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "food/cake",
+      "en": "cake",
+      "ja": "ケーキ",
+      "emoji": "🍰",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    },
+    {
+      "id": "food/water",
+      "en": "water",
+      "ja": "みず",
+      "emoji": "💧",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": null
+    }
+  ]
+}
