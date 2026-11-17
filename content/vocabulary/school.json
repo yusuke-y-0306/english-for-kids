@@ -1,0 +1,98 @@
+{
+  "id": "school",
+  "label": "がっこう",
+  "emoji": "🏫",
+  "color": "from-yellow-300 to-amber-400",
+  "words": [
+    {
+      "id": "school/book",
+      "en": "book",
+      "ja": "ほん",
+      "emoji": "📕",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/school/book.mp3"
+    },
+    {
+      "id": "school/pencil",
+      "en": "pencil",
+      "ja": "えんぴつ",
+      "emoji": "✏️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/school/pencil.mp3"
+    },
+    {
+      "id": "school/pen",
+      "en": "pen",
+      "ja": "ペン",
+      "emoji": "🖊️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/school/pen.mp3"
+    },
+    {
+      "id": "school/ruler",
+      "en": "ruler",
+      "ja": "ものさし",
+      "emoji": "📏",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/school/ruler.mp3"
+    },
+    {
+      "id": "school/bag",
+      "en": "bag",
+      "ja": "かばん",
+      "emoji": "🎒",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/school/bag.mp3"
+    },
+    {
+      "id": "school/desk",
+      "en": "desk",
+      "ja": "つくえ",
+      "emoji": "🗄️",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/school/desk.mp3"
+    },
+    {
+      "id": "school/chair",
+      "en": "chair",
+      "ja": "いす",
+      "emoji": "🪑",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/school/chair.mp3"
+    },
+    {
+      "id": "school/teacher",
+      "en": "teacher",
+      "ja": "せんせい",
+      "emoji": "👩‍🏫",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/school/teacher.mp3"
+    },
+    {
+      "id": "school/student",
+      "en": "student",
+      "ja": "せいと",
+      "emoji": "🧑‍🎓",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/school/student.mp3"
+    },
+    {
+      "id": "school/school",
+      "en": "school",
+      "ja": "がっこう",
+      "emoji": "🏫",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/school/school.mp3"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "id": "weather",
+  "label": "てんき",
+  "emoji": "☀️",
+  "color": "from-sky-300 to-cyan-400",
+  "words": [
+    {
+      "id": "weather/sun",
+      "en": "sun",
+      "ja": "たいよう",
+      "emoji": "☀️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/weather/sun.mp3",
+      "homophones": [
+        "son"
+      ]
+    },
+    {
+      "id": "weather/rain",
+      "en": "rain",
+      "ja": "あめ",
+      "emoji": "🌧️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/weather/rain.mp3"
+    },
+    {
+      "id": "weather/snow",
+      "en": "snow",
+      "ja": "ゆき",
+      "emoji": "❄️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/weather/snow.mp3"
+    },
+    {
+      "id": "weather/wind",
+      "en": "wind",
+      "ja": "かぜ",
+      "emoji": "🌬️",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/weather/wind.mp3"
+    },
+    {
+      "id": "weather/cloud",
+      "en": "cloud",
+      "ja": "くも",
+      "emoji": "☁️",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/weather/cloud.mp3"
+    },
+    {
+      "id": "weather/sky",
+      "en": "sky",
+      "ja": "そら",
+      "emoji": "🌌",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/weather/sky.mp3"
+    },
+    {
+      "id": "weather/star",
+      "en": "star",
+      "ja": "ほし",
+      "emoji": "⭐",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/weather/star.mp3"
+    },
+    {
+      "id": "weather/moon",
+      "en": "moon",
+      "ja": "つき",
+      "emoji": "🌙",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/weather/moon.mp3"
+    }
+  ]
+}

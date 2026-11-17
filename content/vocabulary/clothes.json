@@ -1,0 +1,83 @@
+{
+  "id": "clothes",
+  "label": "ふく",
+  "emoji": "👕",
+  "color": "from-pink-300 to-fuchsia-400",
+  "words": [
+    {
+      "id": "clothes/shirt",
+      "en": "shirt",
+      "ja": "シャツ",
+      "emoji": "👕",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/clothes/shirt.mp3"
+    },
+    {
+      "id": "clothes/pants",
+      "en": "pants",
+      "ja": "ズボン",
+      "emoji": "👖",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/clothes/pants.mp3",
+      "variants": [
+        "trousers"
+      ]
+    },
+    {
+      "id": "clothes/shoes",
+      "en": "shoes",
+      "ja": "くつ",
+      "emoji": "👟",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/clothes/shoes.mp3"
+    },
+    {
+      "id": "clothes/socks",
+      "en": "socks",
+      "ja": "くつした",
+      "emoji": "🧦",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/clothes/socks.mp3"
+    },
+    {
+      "id": "clothes/hat",
+      "en": "hat",
+      "ja": "ぼうし",
+      "emoji": "🎩",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/clothes/hat.mp3"
+    },
+    {
+      "id": "clothes/coat",
+      "en": "coat",
+      "ja": "コート",
+      "emoji": "🧥",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/clothes/coat.mp3"
+    },
+    {
+      "id": "clothes/skirt",
+      "en": "skirt",
+      "ja": "スカート",
+      "emoji": "👚",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/clothes/skirt.mp3"
+    },
+    {
+      "id": "clothes/dress",
+      "en": "dress",
+      "ja": "ワンピース",
+      "emoji": "👗",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/clothes/dress.mp3"
+    }
+  ]
+}

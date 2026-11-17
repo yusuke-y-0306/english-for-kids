@@ -1,0 +1,101 @@
+{
+  "id": "home",
+  "label": "いえ",
+  "emoji": "🏠",
+  "color": "from-orange-300 to-rose-400",
+  "words": [
+    {
+      "id": "home/house",
+      "en": "house",
+      "ja": "いえ",
+      "emoji": "🏠",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/home/house.mp3"
+    },
+    {
+      "id": "home/door",
+      "en": "door",
+      "ja": "ドア",
+      "emoji": "🚪",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/home/door.mp3"
+    },
+    {
+      "id": "home/window",
+      "en": "window",
+      "ja": "まど",
+      "emoji": "🪟",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/home/window.mp3"
+    },
+    {
+      "id": "home/bed",
+      "en": "bed",
+      "ja": "ベッド",
+      "emoji": "🛏️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/home/bed.mp3"
+    },
+    {
+      "id": "home/table",
+      "en": "table",
+      "ja": "テーブル",
+      "emoji": "🍽️",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/home/table.mp3"
+    },
+    {
+      "id": "home/sofa",
+      "en": "sofa",
+      "ja": "ソファ",
+      "emoji": "🛋️",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/home/sofa.mp3",
+      "variants": [
+        "couch"
+      ]
+    },
+    {
+      "id": "home/clock",
+      "en": "clock",
+      "ja": "とけい",
+      "emoji": "⏰",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/home/clock.mp3"
+    },
+    {
+      "id": "home/spoon",
+      "en": "spoon",
+      "ja": "スプーン",
+      "emoji": "🥄",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/home/spoon.mp3"
+    },
+    {
+      "id": "home/fork",
+      "en": "fork",
+      "ja": "フォーク",
+      "emoji": "🍴",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/home/fork.mp3"
+    },
+    {
+      "id": "home/cup",
+      "en": "cup",
+      "ja": "コップ",
+      "emoji": "☕",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/home/cup.mp3"
+    }
+  ]
+}

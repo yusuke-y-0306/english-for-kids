@@ -195,7 +195,7 @@ Route Handler は組み立てるだけ。
 ```
 
 - `days[].quiz.accuracy` は **0〜100 の整数 %**（出題 0 なら 0）。`correct > total` は total に丸める
-- `words` は **手を付けた単語だけ**（語彙 JSON の並び順）。全 48 語を毎回返すと payload が膨らむため
+- `words` は **手を付けた単語だけ**（語彙 JSON の並び順）。全 160 語を毎回返すと payload が膨らむため
 - `categories` は **未学習でも全カテゴリ返す**（画面が「まだ 0 / 8」を出せるように）
 - `pronunciation.totalAttempts` は **累計の正**（発音ストア側）。日次合計とは一致しない
   （移行前の日次は遡及していないため。#66 参照）

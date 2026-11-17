@@ -35,12 +35,12 @@ async function loadSources() {
 }
 
 describe("content/vocabulary", () => {
-  test("既存 48 語が JSON から読める (6 カテゴリ)", async () => {
+  test("160 語が JSON から読める (15 カテゴリ, #86)", async () => {
     const categories = buildCategories(await loadSources());
-    assert.equal(categories.length, 6);
+    assert.equal(categories.length, 15);
     assert.equal(
       categories.reduce((total, category) => total + category.words.length, 0),
-      48,
+      160,
     );
 
     const animals = categories.find((category) => category.id === "animals");
@@ -60,6 +60,57 @@ describe("content/vocabulary", () => {
     );
     assert.equal(animals.words[0].ja, "いぬ");
     assert.equal(animals.words[0].emoji, "🐶");
+  });
+
+  test("品詞のバランス (#86 の目安: 動詞 30 / 形容詞 20 / 前置詞 10)", async () => {
+    const categories = buildCategories(await loadSources());
+    const sizeOf = (id) =>
+      categories.find((category) => category.id === id)?.words.length ?? 0;
+    const countByPos = (pos) =>
+      categories.reduce(
+        (total, category) =>
+          total + category.words.filter((word) => word.pos === pos).length,
+        0,
+      );
+
+    /* 追加カテゴリの語数 (色も形容詞なので pos の合計はもっと多い) */
+    assert.equal(sizeOf("verbs"), 30);
+    assert.equal(sizeOf("adjectives"), 20);
+    assert.equal(sizeOf("prepositions"), 10);
+
+    assert.ok(countByPos("verb") >= 30);
+    assert.ok(countByPos("adjective") >= 20);
+    assert.ok(countByPos("preposition") >= 10);
+    assert.ok(countByPos("noun") >= 60, "名詞は 60 語以上");
+  });
+
+  test("カテゴリ間で en が重複しない (#86)", async () => {
+    const categories = buildCategories(await loadSources());
+    const owner = new Map();
+    for (const category of categories) {
+      for (const word of category.words) {
+        const previous = owner.get(word.en);
+        assert.equal(
+          previous,
+          undefined,
+          `"${word.en}" が ${previous} と ${category.id} の両方にあります`,
+        );
+        owner.set(word.en, category.id);
+      }
+    }
+  });
+
+  test("発音練習の 1 語として破綻しない (句動詞・長すぎる語を置かない)", async () => {
+    const categories = buildCategories(await loadSources());
+    for (const category of categories) {
+      for (const word of category.words) {
+        assert.ok(!/\s/.test(word.en), `"${word.en}" に空白 (句動詞は不可)`);
+        assert.ok(
+          word.en.length <= 12,
+          `"${word.en}" は長すぎる (${word.en.length} 文字)`,
+        );
+      }
+    }
   });
 
   test("全 ID が一意で、保存キーは JSON の id そのもの", async () => {

@@ -1,0 +1,188 @@
+{
+  "id": "adjectives",
+  "label": "けいようし",
+  "emoji": "🌈",
+  "color": "from-cyan-300 to-sky-400",
+  "words": [
+    {
+      "id": "adjectives/big",
+      "en": "big",
+      "ja": "おおきい",
+      "emoji": "🐳",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/adjectives/big.mp3"
+    },
+    {
+      "id": "adjectives/small",
+      "en": "small",
+      "ja": "ちいさい",
+      "emoji": "🐜",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/adjectives/small.mp3"
+    },
+    {
+      "id": "adjectives/long",
+      "en": "long",
+      "ja": "ながい",
+      "emoji": "📏",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/long.mp3"
+    },
+    {
+      "id": "adjectives/short",
+      "en": "short",
+      "ja": "みじかい",
+      "emoji": "📐",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/short.mp3"
+    },
+    {
+      "id": "adjectives/tall",
+      "en": "tall",
+      "ja": "せがたかい",
+      "emoji": "🦒",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/tall.mp3"
+    },
+    {
+      "id": "adjectives/happy",
+      "en": "happy",
+      "ja": "うれしい",
+      "emoji": "😊",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/adjectives/happy.mp3"
+    },
+    {
+      "id": "adjectives/sad",
+      "en": "sad",
+      "ja": "かなしい",
+      "emoji": "😢",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/adjectives/sad.mp3"
+    },
+    {
+      "id": "adjectives/fast",
+      "en": "fast",
+      "ja": "はやい",
+      "emoji": "🐆",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/fast.mp3"
+    },
+    {
+      "id": "adjectives/slow",
+      "en": "slow",
+      "ja": "おそい",
+      "emoji": "🐢",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/slow.mp3"
+    },
+    {
+      "id": "adjectives/hot",
+      "en": "hot",
+      "ja": "あつい",
+      "emoji": "🔥",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/adjectives/hot.mp3"
+    },
+    {
+      "id": "adjectives/cold",
+      "en": "cold",
+      "ja": "つめたい",
+      "emoji": "🧊",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/adjectives/cold.mp3"
+    },
+    {
+      "id": "adjectives/new",
+      "en": "new",
+      "ja": "あたらしい",
+      "emoji": "✨",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/new.mp3"
+    },
+    {
+      "id": "adjectives/old",
+      "en": "old",
+      "ja": "ふるい",
+      "emoji": "🏚️",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/old.mp3"
+    },
+    {
+      "id": "adjectives/good",
+      "en": "good",
+      "ja": "いい",
+      "emoji": "👍",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/adjectives/good.mp3"
+    },
+    {
+      "id": "adjectives/bad",
+      "en": "bad",
+      "ja": "わるい",
+      "emoji": "👎",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/adjectives/bad.mp3"
+    },
+    {
+      "id": "adjectives/clean",
+      "en": "clean",
+      "ja": "きれい",
+      "emoji": "🫧",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/clean.mp3"
+    },
+    {
+      "id": "adjectives/dirty",
+      "en": "dirty",
+      "ja": "よごれた",
+      "emoji": "🗑️",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/dirty.mp3"
+    },
+    {
+      "id": "adjectives/easy",
+      "en": "easy",
+      "ja": "かんたん",
+      "emoji": "🌟",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/easy.mp3"
+    },
+    {
+      "id": "adjectives/hard",
+      "en": "hard",
+      "ja": "むずかしい",
+      "emoji": "🪨",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/hard.mp3"
+    },
+    {
+      "id": "adjectives/funny",
+      "en": "funny",
+      "ja": "おもしろい",
+      "emoji": "😂",
+      "pos": "adjective",
+      "level": "a1",
+      "audio": "/audio/words/adjectives/funny.mp3"
+    }
+  ]
+}

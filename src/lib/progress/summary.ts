@@ -234,7 +234,7 @@ export function masteryOf(
 /**
  * 手を付けた単語だけを、渡された順 (`words.ts` の並び) で返す。
  *
- * 全 48 語を毎回返すと payload が膨らむので、記録のある単語だけ。
+ * 全 160 語を毎回返すと payload が膨らむので、記録のある単語だけ。
  * 「まだ」の語数は `summarizeCategories()` が数える (画面はそれで足りる)。
  */
 export function summarizeWords(
