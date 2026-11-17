@@ -11,7 +11,7 @@
       "emoji": "🍎",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/food/apple.mp3"
     },
     {
       "id": "food/banana",
@@ -20,7 +20,7 @@
       "emoji": "🍌",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/food/banana.mp3"
     },
     {
       "id": "food/bread",
@@ -29,7 +29,7 @@
       "emoji": "🍞",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null,
+      "audio": "/audio/words/food/bread.mp3",
       "homophones": [
         "bred"
       ]
@@ -41,7 +41,7 @@
       "emoji": "🥛",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/food/milk.mp3"
     },
     {
       "id": "food/rice",
@@ -50,7 +50,7 @@
       "emoji": "🍚",
       "pos": "noun",
       "level": "a1",
-      "audio": null
+      "audio": "/audio/words/food/rice.mp3"
     },
     {
       "id": "food/egg",
@@ -59,7 +59,7 @@
       "emoji": "🥚",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/food/egg.mp3"
     },
     {
       "id": "food/cake",
@@ -68,7 +68,7 @@
       "emoji": "🍰",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/food/cake.mp3"
     },
     {
       "id": "food/water",
@@ -77,7 +77,7 @@
       "emoji": "💧",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/food/water.mp3"
     }
   ]
 }

@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import Link from "next/link";
+import { MuteToggle } from "@/components/audio/MuteToggle";
+import { SpeakButton } from "@/components/audio/SpeakButton";
+import { useAudioMuted } from "@/lib/audio/use-audio-muted";
 import { newClientId } from "@/lib/client-id";
+import { findWordById } from "@/lib/words";
 import {
   buildRound,
   quizLevels,
@@ -17,14 +21,14 @@ import {
  * ------------------------------------------------------------------ */
 
 const BEST_KEY = "kodomo-eigo-quiz-best-v1";
-const MUTE_KEY = "kodomo-eigo-quiz-mute-v1";
 const STORE_EVENT = "kodomo-eigo-quiz-store";
 
 type BestScores = Partial<Record<QuizLevelId, number>>;
 
-type QuizStore = { best: BestScores; muted: boolean };
+/* おとの ON/OFF は #84 でアプリ共通の設定 (`@/lib/audio/settings`) に移した */
+type QuizStore = { best: BestScores };
 
-const EMPTY_STORE: QuizStore = { best: {}, muted: false };
+const EMPTY_STORE: QuizStore = { best: {} };
 
 /*
  * localStorage は「外部ストア」として useSyncExternalStore で読む。
@@ -39,7 +43,6 @@ function readStore(): QuizStore {
       const rawBest = window.localStorage.getItem(BEST_KEY);
       storeCache = {
         best: rawBest ? (JSON.parse(rawBest) as BestScores) : {},
-        muted: window.localStorage.getItem(MUTE_KEY) === "1",
       };
     } catch {
       storeCache = EMPTY_STORE;
@@ -54,7 +57,6 @@ function writeStore(next: QuizStore) {
   storeLoaded = true;
   try {
     window.localStorage.setItem(BEST_KEY, JSON.stringify(next.best));
-    window.localStorage.setItem(MUTE_KEY, next.muted ? "1" : "0");
   } catch {
     /* 保存できなくても プレイは続けられる */
   }
@@ -152,7 +154,7 @@ export default function QuizPage() {
 
   const store = useSyncExternalStore(subscribeStore, readStore, () => EMPTY_STORE);
   const best = store.best;
-  const muted = store.muted;
+  const muted = useAudioMuted();
 
   const audioRef = useRef<AudioContext | null>(null);
 
@@ -218,6 +220,8 @@ export default function QuizPage() {
   const question = questions[index];
   const answered = selected !== null;
   const isCorrect = answered && selected === question?.answer;
+  /* 初級の問題だけが単語 ID を持つ。正解発表後に「もういちど きく」を出す (#84) */
+  const answerWord = question?.wordId ? (findWordById(question.wordId)?.word ?? null) : null;
 
   function start(l: QuizLevel) {
     roundRef.current = { id: newClientId(), results: [] };
@@ -288,7 +292,7 @@ export default function QuizPage() {
     if (index + 1 >= total) {
       const isRecord = score > (best[level.id] ?? 0) && score > 0;
       if (isRecord) {
-        writeStore({ best: { ...best, [level.id]: score }, muted });
+        writeStore({ best: { ...best, [level.id]: score } });
       }
       setNewRecord(isRecord);
       setScreen("result");
@@ -325,10 +329,6 @@ export default function QuizPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [screen, question]);
 
-  function toggleMute() {
-    writeStore({ best, muted: !muted });
-  }
-
   const stars = starsFor(correctCount, total);
 
   return (
@@ -363,14 +363,7 @@ export default function QuizPage() {
               ⭐ {score}
             </span>
           )}
-          <button
-            onClick={toggleMute}
-            aria-pressed={muted}
-            aria-label={muted ? "おとを だす" : "おとを けす"}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-base shadow-[0_2px_0_rgba(122,104,87,0.16)] transition hover:-translate-y-0.5"
-          >
-            {muted ? "🔇" : "🔊"}
-          </button>
+          <MuteToggle />
         </div>
       </header>
 
@@ -567,6 +560,12 @@ export default function QuizPage() {
                   </p>
                 </div>
               ))}
+            {/* 正解した単語をもう一度きく (#84)。答えを見せる前には出さない */}
+            {answered && answerWord && (
+              <div className="mt-3 flex justify-center">
+                <SpeakButton word={answerWord} label="もういちど きく" size="sm" />
+              </div>
+            )}
           </div>
 
           {/* つぎへ */}

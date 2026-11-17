@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { MuteToggle } from "@/components/audio/MuteToggle";
+import { SpeakButton } from "@/components/audio/SpeakButton";
 import PrivacyNotice from "@/components/speech/PrivacyNotice";
 import RecognitionPathBadge from "@/components/speech/RecognitionPathBadge";
 import SelfReportPrompt from "@/components/speech/SelfReportPrompt";
@@ -42,6 +44,8 @@ type PracticeWord = {
   en: string;
   ja: string;
   emoji: string;
+  /** 事前生成した音声 (#84)。無ければ端末 TTS にフォールバックする */
+  audio: string | null;
   /** 同音語 (two → "too")。採点で ok として吸収する */
   homophones?: string[];
   /** 言い換え (mother → "mom")。採点では close 止まり */
@@ -54,6 +58,7 @@ const PRACTICE_WORDS: PracticeWord[] = categories.flatMap((category) =>
     en: word.en,
     ja: word.ja,
     emoji: word.emoji,
+    audio: word.audio,
   })),
 );
 
@@ -296,7 +301,10 @@ export default function PronunciationPanel() {
           ← ホーム
         </Link>
         <h1 className="text-base font-extrabold text-ink sm:text-lg">発音練習</h1>
-        {path ? <RecognitionPathBadge path={path} /> : <span className="w-20" />}
+        <div className="flex items-center gap-1.5">
+          {path ? <RecognitionPathBadge path={path} /> : null}
+          <MuteToggle />
+        </div>
       </header>
 
       <PrivacyNotice />
@@ -310,6 +318,9 @@ export default function PronunciationPanel() {
           {word.en}
         </p>
         <p className="text-lg font-bold text-ink-soft">{word.ja}</p>
+
+        {/* お手本 (#84)。生成済みの音声なので、端末によって声が変わらない */}
+        <SpeakButton word={word} label="お手本を きく" tone="primary" />
 
         {decision === null && <p className="text-sm text-ink-soft">よみこみ中…</p>}
 

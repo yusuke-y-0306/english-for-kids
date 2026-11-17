@@ -19,7 +19,7 @@ import { pathToFileURL } from "node:url";
  */
 
 // quiz.ts は拡張子なしの相対 import を持つので、解決フックを挟んでから読む
-register("./quiz-loader.mjs", pathToFileURL(import.meta.filename));
+register("./ts-loader.mjs", pathToFileURL(import.meta.filename));
 
 const { buildRound, QUIZ_LENGTH } = await import("../../src/lib/quiz.ts");
 

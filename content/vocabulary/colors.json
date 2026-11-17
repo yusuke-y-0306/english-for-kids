@@ -11,7 +11,7 @@
       "emoji": "🔴",
       "pos": "adjective",
       "level": "pre-a1",
-      "audio": null,
+      "audio": "/audio/words/colors/red.mp3",
       "homophones": [
         "read"
       ]
@@ -23,7 +23,7 @@
       "emoji": "🔵",
       "pos": "adjective",
       "level": "pre-a1",
-      "audio": null,
+      "audio": "/audio/words/colors/blue.mp3",
       "homophones": [
         "blew"
       ]
@@ -35,7 +35,7 @@
       "emoji": "🟡",
       "pos": "adjective",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/colors/yellow.mp3"
     },
     {
       "id": "colors/green",
@@ -44,7 +44,7 @@
       "emoji": "🟢",
       "pos": "adjective",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/colors/green.mp3"
     },
     {
       "id": "colors/black",
@@ -53,7 +53,7 @@
       "emoji": "⚫",
       "pos": "adjective",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/colors/black.mp3"
     },
     {
       "id": "colors/white",
@@ -62,7 +62,7 @@
       "emoji": "⚪",
       "pos": "adjective",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/colors/white.mp3"
     },
     {
       "id": "colors/pink",
@@ -71,7 +71,7 @@
       "emoji": "🌸",
       "pos": "adjective",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/colors/pink.mp3"
     },
     {
       "id": "colors/orange",
@@ -80,7 +80,7 @@
       "emoji": "🟠",
       "pos": "adjective",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/colors/orange.mp3"
     }
   ]
 }

@@ -11,7 +11,7 @@
       "emoji": "👩",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null,
+      "audio": "/audio/words/family/mother.mp3",
       "variants": [
         "mom",
         "mum",
@@ -25,7 +25,7 @@
       "emoji": "👨",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null,
+      "audio": "/audio/words/family/father.mp3",
       "variants": [
         "dad",
         "papa",
@@ -39,7 +39,7 @@
       "emoji": "👧",
       "pos": "noun",
       "level": "a1",
-      "audio": null
+      "audio": "/audio/words/family/sister.mp3"
     },
     {
       "id": "family/brother",
@@ -48,7 +48,7 @@
       "emoji": "👦",
       "pos": "noun",
       "level": "a1",
-      "audio": null
+      "audio": "/audio/words/family/brother.mp3"
     },
     {
       "id": "family/grandmother",
@@ -57,7 +57,7 @@
       "emoji": "👵",
       "pos": "noun",
       "level": "a1",
-      "audio": null,
+      "audio": "/audio/words/family/grandmother.mp3",
       "variants": [
         "grandma",
         "grandmom"
@@ -70,7 +70,7 @@
       "emoji": "👴",
       "pos": "noun",
       "level": "a1",
-      "audio": null,
+      "audio": "/audio/words/family/grandfather.mp3",
       "variants": [
         "grandpa",
         "granddad"
@@ -83,7 +83,7 @@
       "emoji": "👶",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/family/baby.mp3"
     },
     {
       "id": "family/family",
@@ -92,7 +92,7 @@
       "emoji": "👨‍👩‍👧‍👦",
       "pos": "noun",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/family/family.mp3"
     }
   ]
 }

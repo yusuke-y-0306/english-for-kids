@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, M_PLUS_Rounded_1c, Nunito } from "next/font/google";
+import { OfflineAudioCache } from "@/components/audio/OfflineAudioCache";
 import "./globals.css";
 
 const mplus = M_PLUS_Rounded_1c({
@@ -40,7 +41,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ja"
       className={`${mplus.variable} ${fredoka.variable} ${nunito.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* 単語音声のオフラインキャッシュ (#84)。本番ビルドでのみ SW を登録する */}
+        <OfflineAudioCache />
+        {children}
+      </body>
     </html>
   );
 }

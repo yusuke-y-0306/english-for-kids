@@ -11,7 +11,7 @@
       "emoji": "1️⃣",
       "pos": "numeral",
       "level": "pre-a1",
-      "audio": null,
+      "audio": "/audio/words/numbers/one.mp3",
       "homophones": [
         "won"
       ]
@@ -23,7 +23,7 @@
       "emoji": "2️⃣",
       "pos": "numeral",
       "level": "pre-a1",
-      "audio": null,
+      "audio": "/audio/words/numbers/two.mp3",
       "homophones": [
         "too",
         "to"
@@ -36,7 +36,7 @@
       "emoji": "3️⃣",
       "pos": "numeral",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/numbers/three.mp3"
     },
     {
       "id": "numbers/four",
@@ -45,7 +45,7 @@
       "emoji": "4️⃣",
       "pos": "numeral",
       "level": "pre-a1",
-      "audio": null,
+      "audio": "/audio/words/numbers/four.mp3",
       "homophones": [
         "for",
         "fore"
@@ -58,7 +58,7 @@
       "emoji": "5️⃣",
       "pos": "numeral",
       "level": "pre-a1",
-      "audio": null
+      "audio": "/audio/words/numbers/five.mp3"
     },
     {
       "id": "numbers/six",
@@ -67,7 +67,7 @@
       "emoji": "6️⃣",
       "pos": "numeral",
       "level": "a1",
-      "audio": null
+      "audio": "/audio/words/numbers/six.mp3"
     },
     {
       "id": "numbers/seven",
@@ -76,7 +76,7 @@
       "emoji": "7️⃣",
       "pos": "numeral",
       "level": "a1",
-      "audio": null
+      "audio": "/audio/words/numbers/seven.mp3"
     },
     {
       "id": "numbers/eight",
@@ -85,7 +85,7 @@
       "emoji": "8️⃣",
       "pos": "numeral",
       "level": "a1",
-      "audio": null,
+      "audio": "/audio/words/numbers/eight.mp3",
       "homophones": [
         "ate"
       ]

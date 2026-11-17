@@ -61,7 +61,9 @@ src/lib/words.ts                       # 互換アダプタ（画面はここを
 | `variants` | – | 意味は同じ別語（`mother` → `["mom"]`）。`close` 止まり |
 | `pos` の値 | | `noun` / `verb` / `adjective` / `adverb` / `pronoun` / `determiner` / `numeral` / `preposition` / `conjunction` / `interjection` |
 
-- `audio` / `image` は `null` か **`/` で始まる public パス**（例 `/audio/animals/dog.mp3`）。
+- `audio` / `image` は `null` か **`/` で始まる public パス**（例 `/audio/words/animals/dog.mp3`）。
+- `audio` は手で書かない。`npm run audio:generate` が `audioPathForId()` の値で埋める
+  （生成・予算・オフラインの詳細は `docs/audio-assets.md`）。
 - 未知のフィールドは**エラー**（`levle` のような typo をビルドで止めるため）。
 - `homophones` / `variants` は重複不可・空文字不可。
 
