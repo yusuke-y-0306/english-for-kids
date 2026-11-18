@@ -96,6 +96,8 @@ function prepareLabel(
       return `モデルを かくにん中… ${elapsedSec}びょう`;
     case "engine":
       return `エンジンを よみこみ中… ${elapsedSec}びょう`;
+    case "engine-init":
+      return `エンジンを かくにん中… ${elapsedSec}びょう`;
     case "model":
       return `モデルを よみこみ中… ${elapsedSec}びょう`;
   }
