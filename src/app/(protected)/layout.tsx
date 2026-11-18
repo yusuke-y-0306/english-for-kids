@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
+import WasmWarmup from "@/components/speech/WasmWarmup";
 
 /**
  * ログイン必須エリア。
@@ -13,5 +14,11 @@ export default async function ProtectedLayout({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  return <>{children}</>;
+  return (
+    <>
+      {/* 発音練習を開いた瞬間に 40 秒待たせないよう、裏でモデルを読み込んでおく (issue #2) */}
+      <WasmWarmup />
+      {children}
+    </>
+  );
 }

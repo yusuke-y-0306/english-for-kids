@@ -76,6 +76,23 @@ export async function detectWasmReadiness(): Promise<WasmReadiness> {
   return (await isModelReady()) ? "ready" : "needs-download";
 }
 
+/**
+ * 画面を出したまま、裏でエンジンとモデルを読み込んでおく (issue #2)。
+ *
+ * 発音練習のページを開いてから読み込むと、iPhone では 40 秒以上かかる。
+ * ホームなどを見ているあいだに済ませておけば、本人は待たされない。
+ * **失敗しても何もしない** (次の画面でいつもどおり準備をやり直せる)。
+ */
+export async function warmTranscriber(): Promise<boolean> {
+  if (!detectWasmSupport().supported) return false;
+  try {
+    await loadTranscriber();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 type EngineModule = typeof import("@moonshine-ai/moonshine-wasm");
 
 /**

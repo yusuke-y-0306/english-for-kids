@@ -115,8 +115,11 @@ export default function PronunciationPanel() {
   /** 経過秒の再計算用 (タイマーで進めるだけ) */
   const [now, setNow] = useState(0);
   const [prepareError, setPrepareError] = useState<string | null>(null);
-  /** このページで「いつでも はなせる」状態か (wasm のエンジン読み込み完了) */
-  const [engineReady, setEngineReady] = useState(false);
+  /**
+   * 「いつでも はなせる」状態か (wasm のエンジン読み込み完了)。
+   * ホームで先に読み込んであれば (`WasmWarmup`)、開いた時点で true。
+   */
+  const [engineReady, setEngineReady] = useState(() => isTranscriberLoaded());
   /** 自動のじゅんびに失敗した。押してもらって作り直す */
   const [prepareFailed, setPrepareFailed] = useState(false);
   /** 認識できなかった等の短い案内 (採点結果とは別に出す) */
@@ -430,6 +433,8 @@ export default function PronunciationPanel() {
         {preparing !== null && (
           <p aria-live="polite" className="text-sm font-bold text-ink-soft">
             こえの じゅんびを しています。そのまま まってね
+            <br />
+            <span className="text-xs">さいしょの 1 回だけ、1〜2 ぷん かかることが あります</span>
           </p>
         )}
 
