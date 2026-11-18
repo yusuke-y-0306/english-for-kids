@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test, { after, before, describe } from "node:test";
 
+import { categories as vocabulary } from "../../src/lib/words.ts";
+
 /**
  * 進捗の取得 API — issue #67
  *
@@ -247,7 +249,8 @@ describe("ログイン済み: 形と数字", () => {
 
   test("カテゴリ別の達成度が全カテゴリぶん返る", async () => {
     const body = await (await get("", { cookie: sessionCookie(USER_A) })).json();
-    assert.equal(body.categories.length, 6);
+    /* 語数はコンテンツ側で増えるので、期待値は語彙から取る (#86) */
+    assert.equal(body.categories.length, vocabulary.length);
     const animals = body.categories.find((c) => c.id === "animals");
     assert.equal(animals.mastered, 1, "dog");
     assert.equal(animals.learning, 1, "cat");
@@ -300,7 +303,7 @@ describe("自分のデータだけが返る", () => {
     assert.deepEqual(body.streak, { current: 0, longest: 0, studiedToday: false, lastStudyDay: null });
     assert.deepEqual(body.words, {});
     /* カテゴリは必ず全件返る (画面が「まだ 0 / 8」を出せる) */
-    assert.equal(body.categories.length, 6);
+    assert.equal(body.categories.length, vocabulary.length);
     assert.equal(body.pronunciation.totalAttempts, 0);
   });
 

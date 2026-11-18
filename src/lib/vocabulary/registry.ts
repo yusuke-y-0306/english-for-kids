@@ -1,9 +1,18 @@
 import animals from "../../../content/vocabulary/animals.json" with { type: "json" };
+import adjectives from "../../../content/vocabulary/adjectives.json" with { type: "json" };
 import body from "../../../content/vocabulary/body.json" with { type: "json" };
+import clothes from "../../../content/vocabulary/clothes.json" with { type: "json" };
 import colors from "../../../content/vocabulary/colors.json" with { type: "json" };
 import family from "../../../content/vocabulary/family.json" with { type: "json" };
 import food from "../../../content/vocabulary/food.json" with { type: "json" };
+import home from "../../../content/vocabulary/home.json" with { type: "json" };
 import numbers from "../../../content/vocabulary/numbers.json" with { type: "json" };
+import prepositions from "../../../content/vocabulary/prepositions.json" with { type: "json" };
+import school from "../../../content/vocabulary/school.json" with { type: "json" };
+import sports from "../../../content/vocabulary/sports.json" with { type: "json" };
+import vehicles from "../../../content/vocabulary/vehicles.json" with { type: "json" };
+import verbs from "../../../content/vocabulary/verbs.json" with { type: "json" };
+import weather from "../../../content/vocabulary/weather.json" with { type: "json" };
 import { buildCategories, type Category, type VocabularySource } from "./load.ts";
 
 /**
@@ -21,6 +30,16 @@ export const vocabularySources: VocabularySource[] = [
   { path: "content/vocabulary/numbers.json", data: numbers },
   { path: "content/vocabulary/body.json", data: body },
   { path: "content/vocabulary/family.json", data: family },
+  // #86: 品詞のバランスを取るために追加
+  { path: "content/vocabulary/verbs.json", data: verbs },
+  { path: "content/vocabulary/adjectives.json", data: adjectives },
+  { path: "content/vocabulary/prepositions.json", data: prepositions },
+  { path: "content/vocabulary/school.json", data: school },
+  { path: "content/vocabulary/home.json", data: home },
+  { path: "content/vocabulary/vehicles.json", data: vehicles },
+  { path: "content/vocabulary/weather.json", data: weather },
+  { path: "content/vocabulary/clothes.json", data: clothes },
+  { path: "content/vocabulary/sports.json", data: sports },
 ];
 
 /**

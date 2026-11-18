@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 
 /** グラフに出す日数 (issue の指定は直近 7 日) */
 const CHART_DAYS = 7;
-/** 単語リストに出す上限 (全 48 語を並べると 360px では読めない) */
+/** 単語リストに出す上限 (全 160 語を並べると 360px では読めない) */
 const WORD_LIST_LIMIT = 24;
 
 export default async function ProgressPage() {

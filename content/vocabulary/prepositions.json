@@ -1,0 +1,109 @@
+{
+  "id": "prepositions",
+  "label": "ばしょのことば",
+  "emoji": "🧭",
+  "color": "from-slate-300 to-gray-400",
+  "words": [
+    {
+      "id": "prepositions/in",
+      "en": "in",
+      "ja": "なかに",
+      "emoji": "📦",
+      "pos": "preposition",
+      "level": "pre-a1",
+      "audio": "/audio/words/prepositions/in.mp3",
+      "homophones": [
+        "inn"
+      ]
+    },
+    {
+      "id": "prepositions/on",
+      "en": "on",
+      "ja": "うえに",
+      "emoji": "🔝",
+      "pos": "preposition",
+      "level": "pre-a1",
+      "audio": "/audio/words/prepositions/on.mp3"
+    },
+    {
+      "id": "prepositions/under",
+      "en": "under",
+      "ja": "したに",
+      "emoji": "🔽",
+      "pos": "preposition",
+      "level": "pre-a1",
+      "audio": "/audio/words/prepositions/under.mp3"
+    },
+    {
+      "id": "prepositions/by",
+      "en": "by",
+      "ja": "そばに",
+      "emoji": "🧭",
+      "pos": "preposition",
+      "level": "a1",
+      "audio": "/audio/words/prepositions/by.mp3",
+      "homophones": [
+        "buy",
+        "bye"
+      ]
+    },
+    {
+      "id": "prepositions/at",
+      "en": "at",
+      "ja": "そこで",
+      "emoji": "📍",
+      "pos": "preposition",
+      "level": "a1",
+      "audio": "/audio/words/prepositions/at.mp3"
+    },
+    {
+      "id": "prepositions/to",
+      "en": "to",
+      "ja": "へ",
+      "emoji": "➡️",
+      "pos": "preposition",
+      "level": "a1",
+      "audio": "/audio/words/prepositions/to.mp3",
+      "homophones": [
+        "too",
+        "two"
+      ]
+    },
+    {
+      "id": "prepositions/from",
+      "en": "from",
+      "ja": "から",
+      "emoji": "⬅️",
+      "pos": "preposition",
+      "level": "a1",
+      "audio": "/audio/words/prepositions/from.mp3"
+    },
+    {
+      "id": "prepositions/with",
+      "en": "with",
+      "ja": "といっしょに",
+      "emoji": "🤲",
+      "pos": "preposition",
+      "level": "a1",
+      "audio": "/audio/words/prepositions/with.mp3"
+    },
+    {
+      "id": "prepositions/near",
+      "en": "near",
+      "ja": "ちかく",
+      "emoji": "🗺️",
+      "pos": "preposition",
+      "level": "a1",
+      "audio": "/audio/words/prepositions/near.mp3"
+    },
+    {
+      "id": "prepositions/behind",
+      "en": "behind",
+      "ja": "うしろ",
+      "emoji": "🔙",
+      "pos": "preposition",
+      "level": "a1",
+      "audio": "/audio/words/prepositions/behind.mp3"
+    }
+  ]
+}

@@ -1,0 +1,281 @@
+{
+  "id": "verbs",
+  "label": "どうし",
+  "emoji": "🏃",
+  "color": "from-lime-300 to-green-400",
+  "words": [
+    {
+      "id": "verbs/run",
+      "en": "run",
+      "ja": "はしる",
+      "emoji": "🏃",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/run.mp3"
+    },
+    {
+      "id": "verbs/eat",
+      "en": "eat",
+      "ja": "たべる",
+      "emoji": "🍽️",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/eat.mp3"
+    },
+    {
+      "id": "verbs/sleep",
+      "en": "sleep",
+      "ja": "ねる",
+      "emoji": "😴",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/sleep.mp3"
+    },
+    {
+      "id": "verbs/jump",
+      "en": "jump",
+      "ja": "じゃんぷする",
+      "emoji": "🤸",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/jump.mp3"
+    },
+    {
+      "id": "verbs/open",
+      "en": "open",
+      "ja": "あける",
+      "emoji": "🔓",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/open.mp3"
+    },
+    {
+      "id": "verbs/close",
+      "en": "close",
+      "ja": "しめる",
+      "emoji": "🔒",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/close.mp3"
+    },
+    {
+      "id": "verbs/drink",
+      "en": "drink",
+      "ja": "のむ",
+      "emoji": "🥤",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/drink.mp3"
+    },
+    {
+      "id": "verbs/walk",
+      "en": "walk",
+      "ja": "あるく",
+      "emoji": "🚶",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/walk.mp3"
+    },
+    {
+      "id": "verbs/swim",
+      "en": "swim",
+      "ja": "およぐ",
+      "emoji": "🏊",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/swim.mp3"
+    },
+    {
+      "id": "verbs/read",
+      "en": "read",
+      "ja": "よむ",
+      "emoji": "📖",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/read.mp3"
+    },
+    {
+      "id": "verbs/write",
+      "en": "write",
+      "ja": "かく",
+      "emoji": "✍️",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/write.mp3",
+      "homophones": [
+        "right"
+      ]
+    },
+    {
+      "id": "verbs/sing",
+      "en": "sing",
+      "ja": "うたう",
+      "emoji": "🎤",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/sing.mp3"
+    },
+    {
+      "id": "verbs/dance",
+      "en": "dance",
+      "ja": "おどる",
+      "emoji": "💃",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/dance.mp3"
+    },
+    {
+      "id": "verbs/play",
+      "en": "play",
+      "ja": "あそぶ",
+      "emoji": "🎮",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/play.mp3"
+    },
+    {
+      "id": "verbs/look",
+      "en": "look",
+      "ja": "みる",
+      "emoji": "👀",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/look.mp3"
+    },
+    {
+      "id": "verbs/listen",
+      "en": "listen",
+      "ja": "きく",
+      "emoji": "🎧",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/listen.mp3"
+    },
+    {
+      "id": "verbs/speak",
+      "en": "speak",
+      "ja": "はなす",
+      "emoji": "🗣️",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/speak.mp3"
+    },
+    {
+      "id": "verbs/sit",
+      "en": "sit",
+      "ja": "すわる",
+      "emoji": "🪑",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/sit.mp3"
+    },
+    {
+      "id": "verbs/stand",
+      "en": "stand",
+      "ja": "たつ",
+      "emoji": "🧍",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/stand.mp3"
+    },
+    {
+      "id": "verbs/come",
+      "en": "come",
+      "ja": "くる",
+      "emoji": "👋",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/come.mp3"
+    },
+    {
+      "id": "verbs/go",
+      "en": "go",
+      "ja": "いく",
+      "emoji": "🚦",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/verbs/go.mp3"
+    },
+    {
+      "id": "verbs/make",
+      "en": "make",
+      "ja": "つくる",
+      "emoji": "🔨",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/make.mp3"
+    },
+    {
+      "id": "verbs/wash",
+      "en": "wash",
+      "ja": "あらう",
+      "emoji": "🧼",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/wash.mp3"
+    },
+    {
+      "id": "verbs/help",
+      "en": "help",
+      "ja": "たすける",
+      "emoji": "🤝",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/help.mp3"
+    },
+    {
+      "id": "verbs/cook",
+      "en": "cook",
+      "ja": "りょうりする",
+      "emoji": "🍳",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/cook.mp3"
+    },
+    {
+      "id": "verbs/draw",
+      "en": "draw",
+      "ja": "えをかく",
+      "emoji": "🖍️",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/draw.mp3"
+    },
+    {
+      "id": "verbs/ride",
+      "en": "ride",
+      "ja": "のる",
+      "emoji": "🐎",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/ride.mp3"
+    },
+    {
+      "id": "verbs/throw",
+      "en": "throw",
+      "ja": "なげる",
+      "emoji": "🤾",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/throw.mp3"
+    },
+    {
+      "id": "verbs/catch",
+      "en": "catch",
+      "ja": "つかまえる",
+      "emoji": "🧤",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/catch.mp3"
+    },
+    {
+      "id": "verbs/give",
+      "en": "give",
+      "ja": "あげる",
+      "emoji": "🎁",
+      "pos": "verb",
+      "level": "a1",
+      "audio": "/audio/words/verbs/give.mp3"
+    }
+  ]
+}

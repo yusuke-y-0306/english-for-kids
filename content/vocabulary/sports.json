@@ -1,0 +1,83 @@
+{
+  "id": "sports",
+  "label": "スポーツ",
+  "emoji": "⚽",
+  "color": "from-emerald-300 to-lime-400",
+  "words": [
+    {
+      "id": "sports/ball",
+      "en": "ball",
+      "ja": "ボール",
+      "emoji": "🏐",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/sports/ball.mp3"
+    },
+    {
+      "id": "sports/soccer",
+      "en": "soccer",
+      "ja": "サッカー",
+      "emoji": "⚽",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/sports/soccer.mp3",
+      "variants": [
+        "football"
+      ]
+    },
+    {
+      "id": "sports/baseball",
+      "en": "baseball",
+      "ja": "やきゅう",
+      "emoji": "⚾",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/sports/baseball.mp3"
+    },
+    {
+      "id": "sports/tennis",
+      "en": "tennis",
+      "ja": "テニス",
+      "emoji": "🎾",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/sports/tennis.mp3"
+    },
+    {
+      "id": "sports/basketball",
+      "en": "basketball",
+      "ja": "バスケットボール",
+      "emoji": "🏀",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/sports/basketball.mp3"
+    },
+    {
+      "id": "sports/racket",
+      "en": "racket",
+      "ja": "ラケット",
+      "emoji": "🏸",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/sports/racket.mp3"
+    },
+    {
+      "id": "sports/goal",
+      "en": "goal",
+      "ja": "ゴール",
+      "emoji": "🥅",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/sports/goal.mp3"
+    },
+    {
+      "id": "sports/team",
+      "en": "team",
+      "ja": "チーム",
+      "emoji": "👥",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/sports/team.mp3"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "id": "vehicles",
+  "label": "のりもの",
+  "emoji": "🚗",
+  "color": "from-blue-300 to-indigo-400",
+  "words": [
+    {
+      "id": "vehicles/car",
+      "en": "car",
+      "ja": "くるま",
+      "emoji": "🚗",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/vehicles/car.mp3"
+    },
+    {
+      "id": "vehicles/bus",
+      "en": "bus",
+      "ja": "バス",
+      "emoji": "🚌",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/vehicles/bus.mp3"
+    },
+    {
+      "id": "vehicles/train",
+      "en": "train",
+      "ja": "でんしゃ",
+      "emoji": "🚆",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/vehicles/train.mp3"
+    },
+    {
+      "id": "vehicles/bike",
+      "en": "bike",
+      "ja": "じてんしゃ",
+      "emoji": "🚲",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/vehicles/bike.mp3",
+      "variants": [
+        "bicycle"
+      ]
+    },
+    {
+      "id": "vehicles/plane",
+      "en": "plane",
+      "ja": "ひこうき",
+      "emoji": "✈️",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/vehicles/plane.mp3",
+      "variants": [
+        "airplane"
+      ]
+    },
+    {
+      "id": "vehicles/boat",
+      "en": "boat",
+      "ja": "ボート",
+      "emoji": "⛵",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/vehicles/boat.mp3"
+    },
+    {
+      "id": "vehicles/ship",
+      "en": "ship",
+      "ja": "ふね",
+      "emoji": "🚢",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/vehicles/ship.mp3"
+    },
+    {
+      "id": "vehicles/taxi",
+      "en": "taxi",
+      "ja": "タクシー",
+      "emoji": "🚕",
+      "pos": "noun",
+      "level": "a1",
+      "audio": "/audio/words/vehicles/taxi.mp3"
+    }
+  ]
+}
