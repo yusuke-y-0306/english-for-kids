@@ -17,7 +17,7 @@
  */
 
 const BASE = (process.env.BASE_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
-const PATHS = (process.env.CHECK_PATHS ?? "/,/login,/flashcards,/build,/quiz").split(",");
+const PATHS = (process.env.CHECK_PATHS ?? "/,/login,/flashcards,/build,/quiz,/pronunciation").split(",");
 
 /** モデル配信元 (issue #30)。connect-src の唯一の外部オリジン */
 const EXPECTED_MODEL_ORIGIN = "https://yusuke-y-0306.github.io";
@@ -118,6 +118,16 @@ async function main() {
     check(scriptSrc.includes("'self'"), `${label} script-src 'self'`);
     check(!scriptSrc.includes("'unsafe-inline'"), `${label} script-src に 'unsafe-inline' が無い`);
     check(scriptSrc.includes("'wasm-unsafe-eval'"), `${label} script-src 'wasm-unsafe-eval' (WASM 用)`);
+    /*
+     * 'unsafe-eval' は **発音練習のページだけ** (issue #2)。
+     * エンジンの embind 糊が new Function を使うため、そこだけ許可している。
+     * それ以外のページに漏れていたら失敗させる。
+     */
+    if (path.startsWith("/pronunciation")) {
+      check(scriptSrc.includes("'unsafe-eval'"), `${label} script-src 'unsafe-eval' (端末内推論用)`);
+    } else {
+      check(!scriptSrc.includes("'unsafe-eval'"), `${label} script-src に 'unsafe-eval' が無い`);
+    }
     check((d.get("default-src") ?? []).join(" ") === "'self'", `${label} default-src 'self'`);
     check((d.get("frame-ancestors") ?? []).includes("'none'"), `${label} frame-ancestors 'none'`);
     check((d.get("object-src") ?? []).includes("'none'"), `${label} object-src 'none'`);

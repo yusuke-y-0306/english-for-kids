@@ -46,6 +46,13 @@ object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';
 - **`'wasm-unsafe-eval'` は必須**。無いと WASM のコンパイルが失敗し、推論だけが
   **無言で**死ぬ (例外は出ず、コンソールに 1 行出るだけ)。だから `npm run headers:check` で
   存在を固定している。
+- **`/pronunciation` だけ `'unsafe-eval'` を足している** (issue #2)。端末内推論エンジン
+  (Moonshine) の embind 糊が関数を `new Function(...)` で組み立てるため、無いと
+  `EvalError: Refused to evaluate a string as JavaScript …` で止まる — しかも
+  画面には出ず「モデルを よみこみ中…」のまま固まる (2026-11-18 の実機報告)。
+  `'unsafe-eval'` は CSP を大きく弱めるので、**許可するのはこの経路だけ**に絞り、
+  `npm run headers:check` で「他のページに漏れていないこと」を固定している。
+  エンジンを使う画面 (`WasmWarmup`) もこのページにだけ置く。
 - **`connect-src` が「音声もテキストも外部に送っていない」ことの機械的な証明**になる
   (issue #2 レビュー 高-3)。唯一の外部オリジンはモデル配信元で、しかも
   **モデルのディレクトリまで**絞ってある。値は `src/lib/speech/model-origin.ts` と

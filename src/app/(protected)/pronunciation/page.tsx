@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PronunciationPanel from "./PronunciationPanel";
+import WasmWarmup from "@/components/speech/WasmWarmup";
 
 /**
  * 発音練習 — issue #2
@@ -15,5 +16,12 @@ export const metadata: Metadata = {
 };
 
 export default function PronunciationPage() {
-  return <PronunciationPanel />;
+  return (
+    <>
+      {/* 画面を出したまま裏でモデルを読み込む (issue #2)。
+          エンジンが 'unsafe-eval' を必要とするため、このページだけに置いている。 */}
+      <WasmWarmup />
+      <PronunciationPanel />
+    </>
+  );
 }

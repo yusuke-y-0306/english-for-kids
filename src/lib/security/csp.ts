@@ -34,6 +34,18 @@ export type CspOptions = {
   development: boolean;
   /** `upgrade-insecure-requests` を付けるか (https で配信されているときだけ) */
   upgradeInsecureRequests: boolean;
+  /**
+   * 端末内推論エンジン (Moonshine) を動かすページか — issue #2
+   *
+   * エンジンの糊 (embind) は関数の糊を `new Function(...)` で組み立てるため、
+   * `'unsafe-eval'` が無いと **EvalError で止まる** (実測: iOS Safari で
+   * 「Refused to evaluate a string as JavaScript…」)。しかもエラーは画面に出ず、
+   * 「モデルを よみこみ中…」のまま固まる。
+   *
+   * `'unsafe-eval'` は CSP の意味を大きく削るので、**エンジンを動かすページだけ**に
+   * 限定する (`proxy.ts` の `allowEvalPath()`)。
+   */
+  allowEval?: boolean;
 };
 
 /** CSP 用の nonce (16 バイトの乱数を hex で表現。nonce-source に使える文字だけ) */
@@ -56,7 +68,12 @@ export function createNonce(): string {
  *    送っていない」ことの機械的な証明になる (issue #2 レビュー 高-3)
  *  - `frame-ancestors 'none'` (X-Frame-Options は古いブラウザ用のフォールバック)
  */
-export function buildCsp({ nonce, development, upgradeInsecureRequests }: CspOptions): string {
+export function buildCsp({
+  nonce,
+  development,
+  upgradeInsecureRequests,
+  allowEval = false,
+}: CspOptions): string {
   const connectSrc = ["'self'", MODEL_CSP_SOURCE];
   if (development) {
     // 開発時のみ: ローカルで立ち上げた dev サーバの WebSocket (HMR) を許可する。
@@ -67,6 +84,10 @@ export function buildCsp({ nonce, development, upgradeInsecureRequests }: CspOpt
   const scriptSrc = ["'self'", `'nonce-${nonce}'`, "'wasm-unsafe-eval'"];
   if (development) {
     // dev サーバの HMR (eval ベースの変換) を通すため。本番では付けない。
+    scriptSrc.push("'unsafe-eval'");
+  } else if (allowEval) {
+    // 端末内推論エンジンの embind 糊が new Function を使う (issue #2)。
+    // 対象ページは proxy.ts で絞っている。
     scriptSrc.push("'unsafe-eval'");
   }
 

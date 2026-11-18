@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
-import WasmWarmup from "@/components/speech/WasmWarmup";
 
 /**
  * ログイン必須エリア。
@@ -14,11 +13,11 @@ export default async function ProtectedLayout({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  return (
-    <>
-      {/* 発音練習を開いた瞬間に 40 秒待たせないよう、裏でモデルを読み込んでおく (issue #2) */}
-      <WasmWarmup />
-      {children}
-    </>
-  );
+  /*
+   * 端末内推論の事前読み込み (WasmWarmup) は **発音練習のページだけ** に置いている。
+   * エンジンは `'unsafe-eval'` を必要とし、それを許可しているのは `/pronunciation`
+   * だけだから (issue #2 / `lib/security/csp.ts`)。
+   * ここに置くと、他のページでも 51MB を読み込んで EvalError で失敗する。
+   */
+  return <>{children}</>;
 }
