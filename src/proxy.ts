@@ -58,6 +58,18 @@ function isLoopbackHost(hostname: string): boolean {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
 }
 
+/**
+ * 端末内推論エンジン (Moonshine) を動かすページ — issue #2
+ *
+ * エンジンの embind 糊は `new Function` で関数を組み立てるため、
+ * `'unsafe-eval'` が無いと **EvalError で止まる** (エラーも画面に出ず、
+ * 「モデルを よみこみ中…」のまま固まる)。`'unsafe-eval'` は CSP を大きく
+ * 弱めるので、**この経路だけ**に許可する。
+ */
+function allowEvalPath(pathname: string): boolean {
+  return pathname === "/pronunciation" || pathname.startsWith("/pronunciation/");
+}
+
 /** cookie の `Secure` を付けるか (session.ts の isSecureRequest と同じ判定) */
 function isSecureRequest(request: NextRequest): boolean {
   const proto = request.headers.get("x-forwarded-proto");
@@ -78,6 +90,7 @@ export async function proxy(request: NextRequest) {
     nonce,
     development: isDevelopment,
     upgradeInsecureRequests: !isLoopbackHost(request.nextUrl.hostname),
+    allowEval: allowEvalPath(pathname),
   });
 
   const headerName = reportOnly ? CSP_REPORT_ONLY_HEADER : CSP_HEADER;
