@@ -137,6 +137,12 @@ export default function PronunciationPanel() {
   const listenRunRef = useRef(0);
   /** 準備が長引いたときだけ出す端末情報 (issue #2 の切り分け用) */
   const [diagnostics, setDiagnostics] = useState<SpeechDiagnostics | null>(null);
+  /**
+   * 端末内推論の途中で起きたエラー (issue #2)。
+   * Emscripten は Worker の失敗を `throw` するだけで Promise を解決しないため、
+   * 画面には何も出ずに「終わらない」状態になる。ここで拾って見せる。
+   */
+  const [runtimeError, setRuntimeError] = useState<string | null>(null);
 
   const word = PRACTICE_WORDS[wordIndex];
 
@@ -367,6 +373,33 @@ export default function PronunciationPanel() {
     };
   }, [diagnostics, prepareElapsed, prepareFailed]);
 
+  /* 画面の外で起きたエラーを拾う。Emscripten の Worker 失敗はここに落ちてくる
+     (拾わないと「終わらない」だけが見えて原因が分からない)。 */
+  useEffect(() => {
+    const describe = (value: unknown): string => {
+      if (value instanceof Error) return `${value.name}: ${value.message}`;
+      if (typeof value === "string") return value;
+      try {
+        return JSON.stringify(value) ?? String(value);
+      } catch {
+        return String(value);
+      }
+    };
+    const onError = (event: ErrorEvent) => {
+      const where = event.filename ? ` (${event.filename}:${event.lineno})` : "";
+      setRuntimeError(`${event.message || "エラー"}${where}`);
+    };
+    const onRejection = (event: PromiseRejectionEvent) => {
+      setRuntimeError(describe(event.reason));
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
+
   /** 自己申告 (最後の砦) */
   const selfReport = useCallback(
     (said: boolean) => {
@@ -485,6 +518,14 @@ export default function PronunciationPanel() {
                 <br />
                 <span className="text-[10px] text-[#6b5847]">
                   {describeSpeechDiagnostics(diagnostics)}
+                </span>
+              </>
+            )}
+            {runtimeError && (
+              <>
+                <br />
+                <span className="text-[10px] break-all text-[#b03a63]">
+                  エラー: {runtimeError.slice(0, 200)}
                 </span>
               </>
             )}

@@ -46,15 +46,56 @@ const THREAD_POOL_PATCH = {
   to: "var pthreadPoolSize=Math.min(navigator.hardwareConcurrency,2);",
 };
 
-/** 生成物の pthread プール上限を書き換える (純粋関数。テストで固定する) */
-export function patchThreadPool(source, patch = THREAD_POOL_PATCH) {
+/**
+ * Worker へ wasm モジュールを渡せない環境へのフォールバック — issue #2
+ *
+ * Emscripten は起動時に、コンパイル済みの `WebAssembly.Module` を
+ * `postMessage` で各 Worker に配る:
+ *
+ *   worker.postMessage({cmd:"load",handlers,wasmMemory,wasmModule})
+ *   worker.onerror = e => { ...; throw e }        // ← 例外を投げるだけ
+ *   let pthreadPoolReady = Promise.all(unusedWorkers.map(loadWasmModuleToWorker))
+ *   pthreadPoolReady.then(onMaybeReady)           // ← catch が無い
+ *
+ * Safari は `WebAssembly.Module` の構造化クローンに対応していないため、
+ * この `postMessage` が DataCloneError で落ちる。Promise が解決しないまま
+ * `onMaybeReady` が呼ばれず、**モデルの読み込みが永久に終わらない**
+ * (エラーも出ないので「固まった」ように見える)。
+ *
+ * そこで「渡せなければ渡さずに送り直す」ようにする。Worker 側は自分で
+ * 13MB の wasm を取得・コンパイルする (プールは 2 に絞ってあるので 2 回)。
+ */
+const WORKER_LOAD_PATCH = {
+  file: "moonshine.mjs",
+  from: 'worker.postMessage({cmd:"load",handlers,wasmMemory,wasmModule})',
+  to:
+    'try{worker.postMessage({cmd:"load",handlers,wasmMemory,wasmModule})}' +
+    'catch(_e){console.error("[asr] wasmModule を Worker に渡せませんでした。Worker 側で読み込みます",_e);' +
+    'worker.postMessage({cmd:"load",handlers,wasmMemory})}',
+};
+
+/** 配る生成物に当てるパッチ (順番に適用する) */
+export const ENGINE_PATCHES = [THREAD_POOL_PATCH, WORKER_LOAD_PATCH];
+
+/** 生成物 1 箇所を置換する (冪等。置換できなければ例外) */
+export function applyPatch(source, patch) {
   if (source.includes(patch.to)) return source; // 適用済み
   if (!source.includes(patch.from)) {
     throw new Error(
-      `エンジンの pthread プール設定が見つかりません (${patch.file})。上流の生成物が変わりました`,
+      `エンジンの置換対象が見つかりません (${patch.file})。上流の生成物が変わりました: ${patch.from}`,
     );
   }
   return source.replace(patch.from, patch.to);
+}
+
+/** 生成物の pthread プール上限を書き換える (後方互換のための別名) */
+export function patchThreadPool(source, patch = THREAD_POOL_PATCH) {
+  return applyPatch(source, patch);
+}
+
+/** 生成物に必要なパッチをすべて当てる */
+export function patchEngine(source) {
+  return ENGINE_PATCHES.reduce((current, patch) => applyPatch(current, patch), source);
 }
 
 async function sourceFiles() {
@@ -85,12 +126,14 @@ async function main() {
       const info = await stat(path.join(DEST, name)).catch(() => null);
       if (!info) throw new Error(`未コピー: public/asr/moonshine/${name} (npm run asr:engine)`);
     }
-    /* pthread プールの上限が入っているかも確認する (issue #2) */
+    /* パッチが当たっているかも確認する (issue #2) */
     const mjs = await readFile(path.join(DEST, THREAD_POOL_PATCH.file), "utf8").catch(() => "");
-    if (!mjs.includes(THREAD_POOL_PATCH.to)) {
-      throw new Error(
-        `pthread プールの上限が未適用です: public/asr/moonshine/${THREAD_POOL_PATCH.file} (npm run asr:engine)`,
-      );
+    for (const patch of ENGINE_PATCHES) {
+      if (!mjs.includes(patch.to)) {
+        throw new Error(
+          `未適用のパッチがあります: public/asr/moonshine/${patch.file} (npm run asr:engine)`,
+        );
+      }
     }
     console.log(`OK: エンジン ${files.length} ファイルが public/asr/moonshine/ にあります`);
     return;
@@ -117,13 +160,13 @@ async function main() {
     copied += 1;
   }
 
-  /* コピーした生成物に pthread プールの上限を入れる (issue #2) */
+  /* コピーした生成物に Safari 向けのパッチを当てる (issue #2) */
   const patchedPath = path.join(DEST, THREAD_POOL_PATCH.file);
   const original = await readFile(patchedPath, "utf8");
-  const patched = patchThreadPool(original);
+  const patched = patchEngine(original);
   if (patched !== original) {
     await writeFile(patchedPath, patched);
-    console.log(`engine: pthread プールを 2 に制限 -> ${THREAD_POOL_PATCH.file}`);
+    console.log(`engine: Safari 向けパッチ ${ENGINE_PATCHES.length} 件 -> ${THREAD_POOL_PATCH.file}`);
   }
 
   console.log(`engine: ${copied} コピー / ${skipped} スキップ -> public/asr/moonshine/`);
