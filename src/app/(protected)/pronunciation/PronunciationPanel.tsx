@@ -122,6 +122,8 @@ export default function PronunciationPanel() {
   const [engineReady, setEngineReady] = useState(() => isTranscriberLoaded());
   /** 自動のじゅんびに失敗した。押してもらって作り直す */
   const [prepareFailed, setPrepareFailed] = useState(false);
+  /** じゅんびに続けて失敗した回数 (2 回で自己申告に切り替える) */
+  const prepareFailuresRef = useRef(0);
   /** 認識できなかった等の短い案内 (採点結果とは別に出す) */
   const [notice, setNotice] = useState<string | null>(null);
   /** 聞き取りの世代番号。番人が切り上げたら古い結果を捨てる */
@@ -192,6 +194,7 @@ export default function PronunciationPanel() {
       setPreparing(null);
       setEngineReady(true);
       setPrepareFailed(false);
+      prepareFailuresRef.current = 0;
       return true;
     } catch (error) {
       setPreparing(null);
@@ -202,6 +205,17 @@ export default function PronunciationPanel() {
       setPrepareError(
         `じゅんびが できませんでした${detail}。でんぱの いい ところで もういちど ためしてね`,
       );
+      /* 2 回続けてだめなら、その端末では読み込めないと判断して自己申告に切り替える
+         (子どもの練習を、終わらない準備で止めない)。 */
+      prepareFailuresRef.current += 1;
+      if (prepareFailuresRef.current >= 2) {
+        setDecision({
+          path: "self-report",
+          reason: "この端末では アプリ内の よみとりが おもすぎる ようです",
+          canPrepareWasm: false,
+        });
+        setNotice("きょうは じぶんで「いえた」を えらぼう");
+      }
       return false;
     }
   }, [preparing]);

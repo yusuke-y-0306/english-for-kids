@@ -248,8 +248,8 @@ export async function prepareWasm(options: PrepareOptions = {}): Promise<void> {
   /* ここが端末によっては数十秒かかる (Safari は特に)。終わって初めて「使える」 */
   await withTimeout(
     transcriberFrom(engine, files),
-    300_000,
-    "モデルの よみこみが おわりません",
+    90_000,
+    "モデルの よみこみが おわりません（この端末では おもすぎる かもしれません）",
   );
 
   console.info(`[asr] ready (${Math.round(performance.now() - started)}ms)`);
