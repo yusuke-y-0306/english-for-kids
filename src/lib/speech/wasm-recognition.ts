@@ -39,7 +39,7 @@ export const DEFAULT_LISTEN_TIMEOUT_MS = 8_000;
    タイマーは録音開始後にしか動いていなかったため、ここで止まると
    画面が「きいてるよ…」のまま永久に戻らなかった。 */
 /** ページを開いて初めて話すときの Transcriber 構築 (51MB の読み直しを含む) */
-const MODEL_LOAD_TIMEOUT_MS = 60_000;
+const MODEL_LOAD_TIMEOUT_MS = 45_000;
 /** マイクの許可ダイアログが返ってこない端末がある */
 const MIC_TIMEOUT_MS = 15_000;
 /** worklet の取得。取れなければ ScriptProcessor に落ちる */
@@ -74,6 +74,23 @@ export function detectWasmSupport(): WasmSupport {
 export async function detectWasmReadiness(): Promise<WasmReadiness> {
   if (!detectWasmSupport().supported) return "unsupported";
   return (await isModelReady()) ? "ready" : "needs-download";
+}
+
+/**
+ * 画面を出したまま、裏でエンジンとモデルを読み込んでおく (issue #2)。
+ *
+ * 発音練習のページを開いてから読み込むと、iPhone では 40 秒以上かかる。
+ * ホームなどを見ているあいだに済ませておけば、本人は待たされない。
+ * **失敗しても何もしない** (次の画面でいつもどおり準備をやり直せる)。
+ */
+export async function warmTranscriber(): Promise<boolean> {
+  if (!detectWasmSupport().supported) return false;
+  try {
+    await loadTranscriber();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 type EngineModule = typeof import("@moonshine-ai/moonshine-wasm");
@@ -134,6 +151,25 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
   });
 }
 
+type Module = Awaited<ReturnType<EngineModule["loadMoonshineModule"]>>;
+
+let modulePromise: Promise<Module> | null = null;
+
+/**
+ * Emscripten モジュール (13MB の wasm) を初期化する。
+ *
+ * ここで **pthread の Worker が立ち上がる** (生成物は `hardwareConcurrency` 個の
+ * Worker を作る。`scripts/asr-engine.mjs` で 2 に制限している)。
+ * iPhone で「終わらない」ときの容疑者はまずここなので、段階を分けて計測できるようにする。
+ */
+function loadModule(engine: EngineModule): Promise<Module> {
+  modulePromise ??= engine.loadMoonshineModule().catch((error: unknown) => {
+    modulePromise = null;
+    throw error;
+  });
+  return modulePromise;
+}
+
 /**
  * 検証済みキャッシュのバイト列から Transcriber を作る (1 セッション 1 個)。
  *
@@ -154,11 +190,12 @@ function transcriberFrom(
   files: Map<string, Uint8Array>,
 ): Promise<Transcriber> {
   if (transcriberPromise) return transcriberPromise;
-  transcriberPromise ??= Promise.resolve()
-    .then(() =>
+  transcriberPromise ??= loadModule(engine)
+    .then((module) =>
       engine.Transcriber.load({
         files,
         modelArch: engine.ModelArch.TinyStreaming,
+        module,
       }),
     )
     .then((transcriber) => {
@@ -185,7 +222,7 @@ export type PrepareProgress = {
 };
 
 /** じゅんびの段階。画面はこれで「なにを まっているか」を出す */
-export type PrepareStage = "download" | "verify" | "engine" | "model";
+export type PrepareStage = "download" | "verify" | "engine" | "engine-init" | "model";
 
 export type PrepareOptions = {
   onProgress?: (progress: PrepareProgress) => void;
@@ -224,15 +261,23 @@ export async function prepareWasm(options: PrepareOptions = {}): Promise<void> {
   const filesPromise = loadModelFiles();
 
   stage("engine");
-  const engine = await withTimeout(enginePromise, 120_000, "エンジンの よみこみが おわりません");
+  const engine = await withTimeout(enginePromise, 30_000, "エンジンの よみこみが おわりません");
   const files = await withTimeout(filesPromise, 60_000, "モデルの かくにんが おわりません");
+
+  /* wasm の初期化 (pthread の Worker 起動を含む)。端末差がいちばん大きい段階 */
+  stage("engine-init");
+  await withTimeout(
+    loadModule(engine),
+    20_000,
+    "エンジンの かくにんが おわりません（この端末では おもすぎる かもしれません）",
+  );
 
   stage("model");
   /* ここが端末によっては数十秒かかる (Safari は特に)。終わって初めて「使える」 */
   await withTimeout(
     transcriberFrom(engine, files),
-    300_000,
-    "モデルの よみこみが おわりません",
+    45_000,
+    "モデルの よみこみが おわりません（この端末では おもすぎる かもしれません）",
   );
 
   console.info(`[asr] ready (${Math.round(performance.now() - started)}ms)`);

@@ -57,3 +57,34 @@ export function resampleTo16k(input: Float32Array, inputRate: number): Float32Ar
   }
   return output;
 }
+
+/** 事前読み込みの判断材料 (すべて純粋な値) */
+export type WarmUpInput = {
+  /** 端末内推論が使える環境か (`wasmSupportBlocker() === null`) */
+  supported: boolean;
+  /** モデルの準備状態 */
+  readiness: "ready" | "needs-download" | "unsupported";
+  /** このページですでにエンジンを読み込み済みか */
+  loaded: boolean;
+  /** 回線が節約モード (Save-Data) か */
+  saveData?: boolean;
+};
+
+/**
+ * アプリを開いた裏でモデルを読み込んでおくべきか — issue #2
+ *
+ * 発音練習のページを開いてから読み込むと、**子どもが 30〜60 秒待たされる**
+ * (iPhone の実測で 40 秒超)。ホームを見ているあいだに済ませておく。
+ *
+ * ただし:
+ *  - 51MB の**取得**は本人の操作から (準備できていないなら何もしない)
+ *  - 環境が対応していない / すでに読み込み済みなら何もしない
+ *  - Save-Data のときは遠慮する
+ */
+export function shouldWarmUpWasm(input: WarmUpInput): boolean {
+  if (!input.supported) return false;
+  if (input.readiness !== "ready") return false;
+  if (input.loaded) return false;
+  if (input.saveData) return false;
+  return true;
+}

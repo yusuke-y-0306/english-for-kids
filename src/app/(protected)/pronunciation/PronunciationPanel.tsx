@@ -18,6 +18,11 @@ import type { PronunciationScore } from "@/lib/speech/scores";
 import { scorePronunciation } from "@/lib/speech/scoring";
 import { LISTEN_WATCHDOG_MS, isListenStuck } from "@/lib/speech/listen-watchdog";
 import {
+  collectSpeechDiagnostics,
+  describeSpeechDiagnostics,
+  type SpeechDiagnostics,
+} from "@/lib/speech/diagnostics";
+import {
   WasmRecognitionError,
   detectWasmReadiness,
   isTranscriberLoaded,
@@ -96,6 +101,8 @@ function prepareLabel(
       return `モデルを かくにん中… ${elapsedSec}びょう`;
     case "engine":
       return `エンジンを よみこみ中… ${elapsedSec}びょう`;
+    case "engine-init":
+      return `エンジンを かくにん中… ${elapsedSec}びょう`;
     case "model":
       return `モデルを よみこみ中… ${elapsedSec}びょう`;
   }
@@ -115,14 +122,27 @@ export default function PronunciationPanel() {
   /** 経過秒の再計算用 (タイマーで進めるだけ) */
   const [now, setNow] = useState(0);
   const [prepareError, setPrepareError] = useState<string | null>(null);
-  /** このページで「いつでも はなせる」状態か (wasm のエンジン読み込み完了) */
-  const [engineReady, setEngineReady] = useState(false);
+  /**
+   * 「いつでも はなせる」状態か (wasm のエンジン読み込み完了)。
+   * ホームで先に読み込んであれば (`WasmWarmup`)、開いた時点で true。
+   */
+  const [engineReady, setEngineReady] = useState(() => isTranscriberLoaded());
   /** 自動のじゅんびに失敗した。押してもらって作り直す */
   const [prepareFailed, setPrepareFailed] = useState(false);
+  /** じゅんびに続けて失敗した回数 (2 回で自己申告に切り替える) */
+  const prepareFailuresRef = useRef(0);
   /** 認識できなかった等の短い案内 (採点結果とは別に出す) */
   const [notice, setNotice] = useState<string | null>(null);
   /** 聞き取りの世代番号。番人が切り上げたら古い結果を捨てる */
   const listenRunRef = useRef(0);
+  /** 準備が長引いたときだけ出す端末情報 (issue #2 の切り分け用) */
+  const [diagnostics, setDiagnostics] = useState<SpeechDiagnostics | null>(null);
+  /**
+   * 端末内推論の途中で起きたエラー (issue #2)。
+   * Emscripten は Worker の失敗を `throw` するだけで Promise を解決しないため、
+   * 画面には何も出ずに「終わらない」状態になる。ここで拾って見せる。
+   */
+  const [runtimeError, setRuntimeError] = useState<string | null>(null);
 
   const word = PRACTICE_WORDS[wordIndex];
 
@@ -189,6 +209,7 @@ export default function PronunciationPanel() {
       setPreparing(null);
       setEngineReady(true);
       setPrepareFailed(false);
+      prepareFailuresRef.current = 0;
       return true;
     } catch (error) {
       setPreparing(null);
@@ -199,6 +220,17 @@ export default function PronunciationPanel() {
       setPrepareError(
         `じゅんびが できませんでした${detail}。でんぱの いい ところで もういちど ためしてね`,
       );
+      /* 2 回続けてだめなら、その端末では読み込めないと判断して自己申告に切り替える
+         (子どもの練習を、終わらない準備で止めない)。 */
+      prepareFailuresRef.current += 1;
+      if (prepareFailuresRef.current >= 2) {
+        setDecision({
+          path: "self-report",
+          reason: "この端末では アプリ内の よみとりが おもすぎる ようです",
+          canPrepareWasm: false,
+        });
+        setNotice("きょうは じぶんで「いえた」を えらぼう");
+      }
       return false;
     }
   }, [preparing]);
@@ -327,6 +359,47 @@ export default function PronunciationPanel() {
     return () => clearInterval(timer);
   }, [phase]);
 
+  /* 準備が長引いた / 失敗したときだけ、切り分け用の端末情報を集める。
+     ふだんの画面には出さない (子どもには意味がない)。 */
+  useEffect(() => {
+    if (diagnostics) return;
+    if (prepareElapsed < 20 && !prepareFailed) return;
+    let alive = true;
+    void collectSpeechDiagnostics().then((collected) => {
+      if (alive) setDiagnostics(collected);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [diagnostics, prepareElapsed, prepareFailed]);
+
+  /* 画面の外で起きたエラーを拾う。Emscripten の Worker 失敗はここに落ちてくる
+     (拾わないと「終わらない」だけが見えて原因が分からない)。 */
+  useEffect(() => {
+    const describe = (value: unknown): string => {
+      if (value instanceof Error) return `${value.name}: ${value.message}`;
+      if (typeof value === "string") return value;
+      try {
+        return JSON.stringify(value) ?? String(value);
+      } catch {
+        return String(value);
+      }
+    };
+    const onError = (event: ErrorEvent) => {
+      const where = event.filename ? ` (${event.filename}:${event.lineno})` : "";
+      setRuntimeError(`${event.message || "エラー"}${where}`);
+    };
+    const onRejection = (event: PromiseRejectionEvent) => {
+      setRuntimeError(describe(event.reason));
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
+
   /** 自己申告 (最後の砦) */
   const selfReport = useCallback(
     (said: boolean) => {
@@ -430,6 +503,32 @@ export default function PronunciationPanel() {
         {preparing !== null && (
           <p aria-live="polite" className="text-sm font-bold text-ink-soft">
             こえの じゅんびを しています。そのまま まってね
+            <br />
+            <span className="text-xs">さいしょの 1 回だけ、1 ぷん くらい かかることが あります</span>
+            {prepareElapsed >= 20 && (
+              <>
+                <br />
+                <span className="text-xs text-[#b03a63]">
+                  この端末では じかんが かかっています。もうすこし まってね
+                </span>
+              </>
+            )}
+            {diagnostics && (
+              <>
+                <br />
+                <span className="text-[10px] text-[#6b5847]">
+                  {describeSpeechDiagnostics(diagnostics)}
+                </span>
+              </>
+            )}
+            {runtimeError && (
+              <>
+                <br />
+                <span className="text-[10px] break-all text-[#b03a63]">
+                  エラー: {runtimeError.slice(0, 200)}
+                </span>
+              </>
+            )}
           </p>
         )}
 
@@ -453,7 +552,7 @@ export default function PronunciationPanel() {
             </button>
             {preparing !== null && (
               <p className="mt-2 text-xs leading-relaxed font-bold text-amber-900">
-                さいしょの 1 回だけ、1〜2 ぷん かかることが あります。
+                さいしょの 1 回だけ、1 ぷん くらい かかることが あります。
               </p>
             )}
             {prepareError && <p className="mt-2 text-xs font-bold text-red-700">{prepareError}</p>}
