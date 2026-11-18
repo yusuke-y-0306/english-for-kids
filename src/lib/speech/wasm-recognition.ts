@@ -35,6 +35,16 @@ const WORKLET_NAME = "efk-capture";
 /** 1 回の聞き取りの上限。子どもが黙っていても待ち続けない */
 export const DEFAULT_LISTEN_TIMEOUT_MS = 8_000;
 
+/* 聞き取りの「前さばき」にも上限を置く (issue #2)。
+   タイマーは録音開始後にしか動いていなかったため、ここで止まると
+   画面が「きいてるよ…」のまま永久に戻らなかった。 */
+/** ページを開いて初めて話すときの Transcriber 構築 (51MB の読み直しを含む) */
+const MODEL_LOAD_TIMEOUT_MS = 60_000;
+/** マイクの許可ダイアログが返ってこない端末がある */
+const MIC_TIMEOUT_MS = 15_000;
+/** worklet の取得。取れなければ ScriptProcessor に落ちる */
+const WORKLET_TIMEOUT_MS = 5_000;
+
 export type WasmSupport = {
   supported: boolean;
   /** 使えない理由 (子ども向けの短い文)。使えるなら null */
@@ -90,6 +100,11 @@ function loadEngine(): Promise<EngineModule> {
 }
 
 let transcriberPromise: Promise<Transcriber> | null = null;
+
+/** この**ページ内**で Transcriber が出来上がっているか (再読み込みすると false) */
+export function isTranscriberLoaded(): boolean {
+  return transcriberPromise !== null;
+}
 
 let modelFilesPromise: Promise<Map<string, Uint8Array>> | null = null;
 
@@ -297,12 +312,22 @@ export async function listenOnceWithWasm(options: ListenOptions = {}): Promise<s
   };
 
   try {
-    const transcriber = await loadTranscriber();
+    /* モデルは準備済みでも、ページを開き直すと Transcriber は作り直しになる。
+       ここが数十秒かかる端末 (Safari) があるので、無言で待たせず必ず諦める */
+    const transcriber = await withTimeout(
+      loadTranscriber(),
+      MODEL_LOAD_TIMEOUT_MS,
+      "モデルの よみこみが おわりません",
+    );
 
     try {
-      mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
-      });
+      mediaStream = await withTimeout(
+        navigator.mediaDevices.getUserMedia({
+          audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+        }),
+        MIC_TIMEOUT_MS,
+        "マイクの きょかが かえってきません",
+      );
     } catch (error) {
       throw new WasmRecognitionError("mic", "マイクが つかえませんでした", { cause: error });
     }
@@ -352,7 +377,12 @@ export async function listenOnceWithWasm(options: ListenOptions = {}): Promise<s
     let workletReady = false;
     if (context.audioWorklet) {
       try {
-        await context.audioWorklet.addModule(WORKLET_URL);
+        /* トンネル越しだと取得が返らないことがある。待ち続けずに代替へ落とす */
+        await withTimeout(
+          context.audioWorklet.addModule(WORKLET_URL),
+          WORKLET_TIMEOUT_MS,
+          "worklet の よみこみが おわりません",
+        );
         /* 出力は使わないが、Safari は入力/出力の数を明示しないと構築に失敗することがある */
         workletNode = new AudioWorkletNode(context, WORKLET_NAME, {
           numberOfInputs: 1,

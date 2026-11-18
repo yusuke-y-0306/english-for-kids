@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MuteToggle } from "@/components/audio/MuteToggle";
 import { SpeakButton } from "@/components/audio/SpeakButton";
@@ -16,9 +16,11 @@ import {
 import type { RecognitionPath } from "@/lib/speech/recognition-policy";
 import type { PronunciationScore } from "@/lib/speech/scores";
 import { scorePronunciation } from "@/lib/speech/scoring";
+import { LISTEN_WATCHDOG_MS, isListenStuck } from "@/lib/speech/listen-watchdog";
 import {
   WasmRecognitionError,
   detectWasmReadiness,
+  isTranscriberLoaded,
   listenOnceWithWasm,
   prepareWasm,
   type PrepareStage,
@@ -37,6 +39,8 @@ import { categories, wordId } from "@/lib/words";
  *  - 判定は端末内で完結する純粋関数 (`scorePronunciation`)。
  *  - 保存するのは**単語 ID と 3 段階スコアだけ**。音声も認識テキストも送らない (issue #32)。
  *  - 記録に失敗しても練習は止めない (子どもの学習を通信の都合で妨げない)。
+ *  - 「きいてるよ…」のまま固まらせない (issue #2)。準備が要るなら先に準備を見せ、
+ *    それでも返ってこなければ番人が聞き直しへ戻す。
  */
 
 type PracticeWord = {
@@ -111,8 +115,14 @@ export default function PronunciationPanel() {
   /** 経過秒の再計算用 (タイマーで進めるだけ) */
   const [now, setNow] = useState(0);
   const [prepareError, setPrepareError] = useState<string | null>(null);
+  /** このページで「いつでも はなせる」状態か (wasm のエンジン読み込み完了) */
+  const [engineReady, setEngineReady] = useState(false);
+  /** 自動のじゅんびに失敗した。押してもらって作り直す */
+  const [prepareFailed, setPrepareFailed] = useState(false);
   /** 認識できなかった等の短い案内 (採点結果とは別に出す) */
   const [notice, setNotice] = useState<string | null>(null);
+  /** 聞き取りの世代番号。番人が切り上げたら古い結果を捨てる */
+  const listenRunRef = useRef(0);
 
   const word = PRACTICE_WORDS[wordIndex];
 
@@ -149,9 +159,14 @@ export default function PronunciationPanel() {
     };
   }, []);
 
-  /** 初回のじゅんび (51MB)。押されたときだけ落とす。 */
-  const prepare = useCallback(async () => {
-    if (preparing) return;
+  /**
+   * じゅんび (初回は 51MB の取得)。
+   *
+   * 「はなす」を押したときにも呼ぶ。モデルは準備済みでも、**ページを開き直すと
+   * エンジンの読み直しが要る**ため、そこで無言で待たせない (issue #2)。
+   */
+  const prepare = useCallback(async (): Promise<boolean> => {
+    if (preparing) return false;
     setPrepareError(null);
     setNotice(null);
     setPreparing({ fraction: null, stage: "download", since: Date.now() });
@@ -172,15 +187,39 @@ export default function PronunciationPanel() {
         canPrepareWasm: resolved.canPrepareWasm,
       });
       setPreparing(null);
+      setEngineReady(true);
+      setPrepareFailed(false);
+      return true;
     } catch (error) {
       setPreparing(null);
+      setEngineReady(false);
+      setPrepareFailed(true);
       console.error("[asr] prepare failed", error);
       const detail = error instanceof Error && error.message ? `（${error.message}）` : "";
       setPrepareError(
         `じゅんびが できませんでした${detail}。でんぱの いい ところで もういちど ためしてね`,
       );
+      return false;
     }
   }, [preparing]);
+
+  /**
+   * モデルが準備済みなら、開いた時点でエンジンを読み込んでおく (issue #2)。
+   *
+   * 「はなす」を押してから重い準備を始めると、子どもには**押しても何も起きない
+   * ボタン**に見える。押される前に準備を終わらせ、押せない理由があるときは
+   * 押せないようにする (51MB の取得だけは今までどおり押されてから)。
+   */
+  useEffect(() => {
+    if (decision?.path !== "wasm") return;
+    /* 失敗したら自動では再試行しない (電池と通信を無駄にしない)。押されたときにやり直す */
+    if (readiness !== "ready" || engineReady || prepareFailed || preparing) return;
+    /* 効果の中で同期に状態を動かさない (描画をブロックしない)。次の tick に任せる */
+    const timer = setTimeout(() => {
+      void prepare();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [decision, engineReady, prepare, prepareFailed, preparing, readiness]);
 
   /** 記録は投げっぱなし。失敗しても練習は止めない。 */
   const save = useCallback(async (id: string, score: PronunciationScore) => {
@@ -207,7 +246,18 @@ export default function PronunciationPanel() {
 
   /** 端末内で 1 回だけ聞き取る (device / wasm のどちらでも) */
   const listen = useCallback(async () => {
-    if (!decision || phase === "listening") return;
+    if (!decision || phase === "listening" || preparing) return;
+
+    /* wasm 経路は、このページでまだエンジンを読んでいないことがある。
+       そのまま聞き取りに入ると「きいてるよ…」のまま何十秒も止まって見えるので、
+       先に「じゅんび」を見せる (進捗と経過秒が出る)。 */
+    if (decision.path === "wasm" && !isTranscriberLoaded()) {
+      const ready = await prepare();
+      if (!ready) return;
+    }
+
+    const runId = listenRunRef.current + 1;
+    listenRunRef.current = runId;
     setPhase("listening");
     setResult(null);
     setNotice(null);
@@ -216,6 +266,7 @@ export default function PronunciationPanel() {
         decision.path === "wasm"
           ? await listenOnceWithWasm()
           : (await listenOnce(createDeviceRecognizer(decision))).transcript;
+      if (runId !== listenRunRef.current) return;
       // 同音語・言い換えは単語データ側の許容を渡して吸収する (issue #40)
       const scored = scorePronunciation(transcript, word.en, {
         homophones: word.homophones,
@@ -223,6 +274,7 @@ export default function PronunciationPanel() {
       });
       finish(scored.score, scored.hint, transcript);
     } catch (error) {
+      if (runId !== listenRunRef.current) return;
       if (error instanceof WasmRecognitionError) {
         setPhase("ready");
         if (error.kind === "empty" || error.kind === "timeout") {
@@ -259,7 +311,21 @@ export default function PronunciationPanel() {
       }
       setPhase("ready");
     }
-  }, [decision, finish, phase, readiness, word.en, word.homophones, word.variants]);
+  }, [decision, finish, phase, prepare, preparing, readiness, word.en, word.homophones, word.variants]);
+
+  /* 番人: 「きいてるよ…」が長すぎるときは、必ず聞き直しに戻す (issue #2)。
+     端末側の各段階にもタイムアウトはあるが、想定外の止まり方をする端末がある。 */
+  useEffect(() => {
+    if (phase !== "listening") return;
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      if (!isListenStuck(startedAt, Date.now(), LISTEN_WATCHDOG_MS)) return;
+      listenRunRef.current += 1; // 遅れて届く結果は捨てる
+      setPhase("ready");
+      setNotice("きこえなかったよ。もういちど ためしてね");
+    }, 1_000);
+    return () => clearInterval(timer);
+  }, [phase]);
 
   /** 自己申告 (最後の砦) */
   const selfReport = useCallback(
@@ -271,12 +337,14 @@ export default function PronunciationPanel() {
   );
 
   const retry = useCallback(() => {
+    listenRunRef.current += 1;
     setResult(null);
     setNotice(null);
     setPhase("ready");
   }, []);
 
   const nextWord = useCallback(() => {
+    listenRunRef.current += 1;
     setResult(null);
     setNotice(null);
     setPhase("ready");
@@ -290,6 +358,18 @@ export default function PronunciationPanel() {
 
   const path = decision?.path ?? null;
   const style = result ? SCORE_STYLE[result.score] : null;
+
+  /** マイクに向かって話せる経路か (自己申告なら「はなす」は出さない) */
+  const listeningPath = decision?.path === "device" || decision?.path === "wasm";
+  /**
+   * 押してよい状態か。`device` は API がある時点で話せるが、`wasm` は
+   * エンジンの読み込みが終わるまで押させない (issue #2)。
+   * 準備に失敗したときは押せるようにして、その場でやり直せるようにする。
+   */
+  const canListen =
+    decision?.path === "device" || (decision?.path === "wasm" && (engineReady || prepareFailed));
+  /** 51MB の取得がまだで、本人に押してもらう必要がある状態 */
+  const needsExplicitPrepare = Boolean(decision?.canPrepareWasm && readiness === "needs-download");
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8">
@@ -324,20 +404,38 @@ export default function PronunciationPanel() {
 
         {decision === null && <p className="text-sm text-ink-soft">よみこみ中…</p>}
 
-        {(decision?.path === "device" || decision?.path === "wasm") && (
+        {listeningPath && (
           <button
             type="button"
             onClick={() => void listen()}
-            disabled={phase === "listening"}
+            /* 準備できていないなら押せない (押しても何も起きないボタンにしない) */
+            disabled={!canListen || phase === "listening" || preparing !== null}
+            aria-disabled={!canListen || phase === "listening" || preparing !== null}
             className="rounded-full bg-[#ff8fb0] px-8 py-3 text-lg font-extrabold text-white shadow-[0_4px_0_rgba(176,58,99,0.35)] transition active:translate-y-0.5 active:shadow-none disabled:opacity-60"
           >
-            {phase === "listening" ? "きいてるよ…" : "🎤 はなす"}
+            {preparing !== null
+              ? prepareLabel(preparing, prepareElapsed)
+              : phase === "listening"
+                ? "きいてるよ…"
+                : !canListen
+                  ? readiness === "needs-download"
+                    ? "まず じゅんびを してね"
+                    : "こえの じゅんび中…"
+                  : "🎤 はなす"}
           </button>
+        )}
+
+        {/* 2 回目以降の「はなす」でも、ページを開き直した直後はエンジンの
+            読み込みが要る。ボタンの中で何が起きているかだけ伝える (issue #2) */}
+        {preparing !== null && (
+          <p aria-live="polite" className="text-sm font-bold text-ink-soft">
+            こえの じゅんびを しています。そのまま まってね
+          </p>
         )}
 
         {/* Safari など device が使えない端末: モデル未取得なら「じゅんび」を出す。
             勝手に 51MB を落とさない (押されたときだけ)。 */}
-        {decision?.canPrepareWasm && readiness === "needs-download" && (
+        {needsExplicitPrepare && (
           <div className="w-full max-w-sm rounded-xl border-2 border-amber-200 bg-amber-50 p-3 text-left">
             <p className="text-xs leading-relaxed font-bold text-amber-900">
               この端末では クラウドの よみとりを つかいません。アプリに モデルを ようい すると、
@@ -360,6 +458,11 @@ export default function PronunciationPanel() {
             )}
             {prepareError && <p className="mt-2 text-xs font-bold text-red-700">{prepareError}</p>}
           </div>
+        )}
+
+        {/* 自動のじゅんびに失敗したときの案内 (準備カードが出ていない場合) */}
+        {prepareFailed && prepareError && !needsExplicitPrepare && (
+          <p className="text-sm font-bold text-red-700">{prepareError}</p>
         )}
 
         {/* 自己申告は「まだ判定していないとき」だけ出す。結果が出たあとに
