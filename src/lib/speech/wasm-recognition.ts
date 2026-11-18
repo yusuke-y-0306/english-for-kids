@@ -39,7 +39,7 @@ export const DEFAULT_LISTEN_TIMEOUT_MS = 8_000;
    タイマーは録音開始後にしか動いていなかったため、ここで止まると
    画面が「きいてるよ…」のまま永久に戻らなかった。 */
 /** ページを開いて初めて話すときの Transcriber 構築 (51MB の読み直しを含む) */
-const MODEL_LOAD_TIMEOUT_MS = 60_000;
+const MODEL_LOAD_TIMEOUT_MS = 45_000;
 /** マイクの許可ダイアログが返ってこない端末がある */
 const MIC_TIMEOUT_MS = 15_000;
 /** worklet の取得。取れなければ ScriptProcessor に落ちる */
@@ -261,14 +261,14 @@ export async function prepareWasm(options: PrepareOptions = {}): Promise<void> {
   const filesPromise = loadModelFiles();
 
   stage("engine");
-  const engine = await withTimeout(enginePromise, 120_000, "エンジンの よみこみが おわりません");
+  const engine = await withTimeout(enginePromise, 30_000, "エンジンの よみこみが おわりません");
   const files = await withTimeout(filesPromise, 60_000, "モデルの かくにんが おわりません");
 
   /* wasm の初期化 (pthread の Worker 起動を含む)。端末差がいちばん大きい段階 */
   stage("engine-init");
   await withTimeout(
     loadModule(engine),
-    60_000,
+    20_000,
     "エンジンの かくにんが おわりません（この端末では おもすぎる かもしれません）",
   );
 
@@ -276,7 +276,7 @@ export async function prepareWasm(options: PrepareOptions = {}): Promise<void> {
   /* ここが端末によっては数十秒かかる (Safari は特に)。終わって初めて「使える」 */
   await withTimeout(
     transcriberFrom(engine, files),
-    90_000,
+    45_000,
     "モデルの よみこみが おわりません（この端末では おもすぎる かもしれません）",
   );
 

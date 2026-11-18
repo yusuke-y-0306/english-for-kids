@@ -471,7 +471,7 @@ export default function PronunciationPanel() {
           <p aria-live="polite" className="text-sm font-bold text-ink-soft">
             こえの じゅんびを しています。そのまま まってね
             <br />
-            <span className="text-xs">さいしょの 1 回だけ、1〜2 ぷん かかることが あります</span>
+            <span className="text-xs">さいしょの 1 回だけ、1 ぷん くらい かかることが あります</span>
             {prepareElapsed >= 20 && (
               <>
                 <br />
@@ -511,7 +511,7 @@ export default function PronunciationPanel() {
             </button>
             {preparing !== null && (
               <p className="mt-2 text-xs leading-relaxed font-bold text-amber-900">
-                さいしょの 1 回だけ、1〜2 ぷん かかることが あります。
+                さいしょの 1 回だけ、1 ぷん くらい かかることが あります。
               </p>
             )}
             {prepareError && <p className="mt-2 text-xs font-bold text-red-700">{prepareError}</p>}
