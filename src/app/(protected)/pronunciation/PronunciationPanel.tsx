@@ -449,6 +449,14 @@ export default function PronunciationPanel() {
             こえの じゅんびを しています。そのまま まってね
             <br />
             <span className="text-xs">さいしょの 1 回だけ、1〜2 ぷん かかることが あります</span>
+            {prepareElapsed >= 20 && (
+              <>
+                <br />
+                <span className="text-xs text-[#b03a63]">
+                  この端末では じかんが かかっています。もうすこし まってね
+                </span>
+              </>
+            )}
           </p>
         )}
 
