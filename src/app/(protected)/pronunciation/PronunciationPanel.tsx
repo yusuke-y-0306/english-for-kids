@@ -18,6 +18,11 @@ import type { PronunciationScore } from "@/lib/speech/scores";
 import { scorePronunciation } from "@/lib/speech/scoring";
 import { LISTEN_WATCHDOG_MS, isListenStuck } from "@/lib/speech/listen-watchdog";
 import {
+  collectSpeechDiagnostics,
+  describeSpeechDiagnostics,
+  type SpeechDiagnostics,
+} from "@/lib/speech/diagnostics";
+import {
   WasmRecognitionError,
   detectWasmReadiness,
   isTranscriberLoaded,
@@ -130,6 +135,8 @@ export default function PronunciationPanel() {
   const [notice, setNotice] = useState<string | null>(null);
   /** 聞き取りの世代番号。番人が切り上げたら古い結果を捨てる */
   const listenRunRef = useRef(0);
+  /** 準備が長引いたときだけ出す端末情報 (issue #2 の切り分け用) */
+  const [diagnostics, setDiagnostics] = useState<SpeechDiagnostics | null>(null);
 
   const word = PRACTICE_WORDS[wordIndex];
 
@@ -346,6 +353,20 @@ export default function PronunciationPanel() {
     return () => clearInterval(timer);
   }, [phase]);
 
+  /* 準備が長引いた / 失敗したときだけ、切り分け用の端末情報を集める。
+     ふだんの画面には出さない (子どもには意味がない)。 */
+  useEffect(() => {
+    if (diagnostics) return;
+    if (prepareElapsed < 20 && !prepareFailed) return;
+    let alive = true;
+    void collectSpeechDiagnostics().then((collected) => {
+      if (alive) setDiagnostics(collected);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [diagnostics, prepareElapsed, prepareFailed]);
+
   /** 自己申告 (最後の砦) */
   const selfReport = useCallback(
     (said: boolean) => {
@@ -456,6 +477,14 @@ export default function PronunciationPanel() {
                 <br />
                 <span className="text-xs text-[#b03a63]">
                   この端末では じかんが かかっています。もうすこし まってね
+                </span>
+              </>
+            )}
+            {diagnostics && (
+              <>
+                <br />
+                <span className="text-[10px] text-[#6b5847]">
+                  {describeSpeechDiagnostics(diagnostics)}
                 </span>
               </>
             )}
