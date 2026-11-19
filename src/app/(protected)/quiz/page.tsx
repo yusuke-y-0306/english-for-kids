@@ -4,8 +4,14 @@ import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties }
 import Link from "next/link";
 import { MuteToggle } from "@/components/audio/MuteToggle";
 import { SpeakButton } from "@/components/audio/SpeakButton";
+import { playPraise, playWordAudio, stopWordAudio } from "@/lib/audio/play";
 import { useAudioMuted } from "@/lib/audio/use-audio-muted";
 import { newClientId } from "@/lib/client-id";
+import {
+  isListeningTextVisible,
+  subscribeListeningText,
+  toggleListeningTextVisible,
+} from "@/lib/quiz/listening-text";
 import { findWordById } from "@/lib/words";
 import {
   buildRound,
@@ -155,6 +161,14 @@ export default function QuizPage() {
   const store = useSyncExternalStore(subscribeStore, readStore, () => EMPTY_STORE);
   const best = store.best;
   const muted = useAudioMuted();
+  /* リスニングは文字を補助扱い。既定は小さく出し、設定で隠せる (#85) */
+  const showListeningText = useSyncExternalStore(
+    subscribeListeningText,
+    isListeningTextVisible,
+    () => true,
+  );
+  /** 自動再生できなかったときの案内 (#85) */
+  const [audioHint, setAudioHint] = useState<"none" | "blocked" | "muted">("none");
 
   const audioRef = useRef<AudioContext | null>(null);
 
@@ -167,6 +181,9 @@ export default function QuizPage() {
     const timer = window.setTimeout(() => setBurst(0), 1600);
     return () => window.clearTimeout(timer);
   }, [burst]);
+
+  /* 画面を離れるときは 鳴っている おと を止める */
+  useEffect(() => stopWordAudio, []);
 
   /* --- おと --- */
   function tone(
@@ -220,8 +237,27 @@ export default function QuizPage() {
   const question = questions[index];
   const answered = selected !== null;
   const isCorrect = answered && selected === question?.answer;
-  /* 初級の問題だけが単語 ID を持つ。正解発表後に「もういちど きく」を出す (#84) */
+  /* 単語の問題（リスニング・初級）だけが単語 ID を持つ。答え合わせで読み上げる (#84) */
   const answerWord = question?.wordId ? (findWordById(question.wordId)?.word ?? null) : null;
+  /** 音 → 絵 で答える問題か (#85) */
+  const isListening = Boolean(question?.pictures?.length);
+
+  /* --- リスニング: 出題と同時に読む。鳴らせなければタップで (#85) --- */
+  useEffect(() => {
+    if (screen !== "playing" || !isListening || !answerWord) return;
+
+    let active = true;
+    void playWordAudio(answerWord).then((outcome) => {
+      if (!active) return;
+      setAudioHint(
+        /* 生成音声が鳴らなかった（自動再生ブロック等）ときも、タップ再生を案内する */
+        outcome === "muted" ? "muted" : outcome === "played" ? "none" : "blocked",
+      );
+    });
+    return () => {
+      active = false;
+    };
+  }, [screen, isListening, question, answerWord]);
 
   function start(l: QuizLevel) {
     roundRef.current = { id: newClientId(), results: [] };
@@ -235,7 +271,18 @@ export default function QuizPage() {
     setLastGain(0);
     setNewRecord(false);
     setShake(0);
+    setAudioHint("none");
     setScreen("playing");
+  }
+
+  /** リスニングの読み上げをやり直す（自動再生ブロック対策） */
+  function replayWord() {
+    if (!answerWord) return;
+    void playWordAudio(answerWord).then((outcome) => {
+      setAudioHint(
+        outcome === "muted" ? "muted" : outcome === "played" ? "none" : "blocked",
+      );
+    });
   }
 
   function answer(choice: number) {
@@ -277,12 +324,15 @@ export default function QuizPage() {
       setCorrectCount((c) => c + 1);
       setLastGain(gain);
       setBurst(Date.now());
-      playCorrect();
+      /* リスニングは「音で」ほめる。それ以外は これまでどおり チャイム (#85) */
+      if (question.pictures) playPraise("correct");
+      else playCorrect();
     } else {
       setStreak(0);
       setLastGain(0);
       setShake((n) => n + 1);
-      playWrong();
+      if (question.pictures) playPraise("wrong");
+      else playWrong();
     }
   }
 
@@ -304,6 +354,7 @@ export default function QuizPage() {
     setIndex((i) => i + 1);
     setSelected(null);
     setShake(0);
+    setAudioHint("none");
   }
 
   /* --- キーボード操作（1〜4で回答、Enterで次へ） --- */
@@ -339,7 +390,10 @@ export default function QuizPage() {
       <header className="flex items-center justify-between gap-3 rounded-full border-2 border-white bg-white/85 px-3 py-2.5 shadow-[0_5px_16px_rgba(122,104,87,0.12)] sm:px-4">
         {screen === "playing" ? (
           <button
-            onClick={() => setScreen("title")}
+            onClick={() => {
+              stopWordAudio();
+              setScreen("title");
+            }}
             className="rounded-full px-3 py-1.5 text-sm font-extrabold text-[#5b4a3c] transition hover:bg-[#fff6e3] hover:text-ink"
           >
             ← レベル
@@ -386,6 +440,9 @@ export default function QuizPage() {
             </p>
             <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#fff3d6] px-4 py-2 text-xs font-extrabold text-[#a85f08]">
               ⌨️ キーボードの 1〜4 でも こたえられるよ
+            </p>
+            <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#e6f3ff] px-4 py-2 text-xs font-extrabold text-[#1f5f8b]">
+              👂 おとを きいて えを えらぶ モードも あるよ
             </p>
           </div>
 
@@ -468,30 +525,85 @@ export default function QuizPage() {
             key={question.id}
             className="anim-pop mt-3 rounded-[30px] border-4 border-white bg-white/90 px-5 py-7 text-center shadow-[0_10px_26px_rgba(122,104,87,0.16)]"
           >
-            {question.display && (
-              <div className="text-6xl leading-none">{question.display}</div>
+            {isListening ? (
+              /* 音 → 絵。問題文の文字は補助（隠せる）*/
+              <div className="flex flex-col items-center gap-3">
+                <div className="anim-bob text-6xl leading-none" aria-hidden>
+                  👂
+                </div>
+                <button
+                  type="button"
+                  onClick={replayWord}
+                  disabled={muted}
+                  aria-label="もう いちど きく"
+                  className="inline-flex min-h-12 items-center gap-2 rounded-full bg-[#4dc9f6] px-6 py-3 text-base font-extrabold text-white shadow-[0_4px_0_rgba(26,111,149,0.35)] transition hover:-translate-y-0.5 active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+                >
+                  <span aria-hidden>{muted ? "🔇" : "🔊"}</span>
+                  {muted ? "おと オフ" : "もう いちど きく"}
+                </button>
+
+                {audioHint === "blocked" && !muted && (
+                  <p className="text-xs font-extrabold text-[#a85f08]">
+                    おとが でない ときは、この ボタンを おしてね
+                  </p>
+                )}
+                {audioHint === "muted" && (
+                  <p className="text-xs font-extrabold text-[#a85f08]">
+                    おとが オフ だよ。みぎうえの 🔊 で つけてね
+                  </p>
+                )}
+
+                {showListeningText ? (
+                  <div className="flex flex-col items-center gap-1">
+                    <p className="text-sm font-extrabold text-[#5b4a3c]">
+                      {question.promptJa}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => toggleListeningTextVisible()}
+                      className="text-[0.68rem] font-extrabold text-[#7a6857] underline underline-offset-2"
+                    >
+                      もじを かくす
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => toggleListeningTextVisible()}
+                    className="text-[0.68rem] font-extrabold text-[#a89a8a] underline underline-offset-2"
+                  >
+                    もじを みせる
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                {question.display && (
+                  <div className="text-6xl leading-none">{question.display}</div>
+                )}
+                {question.promptEn && (
+                  <p className="font-display text-[1.45rem] leading-snug font-semibold text-ink sm:text-3xl">
+                    {question.promptEn}
+                  </p>
+                )}
+                <p
+                  className={
+                    question.promptEn
+                      ? "mt-2 text-sm font-extrabold text-[#7a6857]"
+                      : "mt-4 text-xl font-extrabold text-ink sm:text-2xl"
+                  }
+                >
+                  {question.promptJa}
+                </p>
+              </>
             )}
-            {question.promptEn && (
-              <p className="font-display text-[1.45rem] leading-snug font-semibold text-ink sm:text-3xl">
-                {question.promptEn}
-              </p>
-            )}
-            <p
-              className={
-                question.promptEn
-                  ? "mt-2 text-sm font-extrabold text-[#7a6857]"
-                  : "mt-4 text-xl font-extrabold text-ink sm:text-2xl"
-              }
-            >
-              {question.promptJa}
-            </p>
           </div>
 
           {/* 選択肢 */}
           <div
             key={`choices-${question.id}-${shake}`}
             className={`mt-4 grid gap-2.5 ${
-              level.id === "beginner" ? "grid-cols-2" : "grid-cols-1"
+              isListening || level.id === "beginner" ? "grid-cols-2" : "grid-cols-1"
             } ${shake > 0 && !isCorrect ? "anim-shake" : ""}`}
           >
             {question.choices.map((choice, i) => {
@@ -508,6 +620,38 @@ export default function QuizPage() {
                   "border-[#ff8fb0] bg-[#ffecec] text-[#b03a63] shadow-[0_4px_0_#ffc2d2]";
               } else if (answered) {
                 look = "border-white bg-white/55 text-[#8b7a67] opacity-60";
+              }
+
+              /* リスニングは絵を大きく出す。文字は補助（設定で隠せる） */
+              if (question.pictures) {
+                return (
+                  <button
+                    key={`${choice}-${i}`}
+                    onClick={() => answer(i)}
+                    disabled={answered}
+                    aria-label={choice}
+                    className={`relative flex min-h-28 flex-col items-center justify-center gap-1.5 rounded-2xl border-[3px] px-3 py-4 font-extrabold transition ${look} ${
+                      answered ? "cursor-default" : ""
+                    }`}
+                  >
+                    <span aria-hidden className="text-5xl leading-none">
+                      {question.pictures?.[i]}
+                    </span>
+                    {showListeningText && (
+                      <span className="text-xs break-words">{choice}</span>
+                    )}
+                    {showAnswer && (
+                      <span aria-hidden className="absolute top-1.5 right-2 text-lg">
+                        ⭕
+                      </span>
+                    )}
+                    {showWrong && (
+                      <span aria-hidden className="absolute top-1.5 right-2 text-lg">
+                        ❌
+                      </span>
+                    )}
+                  </button>
+                );
               }
 
               return (
@@ -535,6 +679,16 @@ export default function QuizPage() {
             {answered &&
               (isCorrect ? (
                 <div className="anim-correct-pop rounded-[24px] border-4 border-white bg-[#eef7e2] p-4 text-center shadow-[0_6px_16px_rgba(122,104,87,0.12)]">
+                  {question.pictures && (
+                    <div className="mb-2 flex items-center justify-center gap-3">
+                      <span aria-hidden className="text-5xl leading-none">
+                        {question.pictures[question.answer]}
+                      </span>
+                      <span className="text-lg font-extrabold text-[#2f6b2a]">
+                        {question.choices[question.answer]}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-xl font-extrabold text-[#38702f]">
                     ⭕ せいかい！{" "}
                     <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-base">
@@ -552,6 +706,16 @@ export default function QuizPage() {
                 </div>
               ) : (
                 <div className="anim-correct-pop rounded-[24px] border-4 border-white bg-[#fff8e2] p-4 text-center shadow-[0_6px_16px_rgba(122,104,87,0.12)]">
+                  {question.pictures && (
+                    <div className="mb-2 flex items-center justify-center gap-3">
+                      <span aria-hidden className="text-5xl leading-none">
+                        {question.pictures[question.answer]}
+                      </span>
+                      <span className="text-lg font-extrabold text-[#8a5a12]">
+                        {question.choices[question.answer]}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-lg font-extrabold text-[#8a5a12]">
                     おしい！ こたえは “{question.choices[question.answer]}”
                   </p>

@@ -2,8 +2,8 @@
  * クイズ・ゲーム機能のデータ — issue #3
  *
  * 設計方針:
- * - 1ラウンド = 8問。レベルは 3つ（はじめて / ちゅうきゅう / じょうきゅう）。
- * - 初級は `words.ts` の単語から毎回ランダムに出題する（同じ単語でも、
+ * - 1ラウンド = 8問。レベルは 4つ（きいて えらぶ / はじめて / ちゅうきゅう / じょうきゅう）。
+ * - リスニングと初級は `words.ts` の単語から毎回ランダムに出題する（同じ単語でも、
  *   選択肢と順番が変わるので繰り返し遊べる）。
  * - 中級・上級は固定の問題プールからランダムに8問を抜き出す。
  * - 問題の生成はクライアントの「スタート」押下時だけ行う。
@@ -12,7 +12,7 @@
 
 import { categories, type Word } from "./words";
 
-export type QuizLevelId = "beginner" | "intermediate" | "advanced";
+export type QuizLevelId = "listening" | "beginner" | "intermediate" | "advanced";
 
 export type QuizQuestion = {
   id: string;
@@ -29,6 +29,13 @@ export type QuizQuestion = {
   promptJa: string;
   /** 4つの選択肢 */
   choices: string[];
+  /**
+   * 絵で答える問題（リスニング #85）の選択肢。`choices` と同じ並びの絵文字。
+   *
+   * これがある問題は「音 → 絵」で解く問題で、文字は補助でしかない。
+   * 画面側はこの配列の有無で描き分ける（`wordId` の単語を出題時に読み上げる）。
+   */
+  pictures?: string[];
   /** 正解の index */
   answer: number;
   /** 答え合わせのときに出すやさしい説明 */
@@ -49,6 +56,15 @@ export type QuizLevel = {
 export const QUIZ_LENGTH = 8;
 
 export const quizLevels: QuizLevel[] = [
+  {
+    id: "listening",
+    label: "きいて えらぶ",
+    en: "Listening",
+    emoji: "👂",
+    desc: "おとを きいて、えを えらぼう。",
+    color: "#e6f3ff",
+    ink: "#1f5f8b",
+  },
   {
     id: "beginner",
     label: "はじめて",
@@ -105,6 +121,96 @@ function uniqueByEn(words: Word[]): Word[] {
     if (seen.has(w.en)) return false;
     seen.add(w.en);
     return true;
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ * リスニング — 音をきいて絵を選ぶ（#85）
+ * ------------------------------------------------------------------ */
+
+/**
+ * 絵で答えられるカテゴリだけを使う。
+ *
+ * 前置詞・形容詞・動詞・数詞は、絵だけでは語を一意に決められない
+ * （`in` と `on` の絵、`big` の絵、`sit` の絵…）。未就学児が
+ * 「音 → 意味（絵）」を学ぶ入口なので、具体名詞に絞る。
+ */
+const LISTENING_CATEGORY_IDS = [
+  "animals",
+  "food",
+  "clothes",
+  "vehicles",
+  "home",
+  "school",
+  "sports",
+  "body",
+  "family",
+] as const;
+
+/**
+ * 絵が語を表していない（別の意味に見える）単語は出さない。
+ * 誤答の絵と紛れると「聞き取れたのに間違い」になるため、迷わず外す。
+ */
+const LISTENING_EXCLUDED_IDS = new Set([
+  "body/head", // 🗣️ は「話す」の絵に見える
+  "home/table", // 🍽️ は「食べる」の絵に見える
+  "school/desk", // 🗄️ は書庫の絵
+  "sports/team", // 👥 は「人たち」で、単語の意味にならない
+]);
+
+/** リスニングで使える単語（具体名詞のみ）。 */
+function listeningWords(): Word[] {
+  return categories
+    .filter((category) =>
+      (LISTENING_CATEGORY_IDS as readonly string[]).includes(category.id),
+    )
+    .flatMap((category) => category.words)
+    .filter(
+      (word) =>
+        word.pos === "noun" &&
+        word.emoji.length > 0 &&
+        !LISTENING_EXCLUDED_IDS.has(word.id),
+    );
+}
+
+function buildListeningQuestions(count: number): QuizQuestion[] {
+  const pool = uniqueByEn(listeningWords());
+  const picked = shuffle(pool).slice(0, count);
+
+  return picked.map((word, i) => {
+    const categoryId = word.id.split("/")[0];
+    /* 同じ絵・同じ意味の語をダミーにすると、正解が 2 つに見える */
+    const candidates = pool.filter(
+      (w) => w.id !== word.id && w.ja !== word.ja && w.emoji !== word.emoji,
+    );
+    const sameCategory = candidates.filter((w) => w.id.startsWith(`${categoryId}/`));
+
+    /* 絵が重なると選択肢が 2 つに見えるので、絵文字も一意にする */
+    const distractors: Word[] = [];
+    const usedEmoji = new Set([word.emoji]);
+    for (const candidate of [...shuffle(sameCategory), ...shuffle(candidates)]) {
+      if (distractors.length >= 3) break;
+      if (usedEmoji.has(candidate.emoji)) continue;
+      usedEmoji.add(candidate.emoji);
+      distractors.push(candidate);
+    }
+    if (distractors.length < 3) {
+      throw new Error(`listening quiz: ダミーが足りません (${word.id})`);
+    }
+
+    const options = shuffle([word, ...distractors]);
+
+    return {
+      id: `listening-${i}-${word.en}`,
+      // 進捗キーはコンテンツ側の不変 ID (#83)。`en` から組み立てない。
+      wordId: word.id,
+      promptJa: "おとを きいて、えを えらぼう。",
+      choices: options.map((w) => w.en),
+      // 正解の位置は options の並び替えで決まる（index を固定しない）
+      pictures: options.map((w) => w.emoji),
+      answer: options.indexOf(word),
+      explanation: `“${word.en}” は「${word.ja}」だよ。`,
+    };
   });
 }
 
@@ -403,6 +509,8 @@ export function buildRound(
   count: number = QUIZ_LENGTH,
 ): QuizQuestion[] {
   switch (level) {
+    case "listening":
+      return buildListeningQuestions(count);
     case "beginner":
       return buildBeginnerQuestions(count);
     case "intermediate":

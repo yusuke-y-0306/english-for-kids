@@ -102,3 +102,46 @@ export async function playWordAudio(word: PlayableWord): Promise<PlayOutcome> {
     return speakWithDevice(word);
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * ほめことば / はげましのことば — issue #85
+ * ------------------------------------------------------------------ */
+
+export type PraiseKind = "correct" | "wrong";
+
+/**
+ * 正誤フィードバックのことば。
+ *
+ * 単語の音声と違って **事前生成の音声は持たない**（語数が固定でない・
+ * 追加のたびに生成物が増えるため）。端末 TTS の英語音声で読む。
+ * 声は端末で変わるが、ここは「意味が伝わればよい」のでフォールバック相当と
+ * して扱う（音が鳴らなくても、画面の ⭕ / ❌ で伝わる）。
+ */
+const PRAISE: Record<PraiseKind, readonly string[]> = {
+  correct: ["Great!", "Nice!", "Well done!"],
+  wrong: ["Try again!", "Almost!", "Good try!"],
+};
+
+/**
+ * 正誤に合わせて 1 ことば鳴らす。単語の読み上げとは排他
+ * （鳴っている単語音声を止めてから話す）。
+ */
+export function playPraise(kind: PraiseKind): PlayOutcome {
+  if (typeof window === "undefined") return "blocked";
+  if (isMuted()) return "muted";
+
+  const synth = window.speechSynthesis;
+  if (!synth || typeof SpeechSynthesisUtterance === "undefined") return "blocked";
+
+  stopWordAudio();
+  const phrases = PRAISE[kind];
+  const utterance = new SpeechSynthesisUtterance(
+    phrases[Math.floor(Math.random() * phrases.length)],
+  );
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+  /* 少し高めにして、子ども向けの明るい声にする */
+  utterance.pitch = 1.15;
+  synth.speak(utterance);
+  return "fallback";
+}
