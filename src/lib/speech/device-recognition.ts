@@ -20,6 +20,7 @@ import {
   type RecognitionSetup,
   type WasmReadiness,
 } from "./recognition-policy";
+import { LISTEN_TIMEOUT_MS } from "./listen-watchdog";
 
 export const DEVICE_RECOGNITION_LANG = "en-US";
 
@@ -177,7 +178,10 @@ export function createDeviceRecognizer(decision: PathDecision): RecognitionLike 
  * 1 回だけ聞き取る。失敗しても **リトライしない**。
  * @throws DeviceRecognitionError
  */
-export function listenOnce(recognizer: RecognitionLike, timeoutMs = 8000): Promise<DeviceRecognitionResult> {
+export function listenOnce(
+  recognizer: RecognitionLike,
+  timeoutMs = LISTEN_TIMEOUT_MS,
+): Promise<DeviceRecognitionResult> {
   return new Promise<DeviceRecognitionResult>((resolve, reject) => {
     let settled = false;
     const finish = (fn: () => void) => {

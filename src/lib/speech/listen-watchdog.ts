@@ -10,8 +10,30 @@
  * ここは判定だけを持つ純粋な部分 (unit テストで固定する)。
  */
 
-/** 画面が「きいてるよ…」を維持してよい上限 (ms)。超えたら必ず聞き直しを促す */
-export const LISTEN_WATCHDOG_MS = 30_000;
+/**
+ * 1 回の聞き取りの上限 (ms)。子どもが黙っていても待ち続けない。
+ * 画面の残り秒表示と認識側のタイムアウトで **同じ値** を使う (ズレると表示が嘘になる)。
+ */
+export const LISTEN_TIMEOUT_MS = 5_000;
+
+/**
+ * 画面が「きいてるよ…」を維持してよい上限 (ms)。超えたら必ず聞き直しを促す。
+ * 聞き取り上限 + 5 秒。端末側が想定外に止まっても、ここで必ず戻す。
+ */
+export const LISTEN_WATCHDOG_MS = 10_000;
+
+/**
+ * 聞き取り開始から `limit` まで残っている時間 (ms)。
+ * 画面のカウントダウン用。時計が巻き戻った場合は満額を返す。
+ */
+export function listenRemainingMs(
+  startedAt: number,
+  now: number,
+  limit: number = LISTEN_TIMEOUT_MS,
+): number {
+  if (!Number.isFinite(startedAt) || !Number.isFinite(now)) return limit;
+  return Math.max(0, limit - Math.max(0, now - startedAt));
+}
 
 /**
  * 聞き取り開始から `limit` を過ぎたか。

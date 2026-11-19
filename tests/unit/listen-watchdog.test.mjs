@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test, { describe } from "node:test";
 
-import { LISTEN_WATCHDOG_MS, isListenStuck } from "../../src/lib/speech/listen-watchdog.ts";
+import {
+  LISTEN_TIMEOUT_MS,
+  LISTEN_WATCHDOG_MS,
+  isListenStuck,
+  listenRemainingMs,
+} from "../../src/lib/speech/listen-watchdog.ts";
 
 /**
  * 「きいてるよ…」の番人 — issue #2
@@ -34,7 +39,33 @@ describe("isListenStuck", () => {
     assert.equal(isListenStuck(0, Number.POSITIVE_INFINITY), false);
   });
 
-  test("上限は 30 秒 (子どもの待ち時間としてここを超えたら戻す)", () => {
-    assert.equal(LISTEN_WATCHDOG_MS, 30_000);
+  test("上限は 10 秒 (子どもの待ち時間としてここを超えたら戻す)", () => {
+    assert.equal(LISTEN_WATCHDOG_MS, 10_000);
+  });
+});
+
+describe("listenRemainingMs", () => {
+  test("聞き取りの上限は 5 秒", () => {
+    assert.equal(LISTEN_TIMEOUT_MS, 5_000);
+  });
+
+  test("番人は聞き取り上限より後で必ず発火する", () => {
+    assert.ok(LISTEN_WATCHDOG_MS > LISTEN_TIMEOUT_MS);
+  });
+
+  test("経過とともに減り、0 で止まる", () => {
+    const startedAt = 1_000;
+    assert.equal(listenRemainingMs(startedAt, startedAt), 5_000);
+    assert.equal(listenRemainingMs(startedAt, startedAt + 2_000), 3_000);
+    assert.equal(listenRemainingMs(startedAt, startedAt + 5_000), 0);
+    assert.equal(listenRemainingMs(startedAt, startedAt + 9_000), 0);
+  });
+
+  test("時計が巻き戻っても満額を返す", () => {
+    assert.equal(listenRemainingMs(10_000, 9_000), LISTEN_TIMEOUT_MS);
+  });
+
+  test("数値でない時刻は満額を返す", () => {
+    assert.equal(listenRemainingMs(Number.NaN, 10_000), LISTEN_TIMEOUT_MS);
   });
 });
