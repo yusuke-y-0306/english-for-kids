@@ -20,6 +20,7 @@
  */
 
 import type { Stream, Transcriber, TranscriptEventListener } from "@moonshine-ai/moonshine-wasm";
+import { LISTEN_TIMEOUT_MS } from "./listen-watchdog";
 import { ensureModels, isModelReady, loadVerifiedFiles } from "./model-cache";
 import type { WasmReadiness } from "./recognition-policy";
 import { TARGET_SAMPLE_RATE, resampleTo16k, wasmSupportBlocker } from "./wasm-policy";
@@ -32,8 +33,8 @@ const ENGINE_URL = "/asr/moonshine/index.js";
 const WORKLET_URL = "/asr/capture-worklet.js";
 const WORKLET_NAME = "efk-capture";
 
-/** 1 回の聞き取りの上限。子どもが黙っていても待ち続けない */
-export const DEFAULT_LISTEN_TIMEOUT_MS = 8_000;
+/** 1 回の聞き取りの上限。子どもが黙っていても待ち続けない (画面の残り秒表示と共通) */
+export const DEFAULT_LISTEN_TIMEOUT_MS = LISTEN_TIMEOUT_MS;
 
 /* 聞き取りの「前さばき」にも上限を置く (issue #2)。
    タイマーは録音開始後にしか動いていなかったため、ここで止まると

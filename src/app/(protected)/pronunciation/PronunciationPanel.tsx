@@ -16,7 +16,12 @@ import {
 import type { RecognitionPath } from "@/lib/speech/recognition-policy";
 import type { PronunciationScore } from "@/lib/speech/scores";
 import { scorePronunciation } from "@/lib/speech/scoring";
-import { LISTEN_WATCHDOG_MS, isListenStuck } from "@/lib/speech/listen-watchdog";
+import {
+  LISTEN_TIMEOUT_MS,
+  LISTEN_WATCHDOG_MS,
+  isListenStuck,
+  listenRemainingMs,
+} from "@/lib/speech/listen-watchdog";
 import {
   collectSpeechDiagnostics,
   describeSpeechDiagnostics,
@@ -135,6 +140,8 @@ export default function PronunciationPanel() {
   const [notice, setNotice] = useState<string | null>(null);
   /** 聞き取りの世代番号。番人が切り上げたら古い結果を捨てる */
   const listenRunRef = useRef(0);
+  /** 聞き取りを始めた時刻。残り秒の表示に使う */
+  const [listenSince, setListenSince] = useState<number | null>(null);
   /** 準備が長引いたときだけ出す端末情報 (issue #2 の切り分け用) */
   const [diagnostics, setDiagnostics] = useState<SpeechDiagnostics | null>(null);
   /**
@@ -157,6 +164,22 @@ export default function PronunciationPanel() {
     return () => clearInterval(timer);
   }, [prepareSince]);
   const prepareElapsed = prepareSince === null ? 0 : Math.max(0, Math.round((now - prepareSince) / 1000));
+
+  /* 聞き取り中は残り秒を進める。「あと何秒で終わるか」が見えるだけで
+     体感の待ち時間は大きく変わる (issue #107) */
+  useEffect(() => {
+    if (phase !== "listening" || listenSince === null) return;
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 250);
+    return () => clearInterval(timer);
+  }, [phase, listenSince]);
+  const listenRemaining = listenSince === null ? LISTEN_TIMEOUT_MS : listenRemainingMs(listenSince, now);
+  const listenRemainingSec = Math.ceil(listenRemaining / 1000);
+  const listenProgress =
+    listenSince === null
+      ? 0
+      : Math.min(1, Math.max(0, (LISTEN_TIMEOUT_MS - listenRemaining) / LISTEN_TIMEOUT_MS));
 
   // 経路の判定はブラウザ API を触るので、描画中ではなくマウント後に 1 回だけ行う。
   // Safari は device が必ず使えないので、wasm の準備状態 (#79) が体験を決める。
@@ -290,6 +313,9 @@ export default function PronunciationPanel() {
 
     const runId = listenRunRef.current + 1;
     listenRunRef.current = runId;
+    const startedAt = Date.now();
+    setListenSince(startedAt);
+    setNow(startedAt);
     setPhase("listening");
     setResult(null);
     setNotice(null);
@@ -484,18 +510,34 @@ export default function PronunciationPanel() {
             /* 準備できていないなら押せない (押しても何も起きないボタンにしない) */
             disabled={!canListen || phase === "listening" || preparing !== null}
             aria-disabled={!canListen || phase === "listening" || preparing !== null}
+            aria-label={phase === "listening" ? "いま きいています" : undefined}
             className="rounded-full bg-[#ff8fb0] px-8 py-3 text-lg font-extrabold text-white shadow-[0_4px_0_rgba(176,58,99,0.35)] transition active:translate-y-0.5 active:shadow-none disabled:opacity-60"
           >
             {preparing !== null
               ? prepareLabel(preparing, prepareElapsed)
               : phase === "listening"
-                ? "きいてるよ…"
+                ? listenRemainingSec > 0
+                  ? `きいてるよ… あと ${listenRemainingSec}びょう`
+                  : "もうすぐ おわるよ…"
                 : !canListen
                   ? readiness === "needs-download"
                     ? "まず じゅんびを してね"
                     : "こえの じゅんび中…"
                   : "🎤 はなす"}
           </button>
+        )}
+
+        {/* 残り時間のバー。数字と一緒に「終わりが見える」ようにする */}
+        {phase === "listening" && (
+          <div
+            className="h-1.5 w-44 overflow-hidden rounded-full bg-[#ffd9e5]"
+            aria-hidden
+          >
+            <div
+              className="h-full rounded-full bg-[#ff8fb0] transition-[width] duration-200 ease-linear"
+              style={{ width: `${(1 - listenProgress) * 100}%` }}
+            />
+          </div>
         )}
 
         {/* 2 回目以降の「はなす」でも、ページを開き直した直後はエンジンの
