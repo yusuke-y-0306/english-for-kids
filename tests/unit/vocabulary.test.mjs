@@ -35,12 +35,12 @@ async function loadSources() {
 }
 
 describe("content/vocabulary", () => {
-  test("160 語が JSON から読める (15 カテゴリ, #86)", async () => {
+  test("200 語が JSON から読める (16 カテゴリ, #86 / #87)", async () => {
     const categories = buildCategories(await loadSources());
-    assert.equal(categories.length, 15);
+    assert.equal(categories.length, 16);
     assert.equal(
       categories.reduce((total, category) => total + category.words.length, 0),
-      160,
+      200,
     );
 
     const animals = categories.find((category) => category.id === "animals");
@@ -84,19 +84,40 @@ describe("content/vocabulary", () => {
     assert.ok(countByPos("noun") >= 60, "名詞は 60 語以上");
   });
 
-  test("カテゴリ間で en が重複しない (#86)", async () => {
+  test("同じカテゴリ内で en が重複しない (#86 / #87)", async () => {
     const categories = buildCategories(await loadSources());
-    const owner = new Map();
     for (const category of categories) {
+      const seen = new Set();
       for (const word of category.words) {
-        const previous = owner.get(word.en);
         assert.equal(
-          previous,
-          undefined,
-          `"${word.en}" が ${previous} と ${category.id} の両方にあります`,
+          seen.has(word.en),
+          false,
+          `"${word.en}" が ${category.id} の中で重複しています`,
         );
-        owner.set(word.en, category.id);
+        seen.add(word.en);
       }
+    }
+  });
+
+  test("サイトワードは Dolch Pre-K の 40 語で、例文と訳を持つ (#87)", async () => {
+    const categories = buildCategories(await loadSources());
+    const sightWords = categories.find((category) => category.id === "sight-words");
+    assert.ok(sightWords);
+    assert.equal(sightWords.words.length, 40);
+    assert.deepEqual(
+      sightWords.words.map((word) => word.en),
+      [
+        "a", "and", "away", "big", "blue", "can", "come", "down", "find", "for",
+        "funny", "go", "help", "here", "I", "in", "is", "it", "jump", "little",
+        "look", "make", "me", "my", "not", "one", "play", "red", "run", "said",
+        "see", "the", "three", "to", "two", "up", "we", "where", "yellow", "you",
+      ],
+    );
+    for (const word of sightWords.words) {
+      assert.equal(word.pos, "function");
+      assert.equal(word.level, "pre-a1");
+      assert.ok(word.example?.en.length > 0, `${word.id} に例文がありません`);
+      assert.ok(word.example?.ja.length > 0, `${word.id} に例文の訳がありません`);
     }
   });
 

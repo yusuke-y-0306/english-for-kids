@@ -1,0 +1,408 @@
+{
+  "id": "sight-words",
+  "label": "サイトワード",
+  "emoji": "🔤",
+  "color": "from-rose-300 to-pink-400",
+  "words": [
+    {
+      "id": "sight-words/a",
+      "en": "a",
+      "ja": "ひとつの",
+      "emoji": "🅰️",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/a.mp3",
+      "example": { "en": "I see a cat.", "ja": "ねこが みえるよ。" }
+    },
+    {
+      "id": "sight-words/and",
+      "en": "and",
+      "ja": "〜と",
+      "emoji": "➕",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/and.mp3",
+      "example": { "en": "A cat and a dog.", "ja": "ねこと いぬ。" }
+    },
+    {
+      "id": "sight-words/away",
+      "en": "away",
+      "ja": "むこうへ",
+      "emoji": "🛫",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/away.mp3",
+      "example": { "en": "The bird went away.", "ja": "とりが とんで いったよ。" }
+    },
+    {
+      "id": "sight-words/big",
+      "en": "big",
+      "ja": "おおきい",
+      "emoji": "🐘",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/big.mp3",
+      "example": { "en": "A big elephant.", "ja": "おおきな ぞう。" }
+    },
+    {
+      "id": "sight-words/blue",
+      "en": "blue",
+      "ja": "あおい",
+      "emoji": "🔵",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/blue.mp3",
+      "example": { "en": "The sky is blue.", "ja": "そらは あおいよ。" }
+    },
+    {
+      "id": "sight-words/can",
+      "en": "can",
+      "ja": "できる",
+      "emoji": "💪",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/can.mp3",
+      "example": { "en": "I can jump.", "ja": "ジャンプ できるよ。" }
+    },
+    {
+      "id": "sight-words/come",
+      "en": "come",
+      "ja": "くる",
+      "emoji": "👋",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/come.mp3",
+      "example": { "en": "Come here, please.", "ja": "こっちへ きてね。" }
+    },
+    {
+      "id": "sight-words/down",
+      "en": "down",
+      "ja": "したへ",
+      "emoji": "⬇️",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/down.mp3",
+      "example": { "en": "Sit down, please.", "ja": "すわってね。" }
+    },
+    {
+      "id": "sight-words/find",
+      "en": "find",
+      "ja": "みつける",
+      "emoji": "🔍",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/find.mp3",
+      "example": { "en": "I can find my ball.", "ja": "ボールを みつけられるよ。" }
+    },
+    {
+      "id": "sight-words/for",
+      "en": "for",
+      "ja": "〜のために",
+      "emoji": "🎁",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/for.mp3",
+      "example": { "en": "This is for you.", "ja": "これは あなたの ためだよ。" }
+    },
+    {
+      "id": "sight-words/funny",
+      "en": "funny",
+      "ja": "おもしろい",
+      "emoji": "😂",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/funny.mp3",
+      "example": { "en": "A funny monkey.", "ja": "おもしろい さる。" }
+    },
+    {
+      "id": "sight-words/go",
+      "en": "go",
+      "ja": "いく",
+      "emoji": "🚶",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/go.mp3",
+      "example": { "en": "Let's go to the park.", "ja": "こうえんへ いこう。" }
+    },
+    {
+      "id": "sight-words/help",
+      "en": "help",
+      "ja": "てつだう",
+      "emoji": "🆘",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/help.mp3",
+      "example": { "en": "Can you help me?", "ja": "てつだって くれる？" }
+    },
+    {
+      "id": "sight-words/here",
+      "en": "here",
+      "ja": "ここ",
+      "emoji": "📍",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/here.mp3",
+      "example": { "en": "Come here.", "ja": "ここへ きて。" }
+    },
+    {
+      "id": "sight-words/i",
+      "en": "I",
+      "ja": "わたし",
+      "emoji": "🙋",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/i.mp3",
+      "example": { "en": "I am happy.", "ja": "わたしは うれしいよ。" }
+    },
+    {
+      "id": "sight-words/in",
+      "en": "in",
+      "ja": "〜のなかに",
+      "emoji": "📥",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/in.mp3",
+      "example": { "en": "The cat is in the box.", "ja": "ねこが はこの なかに いるよ。" }
+    },
+    {
+      "id": "sight-words/is",
+      "en": "is",
+      "ja": "〜です",
+      "emoji": "🟰",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/is.mp3",
+      "example": { "en": "She is my mom.", "ja": "かのじょは わたしの ママだよ。" }
+    },
+    {
+      "id": "sight-words/it",
+      "en": "it",
+      "ja": "それ",
+      "emoji": "👉",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/it.mp3",
+      "example": { "en": "It is a dog.", "ja": "それは いぬだよ。" }
+    },
+    {
+      "id": "sight-words/jump",
+      "en": "jump",
+      "ja": "ジャンプする",
+      "emoji": "🦘",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/jump.mp3",
+      "example": { "en": "I can jump high.", "ja": "たかく ジャンプ できるよ。" }
+    },
+    {
+      "id": "sight-words/little",
+      "en": "little",
+      "ja": "ちいさい",
+      "emoji": "🐜",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/little.mp3",
+      "example": { "en": "A little mouse.", "ja": "ちいさな ねずみ。" }
+    },
+    {
+      "id": "sight-words/look",
+      "en": "look",
+      "ja": "みる",
+      "emoji": "👀",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/look.mp3",
+      "example": { "en": "Look at the moon.", "ja": "つきを みて。" }
+    },
+    {
+      "id": "sight-words/make",
+      "en": "make",
+      "ja": "つくる",
+      "emoji": "🛠️",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/make.mp3",
+      "example": { "en": "Let's make a cake.", "ja": "ケーキを つくろう。" }
+    },
+    {
+      "id": "sight-words/me",
+      "en": "me",
+      "ja": "わたしを",
+      "emoji": "🧒",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/me.mp3",
+      "example": { "en": "Look at me.", "ja": "わたしを みて。" }
+    },
+    {
+      "id": "sight-words/my",
+      "en": "my",
+      "ja": "わたしの",
+      "emoji": "🎒",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/my.mp3",
+      "example": { "en": "This is my bag.", "ja": "これは わたしの かばんだよ。" }
+    },
+    {
+      "id": "sight-words/not",
+      "en": "not",
+      "ja": "〜ない",
+      "emoji": "🚫",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/not.mp3",
+      "example": { "en": "I am not sad.", "ja": "かなしくないよ。" }
+    },
+    {
+      "id": "sight-words/one",
+      "en": "one",
+      "ja": "いち",
+      "emoji": "1️⃣",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/one.mp3",
+      "example": { "en": "One little cat.", "ja": "ちいさな ねこが いっぴき。" }
+    },
+    {
+      "id": "sight-words/play",
+      "en": "play",
+      "ja": "あそぶ",
+      "emoji": "🎮",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/play.mp3",
+      "example": { "en": "Let's play with the ball.", "ja": "ボールで あそぼう。" }
+    },
+    {
+      "id": "sight-words/red",
+      "en": "red",
+      "ja": "あかい",
+      "emoji": "🔴",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/red.mp3",
+      "example": { "en": "A red apple.", "ja": "あかい りんご。" }
+    },
+    {
+      "id": "sight-words/run",
+      "en": "run",
+      "ja": "はしる",
+      "emoji": "🏃",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/run.mp3",
+      "example": { "en": "I can run fast.", "ja": "はやく はしれるよ。" }
+    },
+    {
+      "id": "sight-words/said",
+      "en": "said",
+      "ja": "いった",
+      "emoji": "💬",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/said.mp3",
+      "example": { "en": "She said hello.", "ja": "かのじょが こんにちはと いったよ。" }
+    },
+    {
+      "id": "sight-words/see",
+      "en": "see",
+      "ja": "みえる",
+      "emoji": "👁️",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/see.mp3",
+      "example": { "en": "I can see a bird.", "ja": "とりが みえるよ。" }
+    },
+    {
+      "id": "sight-words/the",
+      "en": "the",
+      "ja": "その",
+      "emoji": "🔤",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/the.mp3",
+      "example": { "en": "The cat is here.", "ja": "その ねこが ここに いるよ。" }
+    },
+    {
+      "id": "sight-words/three",
+      "en": "three",
+      "ja": "さん",
+      "emoji": "3️⃣",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/three.mp3",
+      "example": { "en": "Three little ducks.", "ja": "あひるが さんびき。" }
+    },
+    {
+      "id": "sight-words/to",
+      "en": "to",
+      "ja": "〜へ",
+      "emoji": "➡️",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/to.mp3",
+      "example": { "en": "I go to school.", "ja": "がっこうへ いくよ。" }
+    },
+    {
+      "id": "sight-words/two",
+      "en": "two",
+      "ja": "に",
+      "emoji": "2️⃣",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/two.mp3",
+      "example": { "en": "Two happy dogs.", "ja": "しあわせそうな いぬが にひき。" }
+    },
+    {
+      "id": "sight-words/up",
+      "en": "up",
+      "ja": "うえへ",
+      "emoji": "⬆️",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/up.mp3",
+      "example": { "en": "Look up at the sky.", "ja": "そらを みあげて。" }
+    },
+    {
+      "id": "sight-words/we",
+      "en": "we",
+      "ja": "わたしたち",
+      "emoji": "👫",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/we.mp3",
+      "example": { "en": "We are friends.", "ja": "わたしたちは ともだち。" }
+    },
+    {
+      "id": "sight-words/where",
+      "en": "where",
+      "ja": "どこ",
+      "emoji": "❓",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/where.mp3",
+      "example": { "en": "Where is my cat?", "ja": "わたしの ねこは どこ？" }
+    },
+    {
+      "id": "sight-words/yellow",
+      "en": "yellow",
+      "ja": "きいろい",
+      "emoji": "🟡",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/yellow.mp3",
+      "example": { "en": "A yellow sun.", "ja": "きいろい たいよう。" }
+    },
+    {
+      "id": "sight-words/you",
+      "en": "you",
+      "ja": "あなた",
+      "emoji": "👦",
+      "pos": "function",
+      "level": "pre-a1",
+      "audio": "/audio/words/sight-words/you.mp3",
+      "example": { "en": "You are my friend.", "ja": "あなたは わたしの ともだち。" }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 /**
  * FeatureIcon — メニューカード用のアイコン（絵文字に依存せず SVG で描画）
  */
-export type FeatureIconName = "cards" | "puzzle" | "mic" | "game" | "chart";
+export type FeatureIconName = "cards" | "book" | "puzzle" | "mic" | "game" | "chart";
 
 export default function FeatureIcon({
   name,
@@ -40,6 +40,18 @@ export default function FeatureIcon({
           <rect x="23" y="12" width="12" height="10" rx="3" fill="#ffd93d" stroke="#e0b21c" />
           <rect x="9" y="30" width="12" height="10" rx="3" fill="#6cc24a" stroke="#4a9b2f" />
           <rect x="23" y="30" width="12" height="10" rx="3" fill="#ff9f43" stroke="#d9701f" />
+        </svg>
+      );
+    case "book":
+      return (
+        <svg {...common}>
+          <path
+            d="M24 12c-4-3-9-4-14-4v26c5 0 10 1 14 4 4-3 9-4 14-4V8c-5 0-10 1-14 4Z"
+            fill="#fff8ec"
+            stroke="#e0761f"
+          />
+          <path d="M24 12v26" stroke="#e0761f" />
+          <path d="M15 18h5M15 24h5M15 30h5M29 18h4M29 24h4M29 30h4" stroke="#ff6b6b" />
         </svg>
       );
     case "mic":

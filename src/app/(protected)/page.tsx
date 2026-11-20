@@ -34,6 +34,16 @@ const features: Feature[] = [
     ring: "#e0b21c",
   },
   {
+    icon: "book",
+    title: "サイトワード",
+    en: "Sight Words",
+    desc: "the・and・is など、よく でる ことばを おぼえよう。",
+    href: "/sight-words",
+    bg: "bg-[#ffeaf1]",
+    ink: "text-[#b03a63]",
+    ring: "#ff8fb0",
+  },
+  {
     icon: "puzzle",
     title: "単語ならべかえ",
     en: "Word Builder",

@@ -115,7 +115,7 @@ export function shuffle<T>(arr: readonly T[]): T[] {
   return a;
 }
 
-function uniqueByEn(words: Word[]): Word[] {
+function uniqueByEn<T extends { en: string }>(words: T[]): T[] {
   const seen = new Set<string>();
   return words.filter((w) => {
     if (seen.has(w.en)) return false;
@@ -222,7 +222,9 @@ function buildBeginnerQuestions(count: number): QuizQuestion[] {
   const all = categories.flatMap((c) =>
     c.words.map((w) => ({ ...w, categoryId: c.id })),
   );
-  const picked = shuffle(all).slice(0, count);
+  /* サイトワードは既存カテゴリと綴りが重なる (big / red …)。
+     同じ語が 1 ラウンドに 2 回出ないよう、出題側で畳む (#87) */
+  const picked = shuffle(uniqueByEn(all)).slice(0, count);
 
   return picked.map((word, i) => {
     const category = categories.find((c) => c.id === word.categoryId);
