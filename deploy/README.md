@@ -8,8 +8,9 @@ GitHub Actions (CI: PR時 / Deploy: main時)
    │  CI      : ubuntu-latest (ホステッド) で lint / typecheck / build
    │  Deploy  : ubuntu-latest (ホステッド) から VPS へ SSH
    │              └─► 160.251.252.114  (~/apps/english-for-kids)
-   │                    git reset --hard origin/main → npm ci → npm run build
-   │                    systemctl --user restart english-for-kids → healthcheck
+   │                    git reset --hard origin/main → npm ci
+   │                    NEXT_DIST_DIR=.next-build npm run build
+   │                    .next とアトミックに入れ替え → 再起動 → healthcheck
    ▼
 Cloudflare Tunnel ── (公開ホスト名) ──► http://127.0.0.1:3000 (Next.js)
 ```
@@ -18,6 +19,21 @@ Cloudflare Tunnel ── (公開ホスト名) ──► http://127.0.0.1:3000 (N
 - **アプリ**: Next.js (`.next`) を `next start` で常駐。`127.0.0.1:3000` のみ listen (外部非公開)。
 - **プロセス管理**: systemd **user** unit `english-for-kids.service` (linger 有効なので再起動後も自動起動)。
 - **公開**: `cloudflared` のトンネルで `http://127.0.0.1:3000` を外部公開。
+
+## デプロイ中の UI 崩れ対策 (issue #111)
+
+以前は **サービス稼働中に `rm -rf .next`** してからビルドしていた。そのためデプロイの
+3 分間、動いている Next.js が存在しない CSS/JS を参照し、**素の HTML** が表示されていた。
+
+現在の手順:
+
+1. `NEXT_DIST_DIR=.next-build npm run build` で **別ディレクトリ** にビルド（本番の `.next` は触らない）
+2. ビルド成功後に `stop` → `.next` を `.next-prev` に退避 → `.next-build` を `.next` に rename → `start`
+3. healthcheck が失敗したら `.next-prev` に戻して再起動（ロールバック）
+4. ビルドが失敗した場合は旧 `.next` のままサービス継続
+
+ダウンタイムは再起動の数秒のみ。`NEXT_DIST_DIR` は `next.config.ts` の `distDir` で読み、
+未指定なら従来どおり `.next` を使う。
   **現状は Quick Tunnel** (`https://<random>.trycloudflare.com`、再起動でURLが変わる)。
   詳細は下記「サイトURLの扱い (issue #18)」を参照。
 - **デプロイ**: main マージ時に **GitHub ホステッドランナー** が VPS へ **SSH** して実行。

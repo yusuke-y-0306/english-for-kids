@@ -56,6 +56,13 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   // サーバの種類を晒さない
   poweredByHeader: false,
+  /*
+   * 出力先を差し替え可能にする (issue #111)。
+   * デプロイ時は `.next-build` にビルドしてから、稼働中の `.next` と
+   * アトミックに入れ替える。稼働中に `.next` を消すと CSS/JS が 404 になり、
+   * 数分間 UI が崩れるため。
+   */
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   async headers() {
     return [
       {
