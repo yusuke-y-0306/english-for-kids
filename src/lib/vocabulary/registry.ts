@@ -10,6 +10,7 @@ import numbers from "../../../content/vocabulary/numbers.json" with { type: "jso
 import prepositions from "../../../content/vocabulary/prepositions.json" with { type: "json" };
 import school from "../../../content/vocabulary/school.json" with { type: "json" };
 import sports from "../../../content/vocabulary/sports.json" with { type: "json" };
+import sightWords from "../../../content/vocabulary/sight-words.json" with { type: "json" };
 import vehicles from "../../../content/vocabulary/vehicles.json" with { type: "json" };
 import verbs from "../../../content/vocabulary/verbs.json" with { type: "json" };
 import weather from "../../../content/vocabulary/weather.json" with { type: "json" };
@@ -40,6 +41,8 @@ export const vocabularySources: VocabularySource[] = [
   { path: "content/vocabulary/weather.json", data: weather },
   { path: "content/vocabulary/clothes.json", data: clothes },
   { path: "content/vocabulary/sports.json", data: sports },
+  // #87: 絵で描けない高頻度語 (Dolch Pre-K)。「読む」への入口
+  { path: "content/vocabulary/sight-words.json", data: sightWords },
 ];
 
 /**

@@ -234,7 +234,7 @@ export function masteryOf(
 /**
  * 手を付けた単語だけを、渡された順 (`words.ts` の並び) で返す。
  *
- * 全 160 語を毎回返すと payload が膨らむので、記録のある単語だけ。
+ * 全 200 語を毎回返すと payload が膨らむので、記録のある単語だけ。
  * 「まだ」の語数は `summarizeCategories()` が数える (画面はそれで足りる)。
  */
 export function summarizeWords(
@@ -259,7 +259,7 @@ export type CategoryLike = {
   id: string;
   label: string;
   emoji: string;
-  words: ReadonlyArray<{ en: string }>;
+  words: ReadonlyArray<{ id: string }>;
 };
 
 export type CategoryProgress = {
@@ -286,7 +286,9 @@ export function summarizeCategories(
     let mastered = 0;
     let learning = 0;
     for (const word of category.words) {
-      const level = masteryOf(`${category.id}/${word.en}`, input).level;
+      /* 保存キーは JSON の `id`。`en` から組み立てると "I" のような
+         大文字を含む語で進捗が引けなくなる (#87) */
+      const level = masteryOf(word.id, input).level;
       if (level === "mastered") mastered += 1;
       else if (level === "learning") learning += 1;
     }

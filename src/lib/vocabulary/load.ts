@@ -26,6 +26,8 @@ export const WORD_POS = [
   "preposition",
   "conjunction",
   "interjection",
+  /** サイトワード (the / and / is など)。意味より「見て読めること」を優先する語 */
+  "function",
 ] as const;
 
 export type WordPos = (typeof WORD_POS)[number];
@@ -34,6 +36,12 @@ export type WordPos = (typeof WORD_POS)[number];
 export const CEFR_LEVELS = ["pre-a1", "a1", "a2"] as const;
 
 export type CefrLevel = (typeof CEFR_LEVELS)[number];
+
+/** サイトワードの文脈例。音声は単語ぶんだけを必須にし、例文は文字で持つ */
+export type WordExample = {
+  en: string;
+  ja: string;
+};
 
 export type Word = {
   /**
@@ -59,6 +67,8 @@ export type Word = {
   homophones?: string[];
   /** 意味は同じだが別の語 (mother → "mom")。お手本の語ではないので `ok` にはせず `close` 止まり */
   variants?: string[];
+  /** 文脈例 (サイトワード)。絵で描けない語を「文の中で」覚えるために使う */
+  example?: WordExample;
 };
 
 export type Category = {
@@ -100,6 +110,7 @@ const WORD_KEYS = [
   "image",
   "homophones",
   "variants",
+  "example",
 ] as const;
 
 function fail(where: string, message: string): never {
@@ -172,6 +183,20 @@ function stringList(
   return [...found];
 }
 
+function parseExample(
+  raw: Record<string, unknown>,
+  where: string,
+): WordExample | undefined {
+  if (!("example" in raw)) return undefined;
+  const found = raw.example;
+  if (!isRecord(found)) fail(where, "must be an object");
+  checkKeys(found, ["en", "ja"] as const, where);
+  return {
+    en: requireString(found, "en", where),
+    ja: requireString(found, "ja", where),
+  };
+}
+
 function checkEnum<T extends string>(
   value: unknown,
   allowed: readonly T[],
@@ -218,6 +243,7 @@ function parseWord(
     level: checkEnum(raw.level, CEFR_LEVELS, `${at}.level`),
     audio: nullablePublicPath(raw, "audio", at) ?? null,
     image: nullablePublicPath(raw, "image", at),
+    example: parseExample(raw, `${at}.example`),
     homophones: stringList(raw, "homophones", at),
     variants: stringList(raw, "variants", at),
   };

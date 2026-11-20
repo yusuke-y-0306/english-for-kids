@@ -52,7 +52,7 @@ export default function FlashcardsPage() {
     const next = !flipped;
     setFlipped(next);
     /* 意味を見た瞬間を「1 枚」と数える (おもてを見ただけでは数えない) */
-    if (next) recordView(`${cat.id}/${word.en}`);
+    if (next) recordView(word.id);
   }
 
   function selectCategory(id: string) {
