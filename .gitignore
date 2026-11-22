@@ -53,3 +53,8 @@ next-env.d.ts
 
 # verify harness のレポート (scripts/verify.mjs)
 /.verify/
+
+# E2E (Playwright): フィクスチャ・成果物はコミットしない
+/.e2e/
+/test-results/
+/playwright-report/

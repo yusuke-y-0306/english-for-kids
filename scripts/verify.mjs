@@ -23,6 +23,7 @@
 
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -35,6 +36,13 @@ const jsonIdx = argv.indexOf("--json");
 const jsonPath = jsonIdx >= 0 ? path.resolve(argv[jsonIdx + 1]) : null;
 const HEADERS_PORT = 3100;
 
+/* ブラウザ E2E 用の共有ライブラリ。root 無しで入れた場合の置き場 (docs/harness.md 参照)。
+ * CI は `playwright install --with-deps` でシステム側に入るので、ここは無くてもよい。 */
+const LOCAL_PW_LIBS = path.join(os.homedir(), ".local/lib/playwright-deps/usr/lib/x86_64-linux-gnu");
+const EXTRA_ENV = existsSync(LOCAL_PW_LIBS)
+  ? { LD_LIBRARY_PATH: [LOCAL_PW_LIBS, process.env.LD_LIBRARY_PATH].filter(Boolean).join(":") }
+  : {};
+
 const C = process.stdout.isTTY
   ? { dim: "\x1b[2m", red: "\x1b[31m", green: "\x1b[32m", yellow: "\x1b[33m", bold: "\x1b[1m", reset: "\x1b[0m" }
   : { dim: "", red: "", green: "", yellow: "", bold: "", reset: "" };
@@ -42,7 +50,7 @@ const C = process.stdout.isTTY
 function runStep(cmd, args, { env = {}, timeoutMs = 15 * 60 * 1000 } = {}) {
   return new Promise((resolve) => {
     const startedAt = Date.now();
-    const child = spawn(cmd, args, { cwd: ROOT, env: { ...process.env, ...env } });
+    const child = spawn(cmd, args, { cwd: ROOT, env: { ...process.env, ...EXTRA_ENV, ...env } });
     let out = "";
     const collect = (buf) => {
       const s = buf.toString();
@@ -65,7 +73,10 @@ function runStep(cmd, args, { env = {}, timeoutMs = 15 * 60 * 1000 } = {}) {
 
 /** build 済みサーバを起動し、/login が応答するまで待ってからフックを実行する */
 async function withServer(port, fn) {
-  const server = spawn("npm", ["run", "start", "--", "-p", String(port)], { cwd: ROOT });
+  const server = spawn("npm", ["run", "start", "--", "-p", String(port)], {
+    cwd: ROOT,
+    env: { ...process.env, ...EXTRA_ENV },
+  });
   let log = "";
   const collect = (b) => (log += b.toString());
   server.stdout.on("data", collect);
@@ -128,6 +139,9 @@ const steps = [
   // CI は `npm run test` (unit + api)。ただし API 側は build 依存なので分けて扱う。
   { ciName: "Unit / API tests", label: "test:unit", cmd: "npm", args: ["run", "test:unit"] },
   { ciName: "Unit / API tests", label: "test:api", cmd: "npm", args: ["run", "test:api"], needsBuild: true },
+  { ciName: "E2E (Playwright)", label: "test:e2e", cmd: "npm", args: ["run", "test:e2e"], needsBuild: true, timeoutMs: 10 * 60 * 1000 },
+  /* CI だけが実行するステップ (ドリフト検出の警告から除外するため登録だけしておく) */
+  { ciName: "Install Playwright browsers", label: "(CI のみ) browser install", ciOnly: true },
 ];
 
 const tail = (s, n = 40) => s.split("\n").slice(-n).join("\n");
@@ -138,6 +152,11 @@ async function main() {
 
   const results = [];
   for (const step of steps) {
+    if (step.ciOnly) {
+      results.push({ ciName: step.ciName, label: step.label, status: "ci-only", ms: 0 });
+      console.log(`${C.dim}− ${step.label}${C.reset}`);
+      continue;
+    }
     if (noBuild && step.needsBuild) {
       results.push({
         ciName: step.ciName,
@@ -194,7 +213,7 @@ async function main() {
   writeFileSync(path.join(REPORT_DIR, "latest.json"), JSON.stringify(report, null, 2));
   if (jsonPath) writeFileSync(jsonPath, JSON.stringify(report, null, 2));
 
-  const summary = `${results.filter((r) => r.status === "pass").length}/${results.filter((r) => r.status !== "skipped").length} passed · ${(totalMs / 1000).toFixed(1)}s`;
+  const summary = `${results.filter((r) => r.status === "pass").length}/${results.filter((r) => r.status === "pass" || r.status === "fail").length} passed · ${(totalMs / 1000).toFixed(1)}s`;
   console.log(`\n${failed.length === 0 ? C.green + "OK" : C.red + "FAIL"} ${C.reset}${summary}`);
   if (failed.length) console.log(`${C.red}赤: ${failed.map((f) => f.label).join(", ")}${C.reset}`);
   process.exit(failed.length === 0 ? 0 : 1);

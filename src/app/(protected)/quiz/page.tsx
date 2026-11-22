@@ -455,6 +455,8 @@ export default function QuizPage() {
               >
                 <button
                   onClick={() => start(l)}
+                  data-testid="quiz-level"
+                  data-level={l.id}
                   style={{ backgroundColor: l.color }}
                   className="group flex w-full items-center gap-4 rounded-[26px] border-4 border-white p-4 text-left shadow-[0_8px_20px_rgba(122,104,87,0.14)] transition hover:-translate-y-1 hover:shadow-[0_16px_30px_rgba(122,104,87,0.2)] active:translate-y-0.5 sm:p-5"
                 >
@@ -630,6 +632,7 @@ export default function QuizPage() {
                     onClick={() => answer(i)}
                     disabled={answered}
                     aria-label={choice}
+                    data-testid="quiz-choice"
                     className={`relative flex min-h-28 flex-col items-center justify-center gap-1.5 rounded-2xl border-[3px] px-3 py-4 font-extrabold transition ${look} ${
                       answered ? "cursor-default" : ""
                     }`}
@@ -659,6 +662,7 @@ export default function QuizPage() {
                   key={`${choice}-${i}`}
                   onClick={() => answer(i)}
                   disabled={answered}
+                  data-testid="quiz-choice"
                   className={`flex min-h-14 items-center gap-2.5 rounded-2xl border-[3px] px-3.5 py-3 text-left font-extrabold transition ${look} ${
                     level.id === "beginner" ? "text-lg" : "text-[0.95rem] leading-snug"
                   } ${answered ? "cursor-default" : ""}`}
@@ -736,6 +740,7 @@ export default function QuizPage() {
           <div className="mt-auto pt-5">
             <button
               onClick={next}
+              data-testid="quiz-next"
               disabled={!answered}
               className="min-h-13 w-full rounded-full bg-[#f4801f] px-8 py-3.5 text-base font-extrabold text-white shadow-[0_5px_0_#c25f0d] transition hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_2px_0_#c25f0d] disabled:cursor-not-allowed disabled:bg-[#c3b09a] disabled:text-white disabled:shadow-[0_4px_0_#a89579] disabled:hover:translate-y-0"
             >

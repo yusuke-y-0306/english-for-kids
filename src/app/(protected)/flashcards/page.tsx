@@ -88,7 +88,10 @@ export default function FlashcardsPage() {
           フラッシュカード
         </h1>
         <div className="flex items-center gap-1.5">
-          <span className="rounded-full bg-[#fff6e3] px-3 py-1.5 text-xs font-extrabold text-[#a85f08]">
+          <span
+            data-testid="flashcard-progress"
+            className="rounded-full bg-[#fff6e3] px-3 py-1.5 text-xs font-extrabold text-[#a85f08]"
+          >
             {index + 1} / {total}
           </span>
           <MuteToggle />
@@ -122,6 +125,7 @@ export default function FlashcardsPage() {
           type="button"
           onClick={flip}
           aria-label="カードをめくる"
+          data-testid="flashcard"
           className="relative block h-72 w-full [transform-style:preserve-3d] transition-transform duration-500 ease-out sm:h-80"
           style={{ transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
         >
@@ -173,6 +177,7 @@ export default function FlashcardsPage() {
         </button>
         <button
           onClick={() => go(1)}
+          data-testid="flashcard-next"
           className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-white text-lg font-extrabold text-[#5b4a3c] shadow-[0_4px_0_rgba(122,104,87,0.18)] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
           aria-label="つぎのカード"
         >
