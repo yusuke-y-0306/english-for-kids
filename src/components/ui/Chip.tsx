@@ -29,6 +29,11 @@ export function Chip({
       {...props}
     >
       {children}
+      {selected && (
+        <span aria-hidden className="ml-1 text-[0.9em] leading-none">
+          ✓
+        </span>
+      )}
     </button>
   );
 }
