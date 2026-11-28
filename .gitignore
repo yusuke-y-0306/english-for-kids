@@ -50,3 +50,11 @@ next-env.d.ts
 
 # 端末内認識エンジン (issue #79): npm 依存からビルド時にコピーする
 /public/asr/moonshine/
+
+# verify harness のレポート (scripts/verify.mjs)
+/.verify/
+
+# E2E (Playwright): フィクスチャ・成果物はコミットしない
+/.e2e/
+/test-results/
+/playwright-report/

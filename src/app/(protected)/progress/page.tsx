@@ -196,10 +196,10 @@ function TodayCard({
 
       <dl className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
         {/* 1 問ごとに記録するので、カードの「まい」と並べられるのは出題数 (#76) */}
-        <Stat label="クイズ" value={`${quiz.total}`} unit="もん" color="bg-[#eef7e2]" />
-        <Stat label="せいかい" value={`${quiz.accuracy}`} unit="%" color="bg-[#e6f6ff]" />
-        <Stat label="カード" value={`${cards.views}`} unit="まい" color="bg-[#fff3d6]" />
-        <Stat label="はつおん" value={`${pronunciation.attempts}`} unit="かい" color="bg-[#ffeaf1]" />
+        <Stat testid="stat-quiz" label="クイズ" value={`${quiz.total}`} unit="もん" color="bg-[#eef7e2]" />
+        <Stat testid="stat-accuracy" label="せいかい" value={`${quiz.accuracy}`} unit="%" color="bg-[#e6f6ff]" />
+        <Stat testid="stat-cards" label="カード" value={`${cards.views}`} unit="まい" color="bg-[#fff3d6]" />
+        <Stat testid="stat-pronunciation" label="はつおん" value={`${pronunciation.attempts}`} unit="かい" color="bg-[#ffeaf1]" />
       </dl>
 
       <p className="mt-3 text-[0.8rem] font-bold text-[#8f7a5e]">
@@ -216,14 +216,16 @@ function Stat({
   value,
   unit,
   color,
+  testid,
 }: {
   label: string;
   value: string;
   unit: string;
   color: string;
+  testid?: string;
 }) {
   return (
-    <div className={`rounded-2xl ${color} px-2 py-3 text-center`}>
+    <div data-testid={testid} className={`rounded-2xl ${color} px-2 py-3 text-center`}>
       <dt className="text-[0.66rem] font-extrabold text-[#5b4a3c]">{label}</dt>
       <dd className="mt-1 text-xl leading-none font-extrabold text-ink sm:text-2xl">
         {value}

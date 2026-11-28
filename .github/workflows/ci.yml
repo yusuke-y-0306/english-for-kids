@@ -61,3 +61,11 @@ jobs:
       # 他人の userId を HTTP 越しに確かめる。
       - name: Unit / API tests
         run: npm run test
+      # ブラウザ E2E。ビルド済み成果物に対して、実際の画面操作で
+      # 「カードをめくる → クイズを1ラウンド → 進捗に出る」までを確かめる。
+      # フィクスチャ (署名済みセッション cookie / 専用データディレクトリ) は
+      # `npm run test:e2e` の前段 (scripts/e2e/prepare.mjs) が作る。
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: E2E (Playwright)
+        run: npm run test:e2e
