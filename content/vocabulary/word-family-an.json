@@ -1,0 +1,80 @@
+{
+  "id": "word-family-an",
+  "label": "-an の ことば",
+  "emoji": "🥫",
+  "color": "from-teal-300 to-cyan-400",
+  "words": [
+    {
+      "id": "word-family-an/can",
+      "en": "can",
+      "ja": "かん",
+      "emoji": "🥫",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-an/can.mp3"
+    },
+    {
+      "id": "word-family-an/fan",
+      "en": "fan",
+      "ja": "せんぷうき",
+      "emoji": "🪭",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-an/fan.mp3"
+    },
+    {
+      "id": "word-family-an/man",
+      "en": "man",
+      "ja": "おとこのひと",
+      "emoji": "🧍",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-an/man.mp3"
+    },
+    {
+      "id": "word-family-an/pan",
+      "en": "pan",
+      "ja": "フライパン",
+      "emoji": "🍳",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-an/pan.mp3"
+    },
+    {
+      "id": "word-family-an/ran",
+      "en": "ran",
+      "ja": "はしった",
+      "emoji": "🏃",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-an/ran.mp3"
+    },
+    {
+      "id": "word-family-an/van",
+      "en": "van",
+      "ja": "バン",
+      "emoji": "🚐",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-an/van.mp3"
+    },
+    {
+      "id": "word-family-an/tan",
+      "en": "tan",
+      "ja": "やけたいろ",
+      "emoji": "🟫",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-an/tan.mp3"
+    },
+    {
+      "id": "word-family-an/ban",
+      "en": "ban",
+      "ja": "きんし",
+      "emoji": "🚫",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-an/ban.mp3"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "id": "word-family-ig",
+  "label": "-ig の ことば",
+  "emoji": "🐷",
+  "color": "from-pink-300 to-rose-400",
+  "words": [
+    {
+      "id": "word-family-ig/big",
+      "en": "big",
+      "ja": "おおきい",
+      "emoji": "🐘",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ig/big.mp3"
+    },
+    {
+      "id": "word-family-ig/dig",
+      "en": "dig",
+      "ja": "ほる",
+      "emoji": "⛏️",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ig/dig.mp3"
+    },
+    {
+      "id": "word-family-ig/fig",
+      "en": "fig",
+      "ja": "いちじく",
+      "emoji": "🫒",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ig/fig.mp3"
+    },
+    {
+      "id": "word-family-ig/pig",
+      "en": "pig",
+      "ja": "ぶた",
+      "emoji": "🐷",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ig/pig.mp3"
+    },
+    {
+      "id": "word-family-ig/wig",
+      "en": "wig",
+      "ja": "かつら",
+      "emoji": "👱",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ig/wig.mp3"
+    },
+    {
+      "id": "word-family-ig/jig",
+      "en": "jig",
+      "ja": "ダンス",
+      "emoji": "🕺",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ig/jig.mp3"
+    },
+    {
+      "id": "word-family-ig/rig",
+      "en": "rig",
+      "ja": "やぐら",
+      "emoji": "🛢️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ig/rig.mp3"
+    },
+    {
+      "id": "word-family-ig/zig",
+      "en": "zig",
+      "ja": "ジグザグ",
+      "emoji": "⚡",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ig/zig.mp3"
+    }
+  ]
+}

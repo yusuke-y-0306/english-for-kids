@@ -11,6 +11,13 @@ import prepositions from "../../../content/vocabulary/prepositions.json" with { 
 import school from "../../../content/vocabulary/school.json" with { type: "json" };
 import sports from "../../../content/vocabulary/sports.json" with { type: "json" };
 import sightWords from "../../../content/vocabulary/sight-words.json" with { type: "json" };
+import phonics from "../../../content/vocabulary/phonics.json" with { type: "json" };
+import phonicsWords from "../../../content/vocabulary/phonics-words.json" with { type: "json" };
+import wordFamilyAt from "../../../content/vocabulary/word-family-at.json" with { type: "json" };
+import wordFamilyAn from "../../../content/vocabulary/word-family-an.json" with { type: "json" };
+import wordFamilyIg from "../../../content/vocabulary/word-family-ig.json" with { type: "json" };
+import wordFamilyOp from "../../../content/vocabulary/word-family-op.json" with { type: "json" };
+import wordFamilyUg from "../../../content/vocabulary/word-family-ug.json" with { type: "json" };
 import vehicles from "../../../content/vocabulary/vehicles.json" with { type: "json" };
 import verbs from "../../../content/vocabulary/verbs.json" with { type: "json" };
 import weather from "../../../content/vocabulary/weather.json" with { type: "json" };
@@ -43,6 +50,16 @@ export const vocabularySources: VocabularySource[] = [
   { path: "content/vocabulary/sports.json", data: sports },
   // #87: 絵で描けない高頻度語 (Dolch Pre-K)。「読む」への入口
   { path: "content/vocabulary/sight-words.json", data: sightWords },
+  // #88: フォニックス。文字の音 (フォニーム) と CVC word family。
+  // これらは専用の練習画面 (/phonics) で使うので、カード・クイズの一覧からは外す
+  // (`words.ts` の `playCategories` を参照)
+  { path: "content/vocabulary/phonics.json", data: phonics },
+  { path: "content/vocabulary/phonics-words.json", data: phonicsWords },
+  { path: "content/vocabulary/word-family-at.json", data: wordFamilyAt },
+  { path: "content/vocabulary/word-family-an.json", data: wordFamilyAn },
+  { path: "content/vocabulary/word-family-ig.json", data: wordFamilyIg },
+  { path: "content/vocabulary/word-family-op.json", data: wordFamilyOp },
+  { path: "content/vocabulary/word-family-ug.json", data: wordFamilyUg },
 ];
 
 /**

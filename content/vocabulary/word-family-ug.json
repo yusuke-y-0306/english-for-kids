@@ -1,0 +1,80 @@
+{
+  "id": "word-family-ug",
+  "label": "-ug の ことば",
+  "emoji": "🐛",
+  "color": "from-orange-300 to-red-400",
+  "words": [
+    {
+      "id": "word-family-ug/bug",
+      "en": "bug",
+      "ja": "むし",
+      "emoji": "🐛",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ug/bug.mp3"
+    },
+    {
+      "id": "word-family-ug/hug",
+      "en": "hug",
+      "ja": "だきしめる",
+      "emoji": "🤗",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ug/hug.mp3"
+    },
+    {
+      "id": "word-family-ug/jug",
+      "en": "jug",
+      "ja": "ピッチャー",
+      "emoji": "🫗",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ug/jug.mp3"
+    },
+    {
+      "id": "word-family-ug/mug",
+      "en": "mug",
+      "ja": "マグカップ",
+      "emoji": "☕",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ug/mug.mp3"
+    },
+    {
+      "id": "word-family-ug/rug",
+      "en": "rug",
+      "ja": "じゅうたん",
+      "emoji": "🧶",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ug/rug.mp3"
+    },
+    {
+      "id": "word-family-ug/tug",
+      "en": "tug",
+      "ja": "ぐいっと ひく",
+      "emoji": "🚢",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ug/tug.mp3"
+    },
+    {
+      "id": "word-family-ug/dug",
+      "en": "dug",
+      "ja": "ほった",
+      "emoji": "⛏️",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ug/dug.mp3"
+    },
+    {
+      "id": "word-family-ug/pug",
+      "en": "pug",
+      "ja": "パグ",
+      "emoji": "🐕",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-ug/pug.mp3"
+    }
+  ]
+}

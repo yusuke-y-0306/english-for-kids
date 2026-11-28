@@ -20,6 +20,7 @@
 - [ ] 発音練習・音声認識 (#2)
 - [x] クイズ・ゲーム (#3) / リスニング（音をきいて絵を選ぶ）(#85)
 - [ ] 進捗管理 (#4)
+- [x] サイトワード (#87) / フォニックス 26 文字 + CVC word family (#88)
 - [x] ログイン（生体認証 / FIDO2・パスキー）(#23)
 
 チケット管理は GitHub Issues で運用: https://github.com/yusuke-y-0306/english-for-kids/issues

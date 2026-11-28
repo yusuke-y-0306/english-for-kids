@@ -1,4 +1,4 @@
-import { categories, type Word } from "./words";
+import { playCategories, type Word } from "./words";
 import { dayKeyOf } from "./progress/day";
 
 /**
@@ -25,7 +25,8 @@ export type DailyWord = {
 };
 
 export function pickDailyWord(userId: string, day: string = todayInTokyo()): DailyWord {
-  const all: DailyWord[] = categories.flatMap((category) =>
+  /* #88: フォニックスの語 (a / sat …) は「きょうの カード」には出さない */
+  const all: DailyWord[] = playCategories.flatMap((category) =>
     category.words.map((word) => ({
       word,
       categoryLabel: category.label,

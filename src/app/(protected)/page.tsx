@@ -44,6 +44,16 @@ const features: Feature[] = [
     ring: "#ff8fb0",
   },
   {
+    icon: "abc",
+    title: "フォニックス",
+    en: "Phonics",
+    desc: "もじの おとを きいて、よむ ちからを つけよう。",
+    href: "/phonics",
+    bg: "bg-[#fffbe0]",
+    ink: "text-[#8a6a00]",
+    ring: "#e0b21c",
+  },
+  {
     icon: "puzzle",
     title: "単語ならべかえ",
     en: "Word Builder",

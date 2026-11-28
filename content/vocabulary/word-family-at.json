@@ -1,0 +1,80 @@
+{
+  "id": "word-family-at",
+  "label": "-at の ことば",
+  "emoji": "🐱",
+  "color": "from-sky-300 to-blue-400",
+  "words": [
+    {
+      "id": "word-family-at/cat",
+      "en": "cat",
+      "ja": "ねこ",
+      "emoji": "🐱",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-at/cat.mp3"
+    },
+    {
+      "id": "word-family-at/bat",
+      "en": "bat",
+      "ja": "こうもり",
+      "emoji": "🦇",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-at/bat.mp3"
+    },
+    {
+      "id": "word-family-at/hat",
+      "en": "hat",
+      "ja": "ぼうし",
+      "emoji": "🎩",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-at/hat.mp3"
+    },
+    {
+      "id": "word-family-at/mat",
+      "en": "mat",
+      "ja": "マット",
+      "emoji": "🧘",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-at/mat.mp3"
+    },
+    {
+      "id": "word-family-at/rat",
+      "en": "rat",
+      "ja": "ねずみ",
+      "emoji": "🐀",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-at/rat.mp3"
+    },
+    {
+      "id": "word-family-at/sat",
+      "en": "sat",
+      "ja": "すわった",
+      "emoji": "🪑",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-at/sat.mp3"
+    },
+    {
+      "id": "word-family-at/fat",
+      "en": "fat",
+      "ja": "ふとった",
+      "emoji": "🐷",
+      "pos": "adjective",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-at/fat.mp3"
+    },
+    {
+      "id": "word-family-at/pat",
+      "en": "pat",
+      "ja": "なでる",
+      "emoji": "🖐️",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-at/pat.mp3"
+    }
+  ]
+}

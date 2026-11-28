@@ -36,9 +36,10 @@ describe("audio-assets", () => {
     }
   });
 
-  test("予算は 40KB/語・3MB 合計 (#87 で 200 語になった)", () => {
+  test("予算は 40KB/語・5MB 合計 (#88 で 344 語になった)", () => {
     assert.equal(MAX_WORD_AUDIO_BYTES, 40 * 1024);
-    assert.equal(MAX_TOTAL_WORD_AUDIO_BYTES, 3 * 1024 * 1024);
+    /* #88 でフォニックス 144 語が増え、344 語・実測 3.7MB になったため 5MB */
+    assert.equal(MAX_TOTAL_WORD_AUDIO_BYTES, 5 * 1024 * 1024);
   });
 
   test("実際の音声が予算内に収まっている (ファイルシステム)", async () => {

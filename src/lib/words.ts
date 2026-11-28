@@ -1,5 +1,5 @@
 import { categories } from "./vocabulary/registry.ts";
-import type { Word } from "./vocabulary/load.ts";
+import type { Category, Word } from "./vocabulary/load.ts";
 
 /**
  * 語彙の互換アダプタ — issue #83
@@ -12,6 +12,32 @@ import type { Word } from "./vocabulary/load.ts";
 export type { Category, CefrLevel, Word, WordPos } from "./vocabulary/load.ts";
 export { wordId } from "./vocabulary/load.ts";
 export { categories };
+
+/* ------------------------------------------------------------------ */
+/* 練習専用カテゴリ (issue #88)                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * フォニックス専用のカテゴリ ID の接頭辞。
+ *
+ * アルファベット (`phonics`) と CVC word family (`word-family-*`) は
+ * **専用の練習画面でだけ**使う。カード一覧・クイズ・きょうのカードに混ざると
+ * 「a」「sat」のような語が一般語彙に並んでしまうため、遊びの一覧からは外す。
+ *
+ * ただし `categories` からは外さない — 進捗と発音は `wordId` で引くので、
+ * `findWordById()` と進捗画面には載っている必要がある。
+ */
+const PRACTICE_ONLY_PREFIXES = ["phonics", "word-family-"] as const;
+
+/** 練習専用カテゴリか (カード・クイズに出さない) */
+export function isPracticeOnlyCategory(categoryId: string): boolean {
+  return PRACTICE_ONLY_PREFIXES.some((prefix) => categoryId.startsWith(prefix));
+}
+
+/** カード・クイズ・きょうのカードで使うカテゴリ (フォニックスを除いたもの) */
+export const playCategories: Category[] = categories.filter(
+  (category) => !isPracticeOnlyCategory(category.id),
+);
 
 /* ------------------------------------------------------------------ */
 /* 単語 ID (issue #32 / #83)                                           */

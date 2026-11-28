@@ -6,7 +6,9 @@ import { MuteToggle } from "@/components/audio/MuteToggle";
 import { SpeakButton } from "@/components/audio/SpeakButton";
 import { Button, Chip } from "@/components/ui";
 import { newClientId } from "@/lib/client-id";
-import { categories } from "@/lib/words";
+/* #88: フォニックス (アルファベット / word family) は専用画面で練習するので
+   カードの一覧には出さない。進捗の記録には載っている必要がある (`categories`) */
+import { playCategories as categories } from "@/lib/words";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];

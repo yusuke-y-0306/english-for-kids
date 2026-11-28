@@ -273,3 +273,16 @@ Route Handler が `words.ts`（語彙 JSON）から渡す。日付キーの加�
 固定幅を置かず、`w-full` と SVG の `viewBox` スケールに任せている。
 スクリーンショットは `docs/screenshots/progress-{375,360}.png` と
 `progress-empty-360.png`。
+
+## フォニックスの記録 (#88)
+
+`/phonics` の回答は **既存のカード閲覧 API** (`POST /api/progress/cards`) に
+`wordId` を送る。専用の保存領域は作らない。
+
+- 記録するのは「答えた語」の ID (`phonics/a` / `word-family-at/cat`)
+- `findWordById()` は `categories` を引くので、フォニックスを **カード・クイズの
+  一覧から外しても** (`playCategories`) 記録と集計はそのまま通る
+- 進捗画面には `phonics` / `phonics-words` / `word-family-*` の帯が並ぶ
+- クイズの `rounds / correct / total` には入らない (`/api/progress/quiz` の `level`
+  はホワイトリスト制)。ラウンドとして数えたくなったら、レベルを増やすのではなく
+  「練習セッション」という別の集計軸を作る方が筋が通る
