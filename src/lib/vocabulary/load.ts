@@ -28,6 +28,8 @@ export const WORD_POS = [
   "interjection",
   /** サイトワード (the / and / is など)。意味より「見て読めること」を優先する語 */
   "function",
+  /** アルファベット 1 文字 (フォニックス。#88)。`en` は文字そのもの ("a") */
+  "letter",
 ] as const;
 
 export type WordPos = (typeof WORD_POS)[number];
@@ -58,6 +60,13 @@ export type Word = {
   level: CefrLevel;
   /** 音声ファイルの public パス。未生成なら `null` (キー自体は必須) */
   audio: string | null;
+  /**
+   * 読み上げ用のテキスト。省略時は `en`。
+   *
+   * フォニックス (#88) のフォニーム音は「文字の名前」ではなく「音」を鳴らしたい
+   * (`a` を "エイ" ではなく /æ/ に近い音で)。TTS に投げる文字列だけ差し替える。
+   */
+  tts?: string;
   /** 画像の public パス。任意 */
   image?: string | null;
   /**
@@ -107,6 +116,7 @@ const WORD_KEYS = [
   "pos",
   "level",
   "audio",
+  "tts",
   "image",
   "homophones",
   "variants",
@@ -141,6 +151,20 @@ function requireString(
   const found = value[key];
   if (typeof found !== "string" || found.trim() === "") {
     fail(where, `"${key}" must be a non-empty string`);
+  }
+  return found;
+}
+
+/** 任意の非空文字列。無ければ `undefined` (省略可能な項目に使う) */
+function optionalText(
+  value: Record<string, unknown>,
+  key: string,
+  where: string,
+): string | undefined {
+  if (!(key in value)) return undefined;
+  const found = value[key];
+  if (typeof found !== "string" || found.trim() === "") {
+    fail(where, `"${key}" must be a non-empty string when present`);
   }
   return found;
 }
@@ -242,6 +266,7 @@ function parseWord(
     pos: checkEnum(raw.pos, WORD_POS, `${at}.pos`),
     level: checkEnum(raw.level, CEFR_LEVELS, `${at}.level`),
     audio: nullablePublicPath(raw, "audio", at) ?? null,
+    tts: optionalText(raw, "tts", at),
     image: nullablePublicPath(raw, "image", at),
     example: parseExample(raw, `${at}.example`),
     homophones: stringList(raw, "homophones", at),

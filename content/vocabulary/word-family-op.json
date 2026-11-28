@@ -1,0 +1,80 @@
+{
+  "id": "word-family-op",
+  "label": "-op の ことば",
+  "emoji": "🎈",
+  "color": "from-violet-300 to-purple-400",
+  "words": [
+    {
+      "id": "word-family-op/hop",
+      "en": "hop",
+      "ja": "ぴょんと とぶ",
+      "emoji": "🐰",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-op/hop.mp3"
+    },
+    {
+      "id": "word-family-op/mop",
+      "en": "mop",
+      "ja": "モップ",
+      "emoji": "🧹",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-op/mop.mp3"
+    },
+    {
+      "id": "word-family-op/pop",
+      "en": "pop",
+      "ja": "ポンと はじける",
+      "emoji": "🎈",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-op/pop.mp3"
+    },
+    {
+      "id": "word-family-op/top",
+      "en": "top",
+      "ja": "こま",
+      "emoji": "🔝",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-op/top.mp3"
+    },
+    {
+      "id": "word-family-op/cop",
+      "en": "cop",
+      "ja": "おまわりさん",
+      "emoji": "👮",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-op/cop.mp3"
+    },
+    {
+      "id": "word-family-op/bop",
+      "en": "bop",
+      "ja": "リズムで おどる",
+      "emoji": "🎵",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-op/bop.mp3"
+    },
+    {
+      "id": "word-family-op/lop",
+      "en": "lop",
+      "ja": "きりおとす",
+      "emoji": "✂️",
+      "pos": "verb",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-op/lop.mp3"
+    },
+    {
+      "id": "word-family-op/sop",
+      "en": "sop",
+      "ja": "つけパン",
+      "emoji": "🍞",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/word-family-op/sop.mp3"
+    }
+  ]
+}

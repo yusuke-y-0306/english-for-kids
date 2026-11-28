@@ -18,11 +18,14 @@ export const WORD_AUDIO_INDEX = "/audio/words/index.json";
 export const MAX_WORD_AUDIO_BYTES = 40 * 1024;
 
 /**
- * 全語ぶんの合計上限。#87 で 200 語になり実測 ~2.1MB なので 3MB。
- * 語彙を増やすときは、この上限と `docs/audio-assets.md` を一緒に見直す
- * (カテゴリ単位の先読みは #100)。
+ * 全語ぶんの合計上限。
+ *
+ * #87 で 200 語 (実測 ~2.1MB) になり 3MB。#88 でフォニックスの 144 語
+ * (26 フォニーム + 78 代表語 + 40 CVC) が増えて 344 語・実測 ~3.6MB なので
+ * 5MB に引き上げた。語彙を増やすときは、この上限と `docs/audio-assets.md` を
+ * 一緒に見直す (カテゴリ単位の先読みは #100)。
  */
-export const MAX_TOTAL_WORD_AUDIO_BYTES = 3 * 1024 * 1024;
+export const MAX_TOTAL_WORD_AUDIO_BYTES = 5 * 1024 * 1024;
 
 /** 単語 ID の形 (`<category>/<slug>`)。ID は content 側で検証済み */
 const WORD_ID = /^[a-z][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;

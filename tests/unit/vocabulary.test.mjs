@@ -35,12 +35,12 @@ async function loadSources() {
 }
 
 describe("content/vocabulary", () => {
-  test("200 語が JSON から読める (16 カテゴリ, #86 / #87)", async () => {
+  test("344 語が JSON から読める (23 カテゴリ, #86 / #87 / #88)", async () => {
     const categories = buildCategories(await loadSources());
-    assert.equal(categories.length, 16);
+    assert.equal(categories.length, 23);
     assert.equal(
       categories.reduce((total, category) => total + category.words.length, 0),
-      200,
+      344,
     );
 
     const animals = categories.find((category) => category.id === "animals");

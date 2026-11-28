@@ -1,7 +1,14 @@
 /**
  * FeatureIcon — メニューカード用のアイコン（絵文字に依存せず SVG で描画）
  */
-export type FeatureIconName = "cards" | "book" | "puzzle" | "mic" | "game" | "chart";
+export type FeatureIconName =
+  | "cards"
+  | "book"
+  | "abc"
+  | "puzzle"
+  | "mic"
+  | "game"
+  | "chart";
 
 export default function FeatureIcon({
   name,
@@ -79,6 +86,50 @@ export default function FeatureIcon({
           <rect x="22" y="16" width="7" height="22" rx="3" fill="#6cc24a" stroke="#4a9b2f" />
           <rect x="32" y="10" width="7" height="28" rx="3" fill="#ff8fb0" stroke="#e0638b" />
           <path d="M10 16l7-5 6 4 8-8" stroke="#a17bf0" strokeDasharray="3 3" />
+        </svg>
+      );
+    case "abc":
+      return (
+        <svg {...common}>
+          <rect x="6" y="10" width="14" height="14" rx="4" fill="#ffd93d" stroke="#e0b21c" />
+          <rect x="17" y="19" width="14" height="14" rx="4" fill="#4dc9f6" stroke="#2e9ec4" />
+          <rect x="28" y="12" width="14" height="14" rx="4" fill="#6cc24a" stroke="#4a9b2f" />
+          <text
+            x="13"
+            y="21"
+            textAnchor="middle"
+            fontSize="10"
+            fontWeight="700"
+            fill="#7a4a10"
+            stroke="none"
+            fontFamily="var(--font-fredoka), sans-serif"
+          >
+            a
+          </text>
+          <text
+            x="24"
+            y="30"
+            textAnchor="middle"
+            fontSize="10"
+            fontWeight="700"
+            fill="#12586f"
+            stroke="none"
+            fontFamily="var(--font-fredoka), sans-serif"
+          >
+            b
+          </text>
+          <text
+            x="35"
+            y="23"
+            textAnchor="middle"
+            fontSize="10"
+            fontWeight="700"
+            fill="#2c5f1c"
+            stroke="none"
+            fontFamily="var(--font-fredoka), sans-serif"
+          >
+            c
+          </text>
         </svg>
       );
   }

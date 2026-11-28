@@ -1,0 +1,710 @@
+{
+  "id": "phonics-words",
+  "label": "もじの ことば",
+  "emoji": "✨",
+  "color": "from-lime-300 to-green-400",
+  "words": [
+    {
+      "id": "phonics-words/apple",
+      "en": "apple",
+      "ja": "りんご",
+      "emoji": "🍎",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/apple.mp3"
+    },
+    {
+      "id": "phonics-words/ant",
+      "en": "ant",
+      "ja": "あり",
+      "emoji": "🐜",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/ant.mp3"
+    },
+    {
+      "id": "phonics-words/ax",
+      "en": "ax",
+      "ja": "おの",
+      "emoji": "🪓",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/ax.mp3"
+    },
+    {
+      "id": "phonics-words/ball",
+      "en": "ball",
+      "ja": "ボール",
+      "emoji": "⚽",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/ball.mp3"
+    },
+    {
+      "id": "phonics-words/bear",
+      "en": "bear",
+      "ja": "くま",
+      "emoji": "🐻",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/bear.mp3"
+    },
+    {
+      "id": "phonics-words/bed",
+      "en": "bed",
+      "ja": "ベッド",
+      "emoji": "🛏️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/bed.mp3"
+    },
+    {
+      "id": "phonics-words/cat",
+      "en": "cat",
+      "ja": "ねこ",
+      "emoji": "🐱",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/cat.mp3"
+    },
+    {
+      "id": "phonics-words/cup",
+      "en": "cup",
+      "ja": "カップ",
+      "emoji": "🥤",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/cup.mp3"
+    },
+    {
+      "id": "phonics-words/car",
+      "en": "car",
+      "ja": "くるま",
+      "emoji": "🚗",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/car.mp3"
+    },
+    {
+      "id": "phonics-words/dog",
+      "en": "dog",
+      "ja": "いぬ",
+      "emoji": "🐶",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/dog.mp3"
+    },
+    {
+      "id": "phonics-words/duck",
+      "en": "duck",
+      "ja": "あひる",
+      "emoji": "🦆",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/duck.mp3"
+    },
+    {
+      "id": "phonics-words/dot",
+      "en": "dot",
+      "ja": "てん",
+      "emoji": "⚫",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/dot.mp3"
+    },
+    {
+      "id": "phonics-words/egg",
+      "en": "egg",
+      "ja": "たまご",
+      "emoji": "🥚",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/egg.mp3"
+    },
+    {
+      "id": "phonics-words/elephant",
+      "en": "elephant",
+      "ja": "ぞう",
+      "emoji": "🐘",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/elephant.mp3"
+    },
+    {
+      "id": "phonics-words/end",
+      "en": "end",
+      "ja": "おわり",
+      "emoji": "🏁",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/end.mp3"
+    },
+    {
+      "id": "phonics-words/fish",
+      "en": "fish",
+      "ja": "さかな",
+      "emoji": "🐟",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/fish.mp3"
+    },
+    {
+      "id": "phonics-words/fan",
+      "en": "fan",
+      "ja": "せんぷうき",
+      "emoji": "🪭",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/fan.mp3"
+    },
+    {
+      "id": "phonics-words/fox",
+      "en": "fox",
+      "ja": "きつね",
+      "emoji": "🦊",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/fox.mp3"
+    },
+    {
+      "id": "phonics-words/goat",
+      "en": "goat",
+      "ja": "やぎ",
+      "emoji": "🐐",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/goat.mp3"
+    },
+    {
+      "id": "phonics-words/gate",
+      "en": "gate",
+      "ja": "もん",
+      "emoji": "🚪",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/gate.mp3"
+    },
+    {
+      "id": "phonics-words/gum",
+      "en": "gum",
+      "ja": "ガム",
+      "emoji": "🍬",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/gum.mp3"
+    },
+    {
+      "id": "phonics-words/hat",
+      "en": "hat",
+      "ja": "ぼうし",
+      "emoji": "🎩",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/hat.mp3"
+    },
+    {
+      "id": "phonics-words/hen",
+      "en": "hen",
+      "ja": "めんどり",
+      "emoji": "🐔",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/hen.mp3"
+    },
+    {
+      "id": "phonics-words/hand",
+      "en": "hand",
+      "ja": "て",
+      "emoji": "✋",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/hand.mp3"
+    },
+    {
+      "id": "phonics-words/igloo",
+      "en": "igloo",
+      "ja": "かまくら",
+      "emoji": "🛖",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/igloo.mp3"
+    },
+    {
+      "id": "phonics-words/ink",
+      "en": "ink",
+      "ja": "インク",
+      "emoji": "🖋️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/ink.mp3"
+    },
+    {
+      "id": "phonics-words/insect",
+      "en": "insect",
+      "ja": "むし",
+      "emoji": "🐛",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/insect.mp3"
+    },
+    {
+      "id": "phonics-words/jam",
+      "en": "jam",
+      "ja": "ジャム",
+      "emoji": "🍯",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/jam.mp3"
+    },
+    {
+      "id": "phonics-words/jet",
+      "en": "jet",
+      "ja": "ジェットき",
+      "emoji": "✈️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/jet.mp3"
+    },
+    {
+      "id": "phonics-words/jug",
+      "en": "jug",
+      "ja": "ピッチャー",
+      "emoji": "🫗",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/jug.mp3"
+    },
+    {
+      "id": "phonics-words/key",
+      "en": "key",
+      "ja": "かぎ",
+      "emoji": "🔑",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/key.mp3"
+    },
+    {
+      "id": "phonics-words/kite",
+      "en": "kite",
+      "ja": "たこ",
+      "emoji": "🪁",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/kite.mp3"
+    },
+    {
+      "id": "phonics-words/kid",
+      "en": "kid",
+      "ja": "こども",
+      "emoji": "🧒",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/kid.mp3"
+    },
+    {
+      "id": "phonics-words/lion",
+      "en": "lion",
+      "ja": "ライオン",
+      "emoji": "🦁",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/lion.mp3"
+    },
+    {
+      "id": "phonics-words/leg",
+      "en": "leg",
+      "ja": "あし",
+      "emoji": "🦵",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/leg.mp3"
+    },
+    {
+      "id": "phonics-words/leaf",
+      "en": "leaf",
+      "ja": "はっぱ",
+      "emoji": "🍃",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/leaf.mp3"
+    },
+    {
+      "id": "phonics-words/moon",
+      "en": "moon",
+      "ja": "つき",
+      "emoji": "🌙",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/moon.mp3"
+    },
+    {
+      "id": "phonics-words/milk",
+      "en": "milk",
+      "ja": "ぎゅうにゅう",
+      "emoji": "🥛",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/milk.mp3"
+    },
+    {
+      "id": "phonics-words/map",
+      "en": "map",
+      "ja": "ちず",
+      "emoji": "🗺️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/map.mp3"
+    },
+    {
+      "id": "phonics-words/nose",
+      "en": "nose",
+      "ja": "はな",
+      "emoji": "👃",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/nose.mp3"
+    },
+    {
+      "id": "phonics-words/nest",
+      "en": "nest",
+      "ja": "とりのす",
+      "emoji": "🪹",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/nest.mp3"
+    },
+    {
+      "id": "phonics-words/net",
+      "en": "net",
+      "ja": "ネット",
+      "emoji": "🥅",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/net.mp3"
+    },
+    {
+      "id": "phonics-words/octopus",
+      "en": "octopus",
+      "ja": "たこ",
+      "emoji": "🐙",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/octopus.mp3"
+    },
+    {
+      "id": "phonics-words/orange",
+      "en": "orange",
+      "ja": "オレンジ",
+      "emoji": "🍊",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/orange.mp3"
+    },
+    {
+      "id": "phonics-words/ox",
+      "en": "ox",
+      "ja": "うし",
+      "emoji": "🐂",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/ox.mp3"
+    },
+    {
+      "id": "phonics-words/pig",
+      "en": "pig",
+      "ja": "ぶた",
+      "emoji": "🐷",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/pig.mp3"
+    },
+    {
+      "id": "phonics-words/pen",
+      "en": "pen",
+      "ja": "ペン",
+      "emoji": "🖊️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/pen.mp3"
+    },
+    {
+      "id": "phonics-words/pan",
+      "en": "pan",
+      "ja": "フライパン",
+      "emoji": "🍳",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/pan.mp3"
+    },
+    {
+      "id": "phonics-words/queen",
+      "en": "queen",
+      "ja": "じょおう",
+      "emoji": "👑",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/queen.mp3"
+    },
+    {
+      "id": "phonics-words/quilt",
+      "en": "quilt",
+      "ja": "もうふ",
+      "emoji": "🛏️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/quilt.mp3"
+    },
+    {
+      "id": "phonics-words/question",
+      "en": "question",
+      "ja": "しつもん",
+      "emoji": "❓",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/question.mp3"
+    },
+    {
+      "id": "phonics-words/rabbit",
+      "en": "rabbit",
+      "ja": "うさぎ",
+      "emoji": "🐰",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/rabbit.mp3"
+    },
+    {
+      "id": "phonics-words/rain",
+      "en": "rain",
+      "ja": "あめ",
+      "emoji": "🌧️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/rain.mp3"
+    },
+    {
+      "id": "phonics-words/ring",
+      "en": "ring",
+      "ja": "ゆびわ",
+      "emoji": "💍",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/ring.mp3"
+    },
+    {
+      "id": "phonics-words/sun",
+      "en": "sun",
+      "ja": "たいよう",
+      "emoji": "☀️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/sun.mp3"
+    },
+    {
+      "id": "phonics-words/sock",
+      "en": "sock",
+      "ja": "くつした",
+      "emoji": "🧦",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/sock.mp3"
+    },
+    {
+      "id": "phonics-words/six",
+      "en": "six",
+      "ja": "ろく",
+      "emoji": "6️⃣",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/six.mp3"
+    },
+    {
+      "id": "phonics-words/tiger",
+      "en": "tiger",
+      "ja": "とら",
+      "emoji": "🐯",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/tiger.mp3"
+    },
+    {
+      "id": "phonics-words/top",
+      "en": "top",
+      "ja": "こま",
+      "emoji": "🔝",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/top.mp3"
+    },
+    {
+      "id": "phonics-words/ten",
+      "en": "ten",
+      "ja": "じゅう",
+      "emoji": "🔟",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/ten.mp3"
+    },
+    {
+      "id": "phonics-words/umbrella",
+      "en": "umbrella",
+      "ja": "かさ",
+      "emoji": "☂️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/umbrella.mp3"
+    },
+    {
+      "id": "phonics-words/up",
+      "en": "up",
+      "ja": "うえ",
+      "emoji": "⬆️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/up.mp3"
+    },
+    {
+      "id": "phonics-words/under",
+      "en": "under",
+      "ja": "した",
+      "emoji": "⬇️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/under.mp3"
+    },
+    {
+      "id": "phonics-words/van",
+      "en": "van",
+      "ja": "バン",
+      "emoji": "🚐",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/van.mp3"
+    },
+    {
+      "id": "phonics-words/vest",
+      "en": "vest",
+      "ja": "ベスト",
+      "emoji": "🦺",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/vest.mp3"
+    },
+    {
+      "id": "phonics-words/violin",
+      "en": "violin",
+      "ja": "バイオリン",
+      "emoji": "🎻",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/violin.mp3"
+    },
+    {
+      "id": "phonics-words/water",
+      "en": "water",
+      "ja": "みず",
+      "emoji": "💧",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/water.mp3"
+    },
+    {
+      "id": "phonics-words/wolf",
+      "en": "wolf",
+      "ja": "おおかみ",
+      "emoji": "🐺",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/wolf.mp3"
+    },
+    {
+      "id": "phonics-words/web",
+      "en": "web",
+      "ja": "くものす",
+      "emoji": "🕸️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/web.mp3"
+    },
+    {
+      "id": "phonics-words/box",
+      "en": "box",
+      "ja": "はこ",
+      "emoji": "📦",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/box.mp3"
+    },
+    {
+      "id": "phonics-words/mix",
+      "en": "mix",
+      "ja": "まぜる",
+      "emoji": "🥣",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/mix.mp3"
+    },
+    {
+      "id": "phonics-words/wax",
+      "en": "wax",
+      "ja": "ろう",
+      "emoji": "🕯️",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/wax.mp3"
+    },
+    {
+      "id": "phonics-words/yak",
+      "en": "yak",
+      "ja": "ヤク",
+      "emoji": "🐂",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/yak.mp3"
+    },
+    {
+      "id": "phonics-words/yarn",
+      "en": "yarn",
+      "ja": "けいと",
+      "emoji": "🧶",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/yarn.mp3"
+    },
+    {
+      "id": "phonics-words/yellow",
+      "en": "yellow",
+      "ja": "きいろ",
+      "emoji": "💛",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/yellow.mp3"
+    },
+    {
+      "id": "phonics-words/zebra",
+      "en": "zebra",
+      "ja": "しまうま",
+      "emoji": "🦓",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/zebra.mp3"
+    },
+    {
+      "id": "phonics-words/zoo",
+      "en": "zoo",
+      "ja": "どうぶつえん",
+      "emoji": "🦒",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/zoo.mp3"
+    },
+    {
+      "id": "phonics-words/zip",
+      "en": "zip",
+      "ja": "ジッパー",
+      "emoji": "🤐",
+      "pos": "noun",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics-words/zip.mp3"
+    }
+  ]
+}

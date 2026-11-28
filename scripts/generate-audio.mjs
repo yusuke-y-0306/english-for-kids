@@ -123,7 +123,8 @@ async function main() {
         python,
         voice: options.voice,
         rate: options.rate,
-        text: entry.word.en,
+        /* フォニーム音は `tts` で読みを差し替える (#88)。通常の語は `en` */
+        text: entry.word.tts ?? entry.word.en,
         outFile: entry.outFile,
       });
     } catch (error) {

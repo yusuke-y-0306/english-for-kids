@@ -10,7 +10,7 @@
  *   （SSR 時に Math.random を走らせるとハイドレーションがズレるため）
  */
 
-import { categories, type Word } from "./words";
+import { categories, playCategories, type Word } from "./words";
 
 export type QuizLevelId = "listening" | "beginner" | "intermediate" | "advanced";
 
@@ -219,7 +219,8 @@ function buildListeningQuestions(count: number): QuizQuestion[] {
  * ------------------------------------------------------------------ */
 
 function buildBeginnerQuestions(count: number): QuizQuestion[] {
-  const all = categories.flatMap((c) =>
+  /* #88: アルファベットと word family は専用の練習画面で扱うので出題しない */
+  const all = playCategories.flatMap((c) =>
     c.words.map((w) => ({ ...w, categoryId: c.id })),
   );
   /* サイトワードは既存カテゴリと綴りが重なる (big / red …)。
@@ -227,7 +228,7 @@ function buildBeginnerQuestions(count: number): QuizQuestion[] {
   const picked = shuffle(uniqueByEn(all)).slice(0, count);
 
   return picked.map((word, i) => {
-    const category = categories.find((c) => c.id === word.categoryId);
+    const category = playCategories.find((c) => c.id === word.categoryId);
     const sameCategory = uniqueByEn(
       (category?.words ?? []).filter((w) => w.en !== word.en),
     );

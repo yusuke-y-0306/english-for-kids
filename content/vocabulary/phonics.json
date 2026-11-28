@@ -1,0 +1,268 @@
+{
+  "id": "phonics",
+  "label": "アルファベット",
+  "emoji": "🔤",
+  "color": "from-yellow-300 to-amber-400",
+  "words": [
+    {
+      "id": "phonics/a",
+      "en": "a",
+      "tts": "ah",
+      "ja": "アの おと",
+      "emoji": "🅰️",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/a.mp3"
+    },
+    {
+      "id": "phonics/b",
+      "en": "b",
+      "tts": "buh",
+      "ja": "ブの おと",
+      "emoji": "🅱️",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/b.mp3"
+    },
+    {
+      "id": "phonics/c",
+      "en": "c",
+      "tts": "kuh",
+      "ja": "クの おと",
+      "emoji": "🌙",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/c.mp3"
+    },
+    {
+      "id": "phonics/d",
+      "en": "d",
+      "tts": "duh",
+      "ja": "ドゥの おと",
+      "emoji": "🐕",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/d.mp3"
+    },
+    {
+      "id": "phonics/e",
+      "en": "e",
+      "tts": "eh",
+      "ja": "エの おと",
+      "emoji": "🥚",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/e.mp3"
+    },
+    {
+      "id": "phonics/f",
+      "en": "f",
+      "tts": "fuh",
+      "ja": "フの おと",
+      "emoji": "🐟",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/f.mp3"
+    },
+    {
+      "id": "phonics/g",
+      "en": "g",
+      "tts": "guh",
+      "ja": "グの おと",
+      "emoji": "🐐",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/g.mp3"
+    },
+    {
+      "id": "phonics/h",
+      "en": "h",
+      "tts": "huh",
+      "ja": "ハの おと",
+      "emoji": "🎩",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/h.mp3"
+    },
+    {
+      "id": "phonics/i",
+      "en": "i",
+      "tts": "ih",
+      "ja": "イの おと",
+      "emoji": "🏠",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/i.mp3"
+    },
+    {
+      "id": "phonics/j",
+      "en": "j",
+      "tts": "juh",
+      "ja": "ジュの おと",
+      "emoji": "🍯",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/j.mp3"
+    },
+    {
+      "id": "phonics/k",
+      "en": "k",
+      "tts": "kuh",
+      "ja": "クの おと",
+      "emoji": "🔑",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/k.mp3"
+    },
+    {
+      "id": "phonics/l",
+      "en": "l",
+      "tts": "luh",
+      "ja": "ルの おと",
+      "emoji": "🦁",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/l.mp3"
+    },
+    {
+      "id": "phonics/m",
+      "en": "m",
+      "tts": "muh",
+      "ja": "ムの おと",
+      "emoji": "🌙",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/m.mp3"
+    },
+    {
+      "id": "phonics/n",
+      "en": "n",
+      "tts": "nuh",
+      "ja": "ヌの おと",
+      "emoji": "👃",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/n.mp3"
+    },
+    {
+      "id": "phonics/o",
+      "en": "o",
+      "tts": "aw",
+      "ja": "オの おと",
+      "emoji": "🐙",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/o.mp3"
+    },
+    {
+      "id": "phonics/p",
+      "en": "p",
+      "tts": "puh",
+      "ja": "プの おと",
+      "emoji": "🐷",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/p.mp3"
+    },
+    {
+      "id": "phonics/q",
+      "en": "q",
+      "tts": "kwuh",
+      "ja": "クワの おと",
+      "emoji": "👑",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/q.mp3"
+    },
+    {
+      "id": "phonics/r",
+      "en": "r",
+      "tts": "ruh",
+      "ja": "ルの おと",
+      "emoji": "🐰",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/r.mp3"
+    },
+    {
+      "id": "phonics/s",
+      "en": "s",
+      "tts": "suh",
+      "ja": "スの おと",
+      "emoji": "☀️",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/s.mp3"
+    },
+    {
+      "id": "phonics/t",
+      "en": "t",
+      "tts": "tuh",
+      "ja": "トゥの おと",
+      "emoji": "🐯",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/t.mp3"
+    },
+    {
+      "id": "phonics/u",
+      "en": "u",
+      "tts": "uh",
+      "ja": "ウの おと",
+      "emoji": "☂️",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/u.mp3"
+    },
+    {
+      "id": "phonics/v",
+      "en": "v",
+      "tts": "vuh",
+      "ja": "ヴの おと",
+      "emoji": "🚐",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/v.mp3"
+    },
+    {
+      "id": "phonics/w",
+      "en": "w",
+      "tts": "wuh",
+      "ja": "ワの おと",
+      "emoji": "💧",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/w.mp3"
+    },
+    {
+      "id": "phonics/x",
+      "en": "x",
+      "tts": "kss",
+      "ja": "クスの おと",
+      "emoji": "📦",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/x.mp3"
+    },
+    {
+      "id": "phonics/y",
+      "en": "y",
+      "tts": "yuh",
+      "ja": "ヤの おと",
+      "emoji": "🐂",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/y.mp3"
+    },
+    {
+      "id": "phonics/z",
+      "en": "z",
+      "tts": "zuh",
+      "ja": "ズの おと",
+      "emoji": "🦓",
+      "pos": "letter",
+      "level": "pre-a1",
+      "audio": "/audio/words/phonics/z.mp3"
+    }
+  ]
+}
