@@ -34,6 +34,49 @@
   --color-cream: #fff8ec;
   --color-badge: #8a5a3b;
 
+  /* ------------------------------------------------------------------
+     セマンティック・トークン (UI 基盤 / issue #120)
+     画面ごとに hex を書かず、役割で選ぶ。色数は「役割」の数だけ。
+     コントラストは 4.5:1 以上 (大きい文字は 3:1) を前提にしている。
+  ------------------------------------------------------------------ */
+  --color-surface: #fffdf8;
+  --color-surface-raised: #ffffff;
+  --color-surface-muted: #fff6e3;
+  --color-ink-muted: #6b5a49;
+  --color-primary: #f4801f;
+  --color-primary-ink: #3d3229;
+  --color-primary-shadow: #c25f0d;
+  --color-secondary: #7a4a2c;
+  --color-secondary-shadow: #5c351e;
+  --color-success: #357026;
+  --color-success-soft: #eef7e2;
+  --color-danger: #b03a63;
+  --color-danger-soft: #ffecec;
+  --color-focus: #1f6feb;
+
+  /* 角丸は 3 段だけ。カード / ボタン・チップ / 小物 */
+  --radius-card: 1.5rem;
+  --radius-button: 999px;
+  --radius-chip: 999px;
+
+  /* 影も 3 段だけ。カード / ボタン / 浮遊 */
+  --shadow-card: 0 8px 20px rgba(122, 104, 87, 0.12);
+  --shadow-button: 0 4px 0 rgba(61, 50, 41, 0.18);
+  --shadow-primary: 0 5px 0 var(--color-primary-shadow);
+  --shadow-float: 0 16px 32px rgba(122, 104, 87, 0.18);
+
+  /* 文字サイズは「子どもが読める」ことを優先する。本文 17px が基準 */
+  --text-kid-caption: 0.75rem;
+  --text-kid-caption--line-height: 1.5;
+  --text-kid-label: 0.875rem;
+  --text-kid-label--line-height: 1.5;
+  --text-kid-body: 1.0625rem;
+  --text-kid-body--line-height: 1.75;
+  --text-kid-title: 1.75rem;
+  --text-kid-title--line-height: 1.3;
+  --text-kid-hero: 2.75rem;
+  --text-kid-hero--line-height: 1.15;
+
   /* 文字 */
   --font-rounded: var(--font-mplus), var(--font-nunito), ui-sans-serif, system-ui,
     sans-serif;
@@ -53,7 +96,15 @@
     background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-rounded);
+    font-size: 1rem;
+    line-height: 1.7;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* キーボードで動く人にも「いまどこか」を見せる。hover だけにしない */
+  :where(a, button, [role="button"], input, select, textarea, summary):focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
   }
 
   ::selection {
@@ -252,5 +303,15 @@
   .anim-correct-pop,
   .anim-star-pop {
     animation: none !important;
+  }
+
+  /* クラス名に依存せず、動きを望まない人には全体で止める (#120) */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import UserChip from "@/components/UserChip";
+import { LinkButton } from "@/components/ui";
 
 /**
  * SiteHeader — ロゴ(s)・サイト名・「Buddy & Friends」バッジ・ナビゲーション。
@@ -52,12 +53,9 @@ export default function SiteHeader() {
             >
               クイズ
             </Link>
-            <Link
-              href="#menu"
-              className="rounded-full bg-rainbow-orange px-4 py-2 text-sm font-extrabold text-white shadow-[0_3px_0_#d9701f] transition hover:-translate-y-0.5 hover:shadow-[0_5px_0_#d9701f] active:translate-y-0.5 active:shadow-[0_1px_0_#d9701f] sm:px-5"
-            >
+            <LinkButton href="#menu" size="md">
               あそぶ
-            </Link>
+            </LinkButton>
           </nav>
         </div>
       </div>

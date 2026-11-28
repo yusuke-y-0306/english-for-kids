@@ -472,16 +472,21 @@ export default function PronunciationPanel() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8">
-      <header className="flex items-center justify-between gap-3 rounded-full border-2 border-white bg-white/85 px-3 py-2.5 shadow-[0_5px_16px_rgba(122,104,87,0.12)] sm:px-4">
+      {/* 幅の狭い端末では 2 行に分ける。1 行に詰めると CJK が単語の途中で折れる (issue #109) */}
+      <header className="grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1 rounded-3xl border-2 border-white bg-white/85 px-3 py-2 shadow-[0_5px_16px_rgba(122,104,87,0.12)] sm:flex sm:justify-between sm:gap-3 sm:rounded-full sm:px-4 sm:py-2.5">
         <Link
           href="/"
-          className="rounded-full px-3 py-1.5 text-sm font-extrabold text-[#5b4a3c] transition hover:bg-[#fff6e3] hover:text-ink"
+          className="col-start-1 row-start-1 justify-self-start rounded-full px-2 py-1.5 text-sm font-extrabold whitespace-nowrap text-[#5b4a3c] transition hover:bg-[#fff6e3] hover:text-ink sm:order-1 sm:px-3"
         >
           ← ホーム
         </Link>
-        <h1 className="text-base font-extrabold text-ink sm:text-lg">発音練習</h1>
-        <div className="flex items-center gap-1.5">
+        <h1 className="col-start-1 row-start-2 text-base font-extrabold whitespace-nowrap text-ink sm:order-2 sm:text-lg">
+          発音練習
+        </h1>
+        <div className="col-start-2 row-start-2 justify-self-end sm:order-3">
           {path ? <RecognitionPathBadge path={path} /> : null}
+        </div>
+        <div className="col-start-2 row-start-1 justify-self-end sm:order-4">
           <MuteToggle />
         </div>
       </header>
@@ -516,9 +521,7 @@ export default function PronunciationPanel() {
             {preparing !== null
               ? prepareLabel(preparing, prepareElapsed)
               : phase === "listening"
-                ? listenRemainingSec > 0
-                  ? `きいてるよ… あと ${listenRemainingSec}びょう`
-                  : "もうすぐ おわるよ…"
+                ? "きいてるよ…"
                 : !canListen
                   ? readiness === "needs-download"
                     ? "まず じゅんびを してね"
@@ -527,16 +530,18 @@ export default function PronunciationPanel() {
           </button>
         )}
 
-        {/* 残り時間のバー。数字と一緒に「終わりが見える」ようにする */}
+        {/* 残り時間はボタンの外に出す。ボタンの幅が秒ごとに変わらない (issue #107) */}
         {phase === "listening" && (
-          <div
-            className="h-1.5 w-44 overflow-hidden rounded-full bg-[#ffd9e5]"
-            aria-hidden
-          >
-            <div
-              className="h-full rounded-full bg-[#ff8fb0] transition-[width] duration-200 ease-linear"
-              style={{ width: `${(1 - listenProgress) * 100}%` }}
-            />
+          <div className="flex w-full max-w-xs flex-col items-center gap-1.5">
+            <p className="text-sm font-extrabold text-[#b03a63]">
+              {listenRemainingSec > 0 ? `あと ${listenRemainingSec}びょう` : "もうすぐ おわるよ…"}
+            </p>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#ffd9e5]" aria-hidden>
+              <div
+                className="h-full rounded-full bg-[#ff8fb0] transition-[width] duration-200 ease-linear"
+                style={{ width: `${(1 - listenProgress) * 100}%` }}
+              />
+            </div>
           </div>
         )}
 

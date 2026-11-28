@@ -16,7 +16,9 @@ const STYLES: Record<RecognitionPath, { label: string; className: string }> = {
 export default function RecognitionPathBadge({ path }: { path: RecognitionPath }) {
   const style = STYLES[path];
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${style.className}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap ${style.className}`}
+    >
       {style.label}
     </span>
   );
