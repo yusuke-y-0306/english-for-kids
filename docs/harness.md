@@ -24,9 +24,9 @@ audio / build / asr-assets / headers / unit+api の 10 項目。
 ## 運用
 
 ```bash
-npm run verify              # フル (build・ヘッダ・API・E2E まで) ~135s
-npm run verify -- --no-build # 高速 (型・lint・コンテンツ・単体テスト) ~35s
-npm run test:e2e            # E2E だけ (build 済みであること)
+npm run verify       # フル (build・ヘッダ・API・E2E まで) ~135s。**マージゲート**
+npm run verify:fast  # 高速 (型・lint・コンテンツ・単体テスト) ~35s。マージ不可
+npm run test:e2e     # E2E だけ (build 済みであること)
 ```
 
 結果は `.verify/latest.json` に残る (失敗ステップ・所要時間)。`ci.yml` に
@@ -65,9 +65,11 @@ CI (GitHub ホステッドランナー) は `playwright install --with-deps chro
 
 - **API テストは `.next` に依存する。** 古いビルドのまま `test:api` を回すと、
   コードは正しいのに `categories.length` が 16 vs 15 で落ちる「偽の赤」が出る。
-  → `--no-build` では `test:api` を実行しない (単体テストのみ) ようにした。
-- **`--no-build` は「速い」ではなく「弱い」。** 緑の意味が変わるなら、それは別の
-  コマンドとして扱うべき。
+  → `verify:fast` では `test:api` を実行しない (単体テストのみ) ようにした。
+- **速いモードは「弱い」。** 緑の意味が変わるなら、それは別のコマンドとして扱うべき。
+  そこで `--no-build` を `--fast` / `npm run verify:fast` に改名し、出力を
+  `PARTIAL` (黄色) にして「マージゲートではない」ことを結果そのものに書いた
+  (`mergeGate` フィールドも JSON に残す)。旧 `--no-build` は警告付きで通す。
 - **E2E の失敗は 3 種類に分かれる。** アプリのバグ / 環境の欠け / セレクタの
   ドリフト。今回踏んだのは環境の欠け (共有ライブラリ) で、テストの中身は最初から
   正しかった。赤を見たら、まず「どの種類か」を決める。

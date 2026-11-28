@@ -11,14 +11,15 @@
  *  4. ci.yml に増えたステップを検出して「verify 未追従」を警告する (ドリフト検出)。
  *
  * 使い方:
- *   npm run verify              # フル (build / セキュリティヘッダのスモークまで)
- *   npm run verify -- --no-build # 型・lint・コンテンツ検証・単体テストのみ (高速)
+ *   npm run verify          # フル (build / API / E2E / ヘッダのスモークまで)。マージゲート
+ *   npm run verify:fast     # 静的検証 + 単体テストのみ (高速)。マージゲートではない
  *   npm run verify -- --json out.json
  *
  * 注意: API テスト (`tests/api`) は実サーバを起動して HTTP 越しに確かめるため、
  * **ビルド成果物 (.next) に依存する**。古い .next のまま回すと、コードは正しいのに
  * 期待値だけがずれる「偽の赤」が出る (2026-11-22 に実際に踏んだ)。
- * そのため --no-build では API テストを実行せず、単体テストだけを回す。
+ * そのため `verify:fast` では API / E2E を実行せず、単体テストだけを回す。
+ * **「verify の緑」と「verify:fast の緑」は意味が違う。** 前者だけがマージゲート。
  */
 
 import { spawn } from "node:child_process";
@@ -31,7 +32,9 @@ const CI_YML = path.join(ROOT, ".github/workflows/ci.yml");
 const REPORT_DIR = path.join(ROOT, ".verify");
 
 const argv = process.argv.slice(2);
-const noBuild = argv.includes("--no-build");
+/* 旧名は互換のために受け付けるが、もう「verify」の一部として説明しない */
+const fast = argv.includes("--fast") || argv.includes("--no-build");
+const usedDeprecatedFlag = argv.includes("--no-build");
 const jsonIdx = argv.indexOf("--json");
 const jsonPath = jsonIdx >= 0 ? path.resolve(argv[jsonIdx + 1]) : null;
 const HEADERS_PORT = 3100;
@@ -148,7 +151,16 @@ const tail = (s, n = 40) => s.split("\n").slice(-n).join("\n");
 
 async function main() {
   const startedAt = new Date();
-  console.log(`${C.bold}verify${C.reset} ${C.dim}(${noBuild ? "--no-build" : "full"}, ${steps.length} steps)${C.reset}\n`);
+  if (usedDeprecatedFlag) {
+    console.log(`${C.yellow}⚠ --no-build は --fast に改名しました。npm run verify:fast を使ってください。${C.reset}\n`);
+  }
+  const modeLabel = fast
+    ? "fast: 静的検証 + 単体 (API / E2E はスキップ)"
+    : "full: CI と同じ (API / E2E を含む)";
+  console.log(`${C.bold}verify${C.reset} ${C.dim}(${modeLabel}, ${steps.length} steps)${C.reset}\n`);
+  if (fast) {
+    console.log(`${C.yellow}このモードは緑でもマージ不可。API / E2E は実行していません。${C.reset}\n`);
+  }
 
   const results = [];
   for (const step of steps) {
@@ -157,15 +169,15 @@ async function main() {
       console.log(`${C.dim}− ${step.label}${C.reset}`);
       continue;
     }
-    if (noBuild && step.needsBuild) {
+    if (fast && step.needsBuild) {
       results.push({
         ciName: step.ciName,
         label: step.label,
         status: "skipped",
         ms: 0,
-        reason: "--no-build (ビルド成果物に依存)",
+        reason: "--fast (ビルド成果物に依存)",
       });
-      console.log(`${C.dim}− ${step.label} (skipped: --no-build)${C.reset}`);
+      console.log(`${C.dim}− ${step.label} (skipped: --fast)${C.reset}`);
       continue;
     }
     process.stdout.write(`${C.dim}… ${step.label}${C.reset}\r`);
@@ -203,8 +215,10 @@ async function main() {
   const report = {
     startedAt: startedAt.toISOString(),
     durationMs: totalMs,
-    mode: noBuild ? "no-build" : "full",
+    mode: fast ? "fast" : "full",
+    partial: fast,
     ok: failed.length === 0,
+    mergeGate: !fast && failed.length === 0,
     steps: results,
     ciDrift: uncovered,
   };
@@ -214,7 +228,11 @@ async function main() {
   if (jsonPath) writeFileSync(jsonPath, JSON.stringify(report, null, 2));
 
   const summary = `${results.filter((r) => r.status === "pass").length}/${results.filter((r) => r.status === "pass" || r.status === "fail").length} passed · ${(totalMs / 1000).toFixed(1)}s`;
-  console.log(`\n${failed.length === 0 ? C.green + "OK" : C.red + "FAIL"} ${C.reset}${summary}`);
+  const status = failed.length > 0 ? `${C.red}FAIL` : fast ? `${C.yellow}PARTIAL` : `${C.green}OK`;
+  console.log(`\n${status} ${C.reset}${summary}`);
+  if (fast) {
+    console.log(`${C.yellow}API / E2E は未実行。マージ前は npm run verify を実行してください。${C.reset}`);
+  }
   if (failed.length) console.log(`${C.red}赤: ${failed.map((f) => f.label).join(", ")}${C.reset}`);
   process.exit(failed.length === 0 ? 0 : 1);
 }
